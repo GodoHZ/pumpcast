@@ -121,6 +121,12 @@ def test_app_instalable(cliente, cliente_en):
         assert cliente.get(recurso).status_code == 200, recurso
 
 
+def test_api_resumen(cliente, cargada):
+    r = cliente.get("/api/resumen").json()
+    assert r["combustible"] == "Gasolina 95" and r["mejor"]["precio"] <= r["media"]
+    assert r["prevision"] is None                      # sin histórico todavía
+
+
 def test_prueba_de_telegram_sin_configurar(cliente):
     r = cliente.post("/ajustes/prueba", follow_redirects=False)
     assert r.headers["location"] == "/ajustes?prueba=error"

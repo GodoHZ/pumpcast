@@ -1,6 +1,6 @@
 # Imagen de Pumpcast.
 # Se construye a mano y el stack de Portainer la usa por su etiqueta:
-#     docker build -t pumpcast:1.2.0 --build-arg VERSION=1.2.0 .
+#     docker build -t pumpcast:1.3.0 --build-arg VERSION=1.3.0 .
 # La fase "test" ejecuta pytest: si falla algo, no hay imagen.
 FROM python:3.12-alpine AS base
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1

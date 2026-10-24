@@ -266,6 +266,19 @@ def api_estaciones(c: str | None = None):
     return {"combustible": comb, "estaciones": _para_mapa(repo.cercanas(aj, comb))}
 
 
+@app.get("/api/resumen")
+def api_resumen():
+    """Lo de la pantalla de inicio en JSON, para bots y atajos: media, la más barata y el semáforo."""
+    aj, comb = _elegir(None)
+    lang = avisos.idioma(aj)
+    lista = repo.cercanas(aj, comb)
+    p = _prevision(aj, comb, lang)
+    return {"combustible": i18n.t(lang, "comb." + comb),
+            "media": mean(e["precio"] for e in lista) if lista else None,
+            "mejor": _para_mapa(lista[:1])[0] if lista else None,
+            "prevision": {k: p[k] for k in ("semaforo", "icono", "titulo", "frase", "cambio")} if p["lista"] else None}
+
+
 @app.get("/api/buscar")
 def buscar_direccion(request: Request, q: str = ""):
     """Busca una dirección en OpenStreetMap (Nominatim), solo en España, para poner la casa.
