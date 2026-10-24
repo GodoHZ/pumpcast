@@ -124,7 +124,7 @@ tests/           pytest, run inside docker build
 scripts/         icons, screenshots with WebKit, Portainer deploy, git hook
 ```
 
-The code and its comments are in Spanish (it started as a personal project); the interface is
+The code and its comments are in Spanish (it's a personal project); the interface is
 in both languages. **Tests run during `docker build`**: if one fails, no image is produced.
 
 ```bash
