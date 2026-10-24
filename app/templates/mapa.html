@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block titulo %}{{ t("mapa.titulo") }} · Pumpcast{% endblock %}
+{% block cabeza %}
+<link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
+{% endblock %}
+{% block contenido %}
+<div id="mapa" class="mapa" role="region" aria-label="{{ t('mapa.aria') }}"></div>
+<p class="nota leyenda">{{ t("mapa.leyenda")|safe }}</p>
+{% endblock %}
+{% block scripts %}
+<script src="/static/vendor/leaflet/leaflet.js"></script>
+<script>
+  const estaciones = {{ estaciones|tojson }};
+  const escala = {{ escala|tojson }};
+  const casa = [{{ aj.lat }}, {{ aj.lon }}];
+  const comb = {{ comb|tojson }};
+  const { t, decimal } = window.I18N;
+
+  const mapa = L.map("mapa", { zoomControl: false }).setView(casa, 12);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19, attribution: "© OpenStreetMap"
+  }).addTo(mapa);
+  L.circle(casa, { radius: {{ aj.radio_km }} * 1000, color: "#0f766e", weight: 1, fillOpacity: 0.04 }).addTo(mapa);
+  L.circleMarker(casa, { radius: 7, color: "#fff", weight: 2, fillColor: "#2563eb", fillOpacity: 1 })
+    .addTo(mapa).bindPopup(t.casa);
+
+  const cifra = (v, d) => v.toFixed(d).replace(".", decimal);
+  const precio = (p) => window.I18N.lang === "es" ? `${cifra(p, 3)} €` : `€${cifra(p, 3)}`;
+  const km = (d) => d < 1 ? Math.round(d * 1000) + " m" : cifra(d, 1) + " km";
+  const color = (p) => {
+    const x = escala.max > escala.min ? Math.min(1, Math.max(0, (p - escala.min) / (escala.max - escala.min))) : 0;
+    return `hsl(${Math.round(130 * (1 - x))} 70% 40%)`;
+  };
+  const nombre = (s) => s.toLowerCase().replace(/(^|\s)\S/g, (l) => l.toUpperCase());
+
+  for (const e of estaciones) {
+    const popup = document.createElement("div");
+    popup.innerHTML = "<b></b><br><span></span><br><a></a>";
+    popup.querySelector("b").textContent = `${precio(e.precio)} · ${nombre(e.rotulo)}`;
+    popup.querySelector("span").textContent = `${e.municipio} · ${km(e.distancia)}`;
+    popup.querySelector("a").textContent = t.ver_historial;
+    popup.querySelector("a").href = `/estacion/${e.id}?c=${comb}`;
+    L.circleMarker([e.lat, e.lon], { radius: 8, color: "#fff", weight: 1.5, fillColor: color(e.precio), fillOpacity: 0.95 })
+      .addTo(mapa).bindPopup(popup);
+  }
+</script>
+{% endblock %}

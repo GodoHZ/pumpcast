@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block titulo %}{{ e.rotulo|titulo }} · Pumpcast{% endblock %}
+{% block h1 %}{{ e.rotulo|titulo }}{% endblock %}
+{% block contenido %}
+<section class="tarjeta">
+  <p class="donde">{{ e.direccion|titulo }}, {{ e.municipio }} · {{ t("estacion.de_casa", distancia=e.distancia|km) }}</p>
+  {% if e.horario %}<p class="nota">{{ e.horario }}</p>{% endif %}
+  <table class="precios">
+    {% for clave in combustibles if clave in precios %}
+    <tr {% if clave == comb %}class="activa"{% endif %}><th>{{ t("comb." + clave) }}</th><td>{{ precios[clave]|moneda(3) }}</td></tr>
+    {% endfor %}
+  </table>
+  <div class="botones">
+    <a class="boton" href="https://maps.apple.com/?daddr={{ e.lat }},{{ e.lon }}">{{ t("como_llegar") }}</a>
+  </div>
+</section>
+
+<section class="tarjeta">
+  <h2>{{ t("estacion.ultimos", comb=nombre_comb) }}</h2>
+  {% if grafica.fechas|length < 2 %}
+  <p class="nota">{{ t("estacion.sin_historico") }}</p>
+  {% else %}
+  <div class="grafica"><canvas id="grafica" aria-label="{{ t('estacion.ultimos', comb=nombre_comb) }}"></canvas></div>
+  {% endif %}
+</section>
+{% endblock %}
+{% block scripts %}
+{% if grafica.fechas|length >= 2 %}
+<script src="/static/vendor/chart.umd.min.js"></script>
+<script src="/static/graficas.js?v={{ version }}"></script>
+<script>
+  const g = {{ grafica|tojson }};
+  lineas("grafica", g.fechas, [
+    { label: {{ t("serie.esta")|tojson }}, data: g.precio, principal: true },
+    { label: {{ t("serie.zona")|tojson }}, data: g.zona },
+  ]);
+</script>
+{% endif %}
+{% endblock %}

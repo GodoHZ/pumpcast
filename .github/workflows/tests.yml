@@ -1,0 +1,16 @@
+# Los tests se ejecutan dentro del propio docker build: si falla algo, la imagen no
+# llega a construirse. Aquí se repite en cada push para comprobarlo fuera del NAS.
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir la imagen y pasar los tests
+        run: docker build --target test -t pumpcast-test .

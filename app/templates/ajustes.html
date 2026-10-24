@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block titulo %}{{ t("aj.titulo") }} · Pumpcast{% endblock %}
+{% block h1 %}{{ t("aj.titulo") }}{% endblock %}
+{% block cabeza %}
+<link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
+{% endblock %}
+{% block contenido %}
+{% if guardado %}<p class="mensaje ok">{{ t("aj.guardado") }}</p>{% endif %}
+{% if error %}<p class="mensaje error">{{ t(error) }}</p>{% endif %}
+{% if prueba == "ok" %}<p class="mensaje ok">{{ t("aj.prueba_ok") }}</p>{% endif %}
+{% if prueba == "error" %}<p class="mensaje error">{{ t("aj.prueba_error") }}</p>{% endif %}
+
+<form method="post" action="/ajustes" class="formulario">
+  <section class="tarjeta">
+    <h2>{{ t("aj.casa") }}</h2>
+    <div class="buscador">
+      <input id="buscar" type="search" placeholder="{{ t('aj.buscar_ph') }}" autocomplete="street-address" aria-label="{{ t('aj.buscar_aria') }}">
+      <button type="button" class="boton secundario" id="buscar-boton">{{ t("aj.buscar") }}</button>
+    </div>
+    <ul class="resultados" id="resultados"></ul>
+    <div id="mapa-casa" class="mapa-casa" role="region" aria-label="{{ t('aj.mapa_aria') }}"></div>
+    <p class="nota" id="ubicacion-estado">{{ t("aj.mapa_ayuda") }}</p>
+    <button type="button" class="boton secundario" id="ubicacion">{{ t("aj.mi_ubicacion") }}</button>
+    <details class="avanzado">
+      <summary>{{ t("aj.coordenadas") }}</summary>
+      <div class="fila">
+        <label>{{ t("aj.latitud") }}<input name="lat" id="lat" inputmode="decimal" value="{{ aj.lat }}" required></label>
+        <label>{{ t("aj.longitud") }}<input name="lon" id="lon" inputmode="decimal" value="{{ aj.lon }}" required></label>
+      </div>
+    </details>
+    <label>{{ t("aj.radio") }}<input name="radio_km" id="radio" inputmode="decimal" value="{{ aj.radio_km }}" required></label>
+    <label>{{ t("aj.provincias") }}
+      <select name="provincias" id="provincias" multiple size="4">
+        {% for codigo, nombre, _ in provincias %}<option value="{{ codigo }}" {% if codigo in elegidas %}selected{% endif %}>{{ nombre }}</option>{% endfor %}
+      </select>
+    </label>
+    <p class="nota">{{ t("aj.provincias_nota") }}</p>
+  </section>
+
+  <section class="tarjeta">
+    <h2>{{ t("aj.coche") }}</h2>
+    <label>{{ t("aj.combustible") }}
+      <select name="combustible">
+        {% for clave in combustibles %}<option value="{{ clave }}" {% if clave == aj.combustible %}selected{% endif %}>{{ t("comb." + clave) }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>{{ t("aj.litros") }}<input name="litros" inputmode="decimal" value="{{ aj.litros }}" required></label>
+  </section>
+
+  <section class="tarjeta">
+    <h2>{{ t("aj.avisos") }}</h2>
+    {% if not telegram %}
+    <p class="mensaje error">{{ t("aj.telegram_falta") }}</p>
+    {% endif %}
+    <label class="interruptor"><input type="checkbox" name="aviso_diario" value="1" {% if aj.aviso_diario == "1" %}checked{% endif %}> {{ t("aj.resumen") }}</label>
+    <label>{{ t("aj.hora") }}<input name="hora_aviso" type="time" value="{{ aj.hora_aviso }}" required></label>
+    <label class="interruptor"><input type="checkbox" name="avisos_chollo" value="1" {% if aj.avisos_chollo == "1" %}checked{% endif %}> {{ t("aj.chollos") }}</label>
+    <label>{{ t("aj.umbral") }}<input name="umbral_chollo" inputmode="decimal" value="{{ aj.umbral_chollo|float|euros(2) }}" required></label>
+  </section>
+
+  <section class="tarjeta">
+    <h2>{{ t("aj.idioma") }}</h2>
+    <label>{{ t("aj.idioma") }}
+      <select name="idioma">
+        <option value="auto" {% if aj.idioma == "auto" %}selected{% endif %}>{{ t("aj.idioma_auto") }}</option>
+        <option value="es" {% if aj.idioma == "es" %}selected{% endif %}>Español</option>
+        <option value="en" {% if aj.idioma == "en" %}selected{% endif %}>English</option>
+      </select>
+    </label>
+  </section>
+
+  <button class="boton ancho">{{ t("aj.guardar") }}</button>
+</form>
+
+{% if telegram %}
+<form method="post" action="/ajustes/prueba"><button class="boton secundario ancho">{{ t("aj.enviar_prueba") }}</button></form>
+{% endif %}
+
+<p class="nota pie">{{ t("aj.version", version=version) }}{% if ultima %} · {{ t("aj.ultima", fecha=ultima.momento|fecha_corta) }}{% endif %}
+  · <a href="https://github.com/GodoHZ/pumpcast">GitHub</a></p>
+{% endblock %}
+{% block scripts %}
+<script src="/static/vendor/leaflet/leaflet.js"></script>
+<script src="/static/ajustes.js?v={{ version }}"></script>
+{% endblock %}

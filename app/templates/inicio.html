@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block contenido %}
+{% if sin_provincia %}
+<section class="tarjeta destacada">
+  <p>{{ t("inicio.primera_vez") }}</p>
+  <a class="boton" href="/ajustes">{{ t("inicio.ir_ajustes") }}</a>
+</section>
+{% elif not lista %}
+<section class="tarjeta">
+  <p>{{ t("inicio.sin_precios", comb=nombre_comb, radio=aj.radio_km) }}</p>
+  <p class="nota">{{ t("inicio.sin_precios_nota") }}</p>
+  <form method="post" action="/actualizar"><button class="boton">{{ t("actualizar_ahora") }}</button></form>
+</section>
+{% else %}
+{% if prevision.lista %}
+<a class="tarjeta prevision prevision-{{ prevision.semaforo }}" href="/tendencia?c={{ comb }}#prevision">
+  <span class="semaforo">{{ prevision.icono }}</span>
+  <span><b>{{ prevision.titulo }}</b><small>{{ prevision.frase }}</small></span>
+</a>
+{% endif %}
+{% set mejor = lista[0] %}
+<section class="tarjeta destacada">
+  <p class="etiqueta">{{ t("inicio.mas_barata", radio=aj.radio_km) }}</p>
+  <p class="precio-grande">{{ mejor.precio|euros }}<small> €/L</small></p>
+  <p class="nombre">{{ mejor.rotulo|titulo }}</p>
+  <p class="donde">{{ mejor.direccion|titulo }}, {{ mejor.municipio }} · {{ mejor.distancia|km }}</p>
+  <p class="ahorro">{{ t("inicio.ahorro", litros=aj.litros, ahorro=ahorro|moneda, media=media|moneda(3))|safe }}</p>
+  <div class="botones">
+    <a class="boton" href="https://maps.apple.com/?daddr={{ mejor.lat }},{{ mejor.lon }}">{{ t("como_llegar") }}</a>
+    <a class="boton secundario" href="/estacion/{{ mejor.id }}?c={{ comb }}">{{ t("historial") }}</a>
+  </div>
+</section>
+
+{% if lista|length > 1 %}
+<section>
+  <h2>{{ t("inicio.resto") }} <span class="nota">{{ t("inicio.resto_nota", total=total) }}</span></h2>
+  <ol class="lista">
+    {% for e in lista[1:] %}
+    <li><a href="/estacion/{{ e.id }}?c={{ comb }}">
+      <span class="precio">{{ e.precio|euros }}</span>
+      <span class="info"><b>{{ e.rotulo|titulo }}</b><small>{{ e.municipio }} · {{ e.distancia|km }}</small></span>
+      <span class="dif {{ 'sube' if e.precio > media else 'baja' }}">{{ (e.precio - media)|centimos }}</span>
+    </a></li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}
+{% endif %}
+
+{% if not sin_provincia %}
+<footer class="pie">
+  <span>{% if ultima %}{{ t("pie.datos", fecha=ultima.fecha_datos|fecha_corta) }}{% else %}{{ t("pie.sin_leer") }}{% endif %}</span>
+  <form method="post" action="/actualizar"><button class="enlace">{{ t("actualizar") }}</button></form>
+</footer>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block titulo %}{{ t("nav.tendencia") }} · Pumpcast{% endblock %}
+{% block contenido %}
+{% if not serie %}
+<section class="tarjeta"><p>{{ t("tend.sin_datos", comb=nombre_comb) }}</p></section>
+{% else %}
+<section class="cifras">
+  <div class="cifra"><span class="etiqueta">{{ t("tend.media_hoy") }}</span><b>{{ serie[-1].media|moneda(3) }}</b></div>
+  {% for nombre, clave in (("semana", "tend.vs7"), ("mes", "tend.vs30")) %}
+  {% set cambio = cambios[nombre] %}
+  <div class="cifra"><span class="etiqueta">{{ t(clave) }}</span>
+    <b class="{{ 'sube' if cambio and cambio > 0 else 'baja' }}">{{ cambio|centimos }}{% if cambio is not none %} {{ t("tend.cts") }}{% endif %}</b></div>
+  {% endfor %}
+</section>
+
+<section class="tarjeta" id="prevision">
+  <h2>{{ t("prev.titulo") }}</h2>
+  {% if prevision.lista %}
+  <p class="prevision-grande prevision-{{ prevision.semaforo }}"><span class="semaforo">{{ prevision.icono }}</span> <b>{{ prevision.titulo }}</b></p>
+  <p>{{ prevision.frase }}</p>
+  {% set cambio_brent = "" %}
+  {% if prevision.brent_semana is not none %}
+  {% set signo = "+" if prevision.brent_semana >= 0 else "−" %}
+  {% set cambio_brent = t("prev.brent_cambio", cambio=signo ~ ((prevision.brent_semana|abs) * 100)|numero(1)) %}
+  {% endif %}
+  <p class="nota">{{ t("prev.brent", precio=prevision.brent|moneda, cambio=cambio_brent) }}
+    {{ t("prev.como") }}</p>
+  {% if prevision.prueba %}
+  <p class="nota">{{ t("prev.prueba", aciertos=prevision.prueba.aciertos, total=prevision.prueba.total,
+      pct=(100 * prevision.prueba.aciertos / prevision.prueba.total)|round|int,
+      error=(prevision.prueba.error_medio * 100)|numero(1))|safe }}</p>
+  {% endif %}
+  {% if prevision.seguimiento.total %}
+  <p class="nota">{{ t("prev.seguimiento", aciertos=prevision.seguimiento.aciertos, total=prevision.seguimiento.total)|safe }}</p>
+  {% elif prevision.seguimiento.apuntadas %}
+  <p class="nota">{{ t("prev.apuntando") }}</p>
+  {% endif %}
+  <p class="nota">{{ t("prev.aviso") }}</p>
+  {% else %}
+  <p class="nota">{{ t("prev.cargando", dias=prevision.dias) }}</p>
+  {% endif %}
+</section>
+
+<section class="tarjeta">
+  <h2>{{ t("tend.zona", comb=nombre_comb, radio=aj.radio_km) }}</h2>
+  {% if serie|length < 2 %}
+  <p class="nota">{{ t("tend.grafica_pronto") }}</p>
+  {% else %}
+  <div class="grafica"><canvas id="grafica" aria-label="{{ t('tend.zona', comb=nombre_comb, radio=aj.radio_km) }}"></canvas></div>
+  {% endif %}
+</section>
+
+<section class="tarjeta">
+  <h2>{{ t("tend.dia_titulo") }}</h2>
+  {% if mejor_dia is not none %}
+  <p>{{ t("tend.dia_mejor", dia=t("dia_frase." ~ mejor_dia))|safe }}</p>
+  <table class="precios">
+    {% for d in semana %}<tr {% if d.dia == mejor_dia %}class="activa"{% endif %}><th>{{ t("dia." ~ d.dia) }}</th><td>{{ d.media|moneda(3) }}</td></tr>{% endfor %}
+  </table>
+  {% else %}
+  <p class="nota">{{ t("tend.dia_faltan", dias=serie|length) }}</p>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+{% if serie|length >= 2 %}
+<script src="/static/vendor/chart.umd.min.js"></script>
+<script src="/static/graficas.js?v={{ version }}"></script>
+<script>
+  const serie = {{ serie|tojson }};
+  lineas("grafica", serie.map((f) => f.fecha), [
+    { label: {{ t("serie.media")|tojson }}, data: serie.map((f) => f.media), principal: true },
+    { label: {{ t("serie.minimo")|tojson }}, data: serie.map((f) => f.minimo) },
+  ], { label: {{ t("serie.brent")|tojson }}, data: {{ brent|tojson }} });
+</script>
+{% endif %}
+{% endblock %}
