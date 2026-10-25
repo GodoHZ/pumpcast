@@ -20,8 +20,8 @@ every 30 minutes.
 
 ## What it does
 
-- **Nearby**: the cheapest station within your radius, how much you save on a full tank
-  compared with the local average, and the rest sorted by price, with a *Directions* button.
+- **Nearby**: the cheapest station within your radius, what your usual fill-up costs there,
+  how much you save compared with the local average, and the rest sorted by price, with a *Directions* button.
 - **Fill up today or wait?** A 7-day traffic light (🟢 fill up now · 🟡 no rush · 🔴 wait if
   you can), learnt from a year of prices in *your* area: pumps trail Brent crude, and prices
   have momentum. It is **tested on the last 60 days without learning from them** and logs
@@ -80,6 +80,7 @@ Everything else is changed from **Settings**. The container takes a few variable
 | `TZ` | time zone (the morning summary uses it) | `Europe/Madrid` |
 | `PROVINCIAS` | starting province(s), [INE codes](https://www.ine.es/daco/daco42/codmun/cod_provincia.htm) such as `28` or `28,45` | none: chosen in Settings |
 | `TELEGRAM_TOKEN`, `TELEGRAM_CHAT` | Telegram alerts | off |
+| `TELEGRAM_THREAD` | topic id, if `TELEGRAM_CHAT` is a group with topics | — |
 | `APP_URL` | link added at the end of each alert | none |
 | `DATA_DIR` | where `pumpcast.db` lives | `/app/data` |
 

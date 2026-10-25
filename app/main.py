@@ -91,10 +91,11 @@ def inicio(request: Request, c: str | None = None):
     aj, comb = _elegir(c)
     lista = repo.cercanas(aj, comb)
     media = mean(e["precio"] for e in lista) if lista else None
-    ahorro = (media - lista[0]["precio"]) * float(aj["litros"]) if lista else None
+    litros = float(aj["litros"])
+    ahorro = (media - lista[0]["precio"]) * litros if lista else None
     lang = _idioma(request, aj)
     return _pagina(request, "inicio.html", "inicio", aj, comb, lista=lista[:20], total=len(lista),
-                   media=media, ahorro=ahorro, prevision=_prevision(aj, comb, lang))
+                   media=media, ahorro=ahorro, litros=litros, prevision=_prevision(aj, comb, lang))
 
 
 def _para_mapa(lista: list[dict]) -> list[dict]:
@@ -122,7 +123,7 @@ def ver_estacion(request: Request, estacion_id: int, c: str | None = None):
     historial = repo.historial(estacion_id, comb)
     grafica = {"fechas": [h["fecha"] for h in historial], "precio": [h["precio"] for h in historial],
                "zona": [zona.get(h["fecha"]) for h in historial]}
-    return _pagina(request, "estacion.html", "mapa", aj, comb, e=e,
+    return _pagina(request, "estacion.html", "mapa", aj, comb, e=e, litros=float(aj["litros"]),
                    precios=repo.precios_actuales(estacion_id), grafica=grafica)
 
 
@@ -276,6 +277,8 @@ def api_resumen():
     return {"combustible": i18n.t(lang, "comb." + comb),
             "media": mean(e["precio"] for e in lista) if lista else None,
             "mejor": _para_mapa(lista[:1])[0] if lista else None,
+            "litros": float(aj["litros"]),
+            "coste": round(lista[0]["precio"] * float(aj["litros"]), 2) if lista else None,
             "prevision": {k: p[k] for k in ("semaforo", "icono", "titulo", "frase", "cambio")} if p["lista"] else None}
 
 

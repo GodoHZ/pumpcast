@@ -20,8 +20,8 @@ actualizados cada 30 minutos.
 
 ## Qué hace
 
-- **Cerca**: la más barata dentro de tu radio, cuánto ahorras al llenar frente a la media de
-  la zona y el resto ordenadas por precio, con botón de *Cómo llegar*.
+- **Cerca**: la más barata dentro de tu radio, lo que te cuesta tu repostaje habitual,
+  cuánto ahorras frente a la media de la zona y el resto ordenadas por precio, con botón de *Cómo llegar*.
 - **¿Lleno hoy o espero?** Un semáforo a 7 días (🟢 llena ya · 🟡 da igual · 🔴 espera si
   puedes), aprendido con un año de precios de *tu* zona: el surtidor va detrás del Brent y
   los precios tienen inercia. Se **prueba con los últimos 60 días sin usarlos para aprender**
@@ -81,6 +81,7 @@ Todo lo demás se cambia desde **Ajustes**. El contenedor admite unas pocas vari
 | `TZ` | zona horaria (la usa el resumen de la mañana) | `Europe/Madrid` |
 | `PROVINCIAS` | provincia(s) de inicio, [códigos del INE](https://www.ine.es/daco/daco42/codmun/cod_provincia.htm) como `28` o `28,45` | ninguna: se elige en Ajustes |
 | `TELEGRAM_TOKEN`, `TELEGRAM_CHAT` | avisos por Telegram | apagados |
+| `TELEGRAM_THREAD` | id del tema, si `TELEGRAM_CHAT` es un grupo con temas | — |
 | `APP_URL` | enlace que se añade al final de cada aviso | ninguno |
 | `DATA_DIR` | dónde vive `pumpcast.db` | `/app/data` |
 

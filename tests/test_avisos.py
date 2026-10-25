@@ -65,3 +65,32 @@ def test_de_noche_no_avisa_de_chollos(con_historial, telegram):
 def test_sin_bajada_no_hay_chollo(con_historial):
     repo.guardar_ajustes({"umbral_chollo": "0.5"})
     assert avisos.chollo(repo.ajustes(), "g95") is None
+
+
+def test_el_resumen_dice_lo_que_cuesta_llenar(cargada):
+    texto = avisos.resumen_diario(repo.ajustes(), "g95")
+    assert "cuesta" in texto and "ahorras" in texto
+
+
+def _enviado(monkeypatch, tema):
+    from urllib.parse import parse_qs
+    monkeypatch.setattr(config, "TELEGRAM_TOKEN", "x")
+    monkeypatch.setattr(config, "TELEGRAM_CHAT", "-100123")
+    monkeypatch.setattr(config, "TELEGRAM_THREAD", tema)
+    enviado = {}
+
+    class Respuesta:
+        def close(self):
+            pass
+
+    def falso(url, datos, timeout):
+        enviado.update({k: v[0] for k, v in parse_qs(datos.decode()).items()})
+        return Respuesta()
+    monkeypatch.setattr(avisos.urllib.request, "urlopen", falso)
+    avisos.enviar("hola")
+    return enviado
+
+
+def test_telegram_a_un_tema_del_grupo(monkeypatch):
+    assert _enviado(monkeypatch, "8")["message_thread_id"] == "8"
+    assert "message_thread_id" not in _enviado(monkeypatch, "")

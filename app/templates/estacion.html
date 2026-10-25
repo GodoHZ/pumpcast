@@ -10,6 +10,9 @@
     <tr {% if clave == comb %}class="activa"{% endif %}><th>{{ t("comb." + clave) }}</th><td>{{ precios[clave]|moneda(3) }}</td></tr>
     {% endfor %}
   </table>
+  {% if comb in precios %}
+  <p class="ahorro">{{ t("estacion.coste", litros=aj.litros, comb=nombre_comb, coste=(precios[comb] * litros)|moneda)|safe }}</p>
+  {% endif %}
   <div class="botones">
     <a class="boton" href="https://maps.apple.com/?daddr={{ e.lat }},{{ e.lon }}">{{ t("como_llegar") }}</a>
   </div>

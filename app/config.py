@@ -13,6 +13,7 @@ TZ = ZoneInfo(os.environ.get("TZ", "Europe/Madrid"))
 APP_URL = os.environ.get("APP_URL", "").rstrip("/")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "").strip()
 TELEGRAM_CHAT = os.environ.get("TELEGRAM_CHAT", "").strip()
+TELEGRAM_THREAD = os.environ.get("TELEGRAM_THREAD", "").strip()   # tema de un grupo con temas (opcional)
 SIN_TAREAS = os.environ.get("SIN_TAREAS") == "1"       # en los tests no se descarga nada
 
 MINUTOS_ENTRE_LECTURAS = 30                             # el Ministerio actualiza cada media hora

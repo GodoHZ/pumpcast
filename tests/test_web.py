@@ -130,3 +130,12 @@ def test_api_resumen(cliente, cargada):
 def test_prueba_de_telegram_sin_configurar(cliente):
     r = cliente.post("/ajustes/prueba", follow_redirects=False)
     assert r.headers["location"] == "/ajustes?prueba=error"
+
+
+def test_api_resumen_trae_el_coste(cliente, cargada):
+    r = cliente.get("/api/resumen").json()
+    assert r["coste"] == round(r["mejor"]["precio"] * r["litros"], 2)
+
+
+def test_las_paginas_dicen_lo_que_cuesta_llenar(cliente, cargada):
+    assert "te cuesta" in cliente.get("/").text

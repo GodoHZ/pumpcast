@@ -27,8 +27,11 @@ def idioma(aj: dict) -> str:
 def enviar(texto: str) -> None:
     if not configurado():
         raise RuntimeError("Faltan TELEGRAM_TOKEN y TELEGRAM_CHAT.")
-    datos = urllib.parse.urlencode({"chat_id": config.TELEGRAM_CHAT, "text": texto, "parse_mode": "HTML",
-                                    "disable_web_page_preview": "true"}).encode()
+    campos = {"chat_id": config.TELEGRAM_CHAT, "text": texto, "parse_mode": "HTML",
+              "disable_web_page_preview": "true"}
+    if config.TELEGRAM_THREAD:
+        campos["message_thread_id"] = config.TELEGRAM_THREAD     # un tema concreto de un grupo
+    datos = urllib.parse.urlencode(campos).encode()
     urllib.request.urlopen(f"https://api.telegram.org/bot{config.TELEGRAM_TOKEN}/sendMessage",
                            datos, timeout=30).close()
 
@@ -53,7 +56,7 @@ def resumen_diario(aj: dict, comb: str, lang: str = "es") -> str | None:
         lineas.append(f"{i}. <b>{moneda(e['precio'], 3, lang)}</b> · {_sitio(e, lang)}")
     ahorro = (media - lista[0]["precio"]) * litros
     lineas.append("\n" + t("tg.media", media=moneda(media, 3, lang), litros=f"{litros:g}",
-                           ahorro=moneda(ahorro, 2, lang)))
+                           coste=moneda(lista[0]["precio"] * litros, 2, lang), ahorro=moneda(ahorro, 2, lang)))
     serie = repo.serie_zona(aj, comb, dias=8)
     if len(serie) >= 2:
         cambio = (serie[-1]["media"] - serie[0]["media"]) * 100

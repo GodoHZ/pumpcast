@@ -21,7 +21,8 @@ TEXTOS: dict[str, dict[str, str]] = {
         "inicio.sin_precios_nota": "Si acabas de arrancar la app, la primera lectura tarda un momento. "
                                    "Si no, amplía el radio en Ajustes.",
         "inicio.mas_barata": "La más barata a menos de {radio} km",
-        "inicio.ahorro": "Llenando {litros} L ahorras <b>{ahorro}</b> frente a la media de la zona ({media}).",
+        "inicio.ahorro": "Llenar {litros} L aquí te cuesta <b>{coste}</b>: ahorras <b>{ahorro}</b> frente a la "
+                         "media de la zona ({media}).",
         "inicio.resto": "El resto cerca de casa",
         "inicio.resto_nota": "{total} en total · céntimos frente a la media",
         "como_llegar": "Cómo llegar", "historial": "Historial",
@@ -38,6 +39,7 @@ TEXTOS: dict[str, dict[str, str]] = {
         "estacion.sin_historico": "Todavía no hay histórico: la app guarda un precio al día y la gráfica "
                                   "sale en cuanto haya dos.",
         "estacion.no_existe": "Esa gasolinera no está en la base de datos.",
+        "estacion.coste": "Llenar {litros} L de {comb} aquí: <b>{coste}</b>",
         "serie.esta": "Esta gasolinera", "serie.zona": "Media de la zona", "serie.media": "Media",
         "serie.minimo": "La más barata", "serie.brent": "Brent (€/barril)",
 
@@ -122,7 +124,8 @@ TEXTOS: dict[str, dict[str, str]] = {
         "manifest.descripcion": "Las gasolineras más baratas cerca de casa y si sale a cuenta llenar hoy.",
 
         "tg.hoy": "⛽ <b>{comb} hoy</b> a menos de {radio} km",
-        "tg.media": "Media de la zona: {media}. Llenando {litros} L en la primera ahorras <b>{ahorro}</b>.",
+        "tg.media": "Media de la zona: {media}. Llenar {litros} L en la primera cuesta <b>{coste}</b> "
+                    "y ahorras <b>{ahorro}</b>.",
         "tg.sube": "Sube {cts} céntimos desde hace una semana.",
         "tg.baja": "Baja {cts} céntimos desde hace una semana.",
         "tg.igual": "Igual que hace una semana.",
@@ -142,7 +145,8 @@ TEXTOS: dict[str, dict[str, str]] = {
         "inicio.sin_precios_nota": "If you just started the app, the first read takes a moment. "
                                    "Otherwise, widen the radius in Settings.",
         "inicio.mas_barata": "Cheapest within {radio} km",
-        "inicio.ahorro": "Filling {litros} L saves you <b>{ahorro}</b> versus the local average ({media}).",
+        "inicio.ahorro": "Filling {litros} L here costs <b>{coste}</b>: you save <b>{ahorro}</b> versus the "
+                         "local average ({media}).",
         "inicio.resto": "Others near home",
         "inicio.resto_nota": "{total} in total · cents vs. average",
         "como_llegar": "Directions", "historial": "History",
@@ -159,6 +163,7 @@ TEXTOS: dict[str, dict[str, str]] = {
         "estacion.sin_historico": "No history yet: the app stores one price a day and the chart appears "
                                   "once there are two.",
         "estacion.no_existe": "That station is not in the database.",
+        "estacion.coste": "Filling {litros} L of {comb} here: <b>{coste}</b>",
         "serie.esta": "This station", "serie.zona": "Local average", "serie.media": "Average",
         "serie.minimo": "Cheapest", "serie.brent": "Brent (€/barrel)",
 
@@ -243,7 +248,8 @@ TEXTOS: dict[str, dict[str, str]] = {
         "manifest.descripcion": "The cheapest petrol stations near home, and whether to fill up today.",
 
         "tg.hoy": "⛽ <b>{comb} today</b> within {radio} km",
-        "tg.media": "Local average: {media}. Filling {litros} L at the first one saves <b>{ahorro}</b>.",
+        "tg.media": "Local average: {media}. Filling {litros} L at the first one costs <b>{coste}</b> "
+                    "and saves <b>{ahorro}</b>.",
         "tg.sube": "Up {cts} cents from a week ago.",
         "tg.baja": "Down {cts} cents from a week ago.",
         "tg.igual": "Same as a week ago.",
