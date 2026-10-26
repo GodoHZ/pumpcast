@@ -15,6 +15,9 @@ Portainer, nunca en el repositorio. Al actualizarlo se conservan las que ya teng
 
     python3 scripts/portainer.py estado      qué hay ahora
     python3 scripts/portainer.py desplegar   crea el stack o lo actualiza
+    python3 scripts/portainer.py variable NOMBRE < valor
+                                             guarda una variable del stack (el valor por la entrada
+                                             estándar, para que no quede en el historial) y lo redespliega
 """
 from __future__ import annotations
 
@@ -100,6 +103,14 @@ def main() -> int:
         print(f"Entorno Portainer: {endpoint}")
         print(f"Stack «{STACK}»: " + (f"existe (id {existente['Id']})" if existente else "no existe todavía"))
         return 0
+    variables = existente.get("Env", []) if existente else []
+    if orden == "variable" and len(sys.argv) == 3 and existente:
+        nombre, valor = sys.argv[2], sys.stdin.readline().strip()
+        if not re.fullmatch(r"[A-Z][A-Z0-9_]*", nombre) or not valor:
+            print("Uso: python3 scripts/portainer.py variable NOMBRE < valor")
+            return 2
+        variables = [v for v in variables if v.get("name") != nombre] + [{"name": nombre, "value": valor}]
+        orden = "desplegar"
     if orden != "desplegar":
         print(__doc__)
         return 2
@@ -108,7 +119,7 @@ def main() -> int:
     try:
         if existente:
             api("PUT", f"/api/stacks/{existente['Id']}?endpointId={endpoint}", token, base,
-                {"stackFileContent": contenido, "env": existente.get("Env", []),
+                {"stackFileContent": contenido, "env": variables,
                  "prune": True, "pullImage": False})
             print(f"Stack «{STACK}» actualizado (id {existente['Id']}).")
         else:

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block titulo %}{{ t("e404.titulo") }} · Pumpcast{% endblock %}
+{% block h1 %}{{ t("e404.titulo") }}{% endblock %}
+{% block contenido %}
+<section class="tarjeta">
+  <p>{{ t("e404.texto") }}</p>
+  <a class="boton" href="/">{{ t("e404.volver") }}</a>
+</section>
+{% endblock %}

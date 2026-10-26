@@ -1,15 +1,16 @@
 # Pumpcast — docker compose up -d --build
 #
-# Listens on 127.0.0.1 only: put it behind a reverse proxy with HTTPS (Nginx Proxy
-# Manager, Caddy, Traefik...) or reach it through a VPN such as Tailscale.
-# Solo escucha en 127.0.0.1: ponla detrás de un proxy inverso con HTTPS o de una VPN.
+# Listens on 127.0.0.1 only: put it behind a reverse proxy with HTTPS (Nginx Proxy Manager,
+# Caddy, Traefik...), a Cloudflare Tunnel, or reach it through a VPN such as Tailscale.
+# Solo escucha en 127.0.0.1: ponla detrás de un proxy inverso con HTTPS, de un túnel de
+# Cloudflare o de una VPN.
 services:
   pumpcast:
     build:
       context: .
       args:
-        VERSION: "1.4.0"
-    image: pumpcast:1.4.0
+        VERSION: "2.2.0"
+    image: pumpcast:2.2.0
     container_name: pumpcast
     restart: unless-stopped
     user: "1000:1000"            # owner of ./data (check with `id -u`) / dueño de ./data
@@ -18,11 +19,21 @@ services:
     environment:
       - TZ=Europe/Madrid
       # Optional / Opcional:
-      # - PROVINCIAS=28                              # starting province (INE code), then in Settings
-      # - APP_URL=https://pumpcast.example.com    # link added to Telegram alerts
+      # - ADMIN_PASSWORD_HASH=scrypt:...             # admin panel (/admin): see README / ver README
+      # - TITULAR=Your name                          # legal notice (/legal) / aviso legal
+      # - CONTACTO=you@example.com
+      # - APP_URL=https://pumpcast.example.com       # link added to Telegram alerts
       # - TELEGRAM_TOKEN=123456:ABC...               # bot from @BotFather
       # - TELEGRAM_CHAT=123456789                    # your chat id
-      # - TELEGRAM_THREAD=8                          # topic id, only for groups with topics
     volumes:
       - ./data:/app/data
-    mem_limit: 256m
+    # Hardening / Endurecimiento: read-only filesystem, no extra privileges.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 100
+    mem_limit: 384m

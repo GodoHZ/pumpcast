@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% set titulo = "Aviso legal y privacidad" if lang == "es" else "Legal notice and privacy" %}
+{% block titulo %}{{ titulo }} · Pumpcast{% endblock %}
+{% block h1 %}{{ titulo }}{% endblock %}
+{% block contenido %}
+{#- Texto largo y que cambia poco: va aquí, en los dos idiomas, y no en i18n.py. -#}
+{% if lang == "es" %}
+<section class="tarjeta legal">
+  <h2>Quién está detrás</h2>
+  <p>Pumpcast es un proyecto personal, gratuito y sin ánimo de lucro{% if titular %} de {{ titular }}{% endif %}.
+    No tiene publicidad ni vende nada, y no tiene relación con el Ministerio ni con ninguna marca de carburantes.</p>
+  <p>Contacto: <a href="{{ enlace_contacto }}">{{ contacto }}</a></p>
+</section>
+
+<section class="tarjeta legal">
+  <h2>De dónde salen los datos</h2>
+  <ul>
+    <li><b>Precios:</b> Geoportal de Hidrocarburos del Ministerio para la Transición Ecológica y el Reto
+      Demográfico, publicados como datos abiertos y reutilizados conforme a la Ley 37/2007. Se descargan cada
+      30 minutos y se muestran sin modificarlos{% if ultima %}; última actualización: {{ ultima.momento|fecha_corta }}{% endif %}.
+      Referencia oficial: <a href="https://geoportalgasolineras.es">geoportalgasolineras.es</a>.</li>
+    <li><b>Petróleo Brent:</b> FRED, Federal Reserve Bank of St. Louis, serie DCOILBRENTEU de la U.S. Energy
+      Information Administration.</li>
+    <li><b>Cambio euro/dólar:</b> Banco Central Europeo.</li>
+    <li><b>Mapas y búsqueda de direcciones:</b> © colaboradores de
+      <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (licencia ODbL).</li>
+  </ul>
+</section>
+
+<section class="tarjeta legal">
+  <h2>Sin garantías</h2>
+  <p>Los precios son los que comunican las propias gasolineras: pueden tener errores o haber cambiado.
+    El que vale es el del surtidor.</p>
+  <p>«¿Lleno hoy o espero?» es una estimación estadística, no un consejo. Pumpcast se ofrece tal cual, sin
+    garantía de ningún tipo, y no responde de las decisiones que se tomen con él ni de los errores de los datos
+    de origen.</p>
+</section>
+
+<section class="tarjeta legal">
+  <h2>Privacidad</h2>
+  <ul>
+    <li><b>En el servidor no se guarda nada tuyo.</b> Tu ubicación, radio, combustible, litros e idioma van en
+      una cookie de tu navegador. El servidor la lee para preparar la página y no la apunta. Puedes borrarla en
+      Ajustes → «Olvidar mi ubicación».</li>
+    <li>Si activas «usar dónde estoy», tu navegador manda tu posición redondeada a unos 100 m solo para
+      actualizar esa cookie.</li>
+    <li><b>No hay registro de visitas.</b> Para frenar abusos, el servidor recuerda en memoria tu dirección IP
+      durante un minuto y luego la olvida (interés legítimo, art. 6.1.f del RGPD).</li>
+    <li><b>Terceros:</b> la web llega a ti a través de Cloudflare, que trata tu IP para servirla y protegerla.
+      El mapa y el buscador de direcciones los da directamente OpenStreetMap, que recibe tu IP y lo que buscas
+      (<a href="https://osmfoundation.org/wiki/Privacy_Policy">su política de privacidad</a>).</li>
+    <li><b>Tus derechos:</b> como no se guardan datos tuyos, no hay nada que consultar ni borrar en el
+      servidor. Para cualquier duda, escribe al contacto de arriba. También puedes reclamar ante la
+      <a href="https://www.aepd.es">Agencia Española de Protección de Datos</a>.</li>
+  </ul>
+</section>
+
+<section class="tarjeta legal">
+  <h2>Cookies</h2>
+  <p>Solo cookies técnicas, necesarias para lo que pides, que por eso no necesitan consentimiento
+    (art. 22.2 de la LSSI). No hay cookies de analítica, de publicidad ni de terceros.</p>
+  <ul>
+    <li><code>pumpcast</code>: tus preferencias de Ajustes. Dura 400 días o hasta que la borres.</li>
+    <li><code>pumpcast_admin</code> y <code>pumpcast_alta</code>: solo para el panel del administrador.</li>
+    <li>Cloudflare puede poner alguna cookie técnica de seguridad, como <code>__cf_bm</code>.</li>
+  </ul>
+  <p>Para que funcione sin conexión, la app guarda una copia de las páginas en tu dispositivo, nunca en el
+    servidor.</p>
+</section>
+
+<section class="tarjeta legal">
+  <h2>Código</h2>
+  <p>Código abierto con licencia MIT en <a href="{{ repositorio }}">GitHub</a>. Usa Leaflet (BSD-2),
+    Chart.js (MIT), qrcode-generator (MIT) e iconos de Lucide (ISC).</p>
+</section>
+{% else %}
+<section class="tarjeta legal">
+  <h2>Who's behind it</h2>
+  <p>Pumpcast is a personal, free, non-profit project{% if titular %} by {{ titular }}{% endif %}. It has no
+    ads, sells nothing, and is not affiliated with the Spanish Ministry or any fuel brand.</p>
+  <p>Contact: <a href="{{ enlace_contacto }}">{{ contacto }}</a></p>
+</section>
+
+<section class="tarjeta legal">
+  <h2>Where the data comes from</h2>
+  <ul>
+    <li><b>Prices:</b> Hydrocarbons Geoportal of the Spanish Ministry for the Ecological Transition and the
+      Demographic Challenge, published as open data and reused under Spanish Law 37/2007. Downloaded every
+      30 minutes and shown unmodified{% if ultima %}; last update: {{ ultima.momento|fecha_corta }}{% endif %}.
+      Official reference: <a href="https://geoportalgasolineras.es">geoportalgasolineras.es</a>.</li>
+    <li><b>Brent crude:</b> FRED, Federal Reserve Bank of St. Louis, series DCOILBRENTEU from the U.S. Energy
+      Information Administration.</li>
+    <li><b>EUR/USD:</b> European Central Bank.</li>
+    <li><b>Maps and address search:</b> ©
+      <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors (ODbL licence).</li>
+  </ul>
+</section>
+
+<section class="tarjeta legal">
+  <h2>No warranty</h2>
+  <p>Prices are the ones the stations report themselves: they may contain errors or have changed. The price
+    on the pump is the one that counts.</p>
+  <p>"Fill up today or wait?" is a statistical estimate, not advice. Pumpcast is provided as is, without
+    warranty of any kind, and accepts no liability for decisions made with it or for errors in the source
+    data.</p>
+</section>
+
+<section class="tarjeta legal">
+  <h2>Privacy</h2>
+  <ul>
+    <li><b>Nothing about you is stored on the server.</b> Your location, radius, fuel, litres and language
+      live in a cookie in your browser. The server reads it to build the page and doesn't record it. You can
+      delete it in Settings → "Forget my location".</li>
+    <li>If you turn on "use where I am", your browser sends your position rounded to about 100 m, only to
+      update that cookie.</li>
+    <li><b>No visit logs.</b> To stop abuse, the server keeps your IP address in memory for one minute and
+      then forgets it (legitimate interest, Art. 6(1)(f) GDPR).</li>
+    <li><b>Third parties:</b> the site reaches you through Cloudflare, which processes your IP to deliver and
+      protect it. The map and address search come straight from OpenStreetMap, which receives your IP and what
+      you search for (<a href="https://osmfoundation.org/wiki/Privacy_Policy">their privacy policy</a>).</li>
+    <li><b>Your rights:</b> since no data about you is kept, there's nothing on the server to access or
+      delete. For any question, use the contact above. You can also complain to the Spanish Data Protection
+      Agency (<a href="https://www.aepd.es">AEPD</a>).</li>
+  </ul>
+</section>
+
+<section class="tarjeta legal">
+  <h2>Cookies</h2>
+  <p>Only technical cookies needed for what you ask for, which therefore don't require consent (Art. 22.2 of
+    Spanish Law 34/2002). No analytics, advertising or third-party cookies.</p>
+  <ul>
+    <li><code>pumpcast</code>: your Settings. Lasts 400 days or until you delete it.</li>
+    <li><code>pumpcast_admin</code> and <code>pumpcast_alta</code>: only for the administrator's panel.</li>
+    <li>Cloudflare may set a technical security cookie such as <code>__cf_bm</code>.</li>
+  </ul>
+  <p>To work offline, the app keeps a copy of pages on your device, never on the server.</p>
+</section>
+
+<section class="tarjeta legal">
+  <h2>Code</h2>
+  <p>Open source under the MIT licence on <a href="{{ repositorio }}">GitHub</a>. Uses Leaflet (BSD-2),
+    Chart.js (MIT), qrcode-generator (MIT) and Lucide icons (ISC).</p>
+</section>
+{% endif %}
+{% endblock %}

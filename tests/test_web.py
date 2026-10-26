@@ -1,12 +1,13 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app import repo
+from app import config, preferencias, repo
 from app.main import app
 
-AJUSTES_BUENOS = {"lat": "40,42", "lon": "-3,70", "radio_km": "15", "combustible": "diesel", "litros": "45",
-                  "umbral_chollo": "0,04", "hora_aviso": "07:45", "aviso_diario": "1",
-                  "provincias": ["28", "45"], "idioma": "auto"}
+from conftest import SOL
+
+PREFERENCIAS_BUENAS = {"lat": "40,4168", "lon": "-3,7038", "radio_km": "5", "combustible": "diesel",
+                       "litros": "45", "idioma": "auto"}
 
 
 @pytest.fixture
@@ -21,31 +22,56 @@ def cliente_en():
         yield c
 
 
+def _ubicar(cliente, **cambios):
+    """Un visitante que ya ha elegido dónde buscar (en la Puerta del Sol)."""
+    valores = {**PREFERENCIAS_BUENAS, **SOL, "combustible": "g95", "radio_km": "10", **cambios}
+    cliente.cookies.set(preferencias.COOKIE, preferencias.para_cookie(valores))
+    return cliente
+
+
+def test_sin_ubicacion_pide_elegirla(cliente, cargada):
+    for ruta in ("/", "/mapa", "/tendencia"):
+        r = cliente.get(ruta)
+        assert r.status_code == 200 and "dinos dónde buscar" in r.text, ruta
+    assert cliente.get("/ajustes").status_code == 200
+    assert cliente.get("/salud").json()["estado"] == "ok"
+
+
 def test_paginas_sin_datos(cliente):
+    _ubicar(cliente)
     for ruta in ("/", "/mapa", "/tendencia", "/ajustes", "/sin-conexion"):
         assert cliente.get(ruta).status_code == 200, ruta
     assert "Aún no hay precios" in cliente.get("/").text
     assert cliente.get("/salud").json()["estado"] == "sin-datos"
 
 
-def test_primera_vez_pide_la_provincia(cliente):
-    repo.guardar_ajustes({"provincias": ""})
-    assert "elige tu provincia" in cliente.get("/").text
-
-
 def test_paginas_con_datos(cliente, con_historial, una):
+    _ubicar(cliente)
     inicio = cliente.get("/")
     assert inicio.status_code == 200
-    assert "La más barata" in inicio.text
+    assert "La más barata" in inicio.text and "te cuesta" in inicio.text
     for ruta in ("/mapa", "/tendencia", f"/estacion/{una['id']}", "/?c=diesel", "/mapa?c=glp", "/tendencia?c=g98"):
         assert cliente.get(ruta).status_code == 200, ruta
     assert "Esta gasolinera" in cliente.get(f"/estacion/{una['id']}").text
     assert cliente.get("/estacion/1").status_code == 404
-    assert cliente.get("/salud").json()["estado"] == "ok"
-    assert cliente.get("/api/estaciones").json()["estaciones"]
+
+
+def test_cada_visitante_ve_lo_suyo(cliente, cargada):
+    """Dos visitantes con radios distintos ven listas distintas, sin pisarse."""
+    with TestClient(app, headers={"Accept-Language": "es"}) as otro:
+        _ubicar(cliente, radio_km="2")
+        _ubicar(otro, radio_km="9")
+        cerca, lejos = cliente.get("/").text, otro.get("/").text
+    assert "a menos de 2 km" in cerca and "a menos de 9 km" in lejos
+
+
+def test_estacion_sin_ubicacion(cliente, cargada, una):
+    r = cliente.get(f"/estacion/{una['id']}")
+    assert r.status_code == 200 and "de tu ubicación" not in r.text
 
 
 def test_en_ingles(cliente_en, con_historial, una):
+    _ubicar(cliente_en)
     inicio = cliente_en.get("/")
     assert '<html lang="en">' in inicio.text
     assert "Cheapest within" in inicio.text and "Petrol 95" in inicio.text
@@ -56,54 +82,66 @@ def test_en_ingles(cliente_en, con_historial, una):
 
 
 def test_el_idioma_de_ajustes_manda(cliente_en, cargada):
-    repo.guardar_ajustes({"idioma": "es"})
+    _ubicar(cliente_en, idioma="es")
     assert "La más barata" in cliente_en.get("/").text
 
 
-def test_se_recuerda_el_idioma_del_navegador_para_los_avisos(cliente_en):
-    cliente_en.get("/")
-    assert repo.ajustes()["idioma_visto"] == "en"
-
-
 def test_combustible_desconocido_usa_el_de_ajustes(cliente, cargada):
+    _ubicar(cliente)
     assert cliente.get("/?c=queroseno").status_code == 200
 
 
-def test_guardar_ajustes(cliente):
-    r = cliente.post("/ajustes", data=AJUSTES_BUENOS, follow_redirects=False)
-    assert r.status_code == 303
-    aj = repo.ajustes()
-    assert aj["lat"] == "40.42" and aj["radio_km"] == "15" and aj["combustible"] == "diesel"
-    assert aj["umbral_chollo"] == "0.04" and aj["provincias"] == "28,45"
-    assert aj["aviso_diario"] == "1" and aj["avisos_chollo"] == "0"
+def test_guardar_ajustes_va_a_la_cookie_y_no_a_la_base_de_datos(cliente, cargada):
+    antes = repo.ajustes()
+    r = cliente.post("/ajustes", data=PREFERENCIAS_BUENAS, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/"
+    cookie = r.headers["set-cookie"]
+    assert cookie.startswith(preferencias.COOKIE + "=") and "httponly" in cookie.lower() and "samesite=lax" in cookie.lower()
+    assert repo.ajustes() == antes
+    inicio = cliente.get("/")
+    assert "a menos de 5 km" in inicio.text and "Diésel" in inicio.text
+
+
+def test_olvidar_la_ubicacion(cliente, cargada):
+    cliente.post("/ajustes", data=PREFERENCIAS_BUENAS)
+    assert "a menos de 5 km" in cliente.get("/").text
+    r = cliente.post("/ajustes/olvidar", follow_redirects=False)
+    assert 'pumpcast=""' in r.headers["set-cookie"] and "Max-Age=0" in r.headers["set-cookie"]
+    assert "dinos dónde buscar" in cliente.get("/").text
 
 
 @pytest.mark.parametrize("cambio, error", [
     ({"radio_km": "500"}, "El radio tiene que estar"),
-    ({"provincias": []}, "Elige entre 1 y 4 provincias"),
-    ({"provincias": ["01", "02", "03", "04", "05"]}, "Elige entre 1 y 4 provincias"),
-    ({"hora_aviso": "8h"}, "La hora del aviso va como"),
+    ({"lat": "48.85", "lon": "2.35"}, "solo tiene precios de España"),       # París
+    ({"lat": "abc"}, "número mal escrito"),
     ({"idioma": "fr"}, "Ese idioma no está disponible"),
+    ({"combustible": "queroseno"}, "Ese combustible no existe"),
 ])
 def test_ajustes_con_error_no_se_guardan(cliente, cambio, error):
-    r = cliente.post("/ajustes", data={**AJUSTES_BUENOS, **cambio})
-    assert r.status_code == 200
+    r = cliente.post("/ajustes", data={**PREFERENCIAS_BUENAS, **cambio})
+    assert r.status_code == 400
     assert error in r.text
-    assert repo.ajustes()["radio_km"] == "10"
+    assert preferencias.COOKIE not in r.cookies
 
 
-def test_buscar_direccion_corta_no_llama_a_nadie(cliente):
-    assert cliente.get("/api/buscar?q=al").json() == {"resultados": []}
+def test_una_cookie_trucada_se_ignora(cliente, cargada):
+    cliente.cookies.set(preferencias.COOKIE, "lat=40.4&lon=-3.7&radio_km=99999&combustible=g95&litros=40&idioma=auto")
+    assert "dinos dónde buscar" in cliente.get("/").text
+    cliente.cookies.set(preferencias.COOKIE, '"><script>alert(1)</script>')
+    r = cliente.get("/")
+    assert r.status_code == 200 and "<script>alert(1)" not in r.text
 
 
-def test_ajustes_tiene_buscador_mapa_y_provincias(cliente):
+def test_ajustes_tiene_buscador_y_mapa(cliente):
     texto = cliente.get("/ajustes").text
     assert 'id="buscar"' in texto and 'id="mapa-casa"' in texto
-    assert '<option value="28" selected>Madrid</option>' in texto
+    assert "provincias" not in texto and "Telegram" not in texto
 
 
 def test_tendencia_dice_que_faltan_datos(cliente, cargada):
-    assert "Cargando el histórico" in cliente.get("/tendencia").text
+    _ubicar(cliente)
+    texto = cliente.get("/tendencia").text
+    assert "Cargando el histórico" in texto
 
 
 def test_app_instalable(cliente, cliente_en):
@@ -115,27 +153,130 @@ def test_app_instalable(cliente, cliente_en):
     assert cliente_en.get("/manifest.webmanifest").json()["lang"] == "en"
     sw = cliente.get("/sw.js")
     assert sw.headers["content-type"].startswith("text/javascript")
+    assert '"/admin"' in sw.text                         # el panel no se guarda para verlo sin conexión
     for recurso in ("/static/vendor/chart.umd.min.js", "/static/vendor/leaflet/leaflet.js",
                     "/static/iconos/apple-touch-icon.png"):
         assert recurso in sw.text or recurso.endswith(".png")
         assert cliente.get(recurso).status_code == 200, recurso
 
 
-def test_api_resumen(cliente, cargada):
-    r = cliente.get("/api/resumen").json()
+def test_api_con_ubicacion_en_la_url(cliente, cargada):
+    r = cliente.get("/api/resumen?lat=40.4168&lon=-3.7038&radio_km=10").json()
     assert r["combustible"] == "Gasolina 95" and r["mejor"]["precio"] <= r["media"]
+    assert r["coste"] == round(r["mejor"]["precio"] * 40, 2)
     assert r["prevision"] is None                      # sin histórico todavía
+    assert cliente.get("/api/estaciones?lat=40.4168&lon=-3.7038&c=diesel").json()["estaciones"]
 
 
-def test_prueba_de_telegram_sin_configurar(cliente):
-    r = cliente.post("/ajustes/prueba", follow_redirects=False)
-    assert r.headers["location"] == "/ajustes?prueba=error"
+def test_api_con_la_cookie(cliente, cargada):
+    _ubicar(cliente, litros="50")
+    assert cliente.get("/api/resumen").json()["litros"] == 50
 
 
-def test_api_resumen_trae_el_coste(cliente, cargada):
-    r = cliente.get("/api/resumen").json()
-    assert r["coste"] == round(r["mejor"]["precio"] * r["litros"], 2)
+def test_api_sin_ubicacion(cliente, cargada):
+    assert cliente.get("/api/resumen").status_code == 400
+    assert cliente.get("/api/estaciones").status_code == 400
+    assert cliente.get("/api/resumen?lat=999&lon=0").status_code == 400
 
 
-def test_las_paginas_dicen_lo_que_cuesta_llenar(cliente, cargada):
-    assert "te cuesta" in cliente.get("/").text
+def test_lo_que_se_quito_ya_no_existe(cliente):
+    """Lo que dejaba a cualquiera tocar el servidor desde la web pública."""
+    assert cliente.post("/actualizar").status_code in (404, 405)
+    assert cliente.post("/ajustes/prueba").status_code in (404, 405)
+    assert cliente.get("/api/buscar?q=madrid").status_code == 404
+
+
+# --- Usar dónde estoy ----------------------------------------------------------------------
+
+def test_sin_gps_no_se_pide_la_ubicacion(cliente, cargada):
+    _ubicar(cliente)
+    assert "gps.js" not in cliente.get("/").text
+    assert cliente.post("/ubicacion", data={"lat": "41.3874", "lon": "2.1686"}).status_code == 409
+
+
+def test_con_gps_cada_pagina_pide_la_ubicacion(cliente, cargada):
+    _ubicar(cliente, gps="1")
+    for ruta in ("/", "/mapa", "/tendencia"):
+        texto = cliente.get(ruta).text
+        assert '<script src="/static/gps.js' in texto and 'id="gps-estado"' in texto, ruta
+    assert "gps.js" not in cliente.get("/ajustes").text
+    assert cliente.get("/static/gps.js").status_code == 200
+
+
+def test_la_casilla_del_gps_se_guarda(cliente, cargada):
+    cliente.post("/ajustes", data={**PREFERENCIAS_BUENAS, "gps": "1"})
+    assert "gps.js" in cliente.get("/").text
+    assert 'id="gps" checked' in cliente.get("/ajustes").text
+    cliente.post("/ajustes", data=PREFERENCIAS_BUENAS)                 # casilla sin marcar: no llega
+    assert "gps.js" not in cliente.get("/").text
+
+
+def test_moverse_cambia_la_cookie_redondeada(cliente, cargada):
+    _ubicar(cliente, gps="1")
+    r = cliente.post("/ubicacion", data={"lat": "40.4530123", "lon": "-3.6883456"})     # ~5 km del Sol
+    assert r.json() == {"cambiada": True}
+    guardada = preferencias.leer_texto(r.cookies[preferencias.COOKIE].strip('"'))
+    assert guardada["lat"] == "40.45300" and guardada["lon"] == "-3.68800"            # ~100 m, no el portal
+    assert guardada["gps"] == "1" and guardada["radio_km"] == "10"                    # lo demás, igual
+
+
+def test_moverse_poco_no_recarga(cliente, cargada):
+    _ubicar(cliente, gps="1")
+    r = cliente.post("/ubicacion", data={"lat": float(SOL["lat"]) + 0.003, "lon": SOL["lon"]})   # ~300 m
+    assert r.json() == {"cambiada": False} and preferencias.COOKIE not in r.cookies
+
+
+@pytest.mark.parametrize("datos, error", [
+    ({"lat": "48.85", "lon": "2.35"}, "err.fuera"),                   # de viaje en París
+    ({"lat": "abc", "lon": "2"}, "err.numero"),
+    ({}, "err.numero"),
+])
+def test_una_posicion_mala_no_cambia_nada(cliente, cargada, datos, error):
+    _ubicar(cliente, gps="1")
+    r = cliente.post("/ubicacion", data=datos)
+    assert r.status_code == 400 and r.json()["error"] == error and preferencias.COOKIE not in r.cookies
+
+
+def test_la_ubicacion_no_se_acepta_desde_otra_web(cliente, cargada):
+    _ubicar(cliente, gps="1")
+    r = cliente.post("/ubicacion", data={"lat": "41.38", "lon": "2.16"}, headers={"Origin": "https://malvada.example"})
+    assert r.status_code == 403
+
+
+def test_sin_emojis_en_la_web(cliente, con_historial, una):
+    """Iconos dibujados en vez de emojis, que cambian de un móvil a otro (en Telegram sí se usan)."""
+    import re
+    emoji = re.compile("[\U0001F000-\U0001FAFF☀-➿⬀-⯿]")
+    _ubicar(cliente, gps="1")
+    for ruta in ("/", "/mapa", "/tendencia", "/ajustes", f"/estacion/{una['id']}"):
+        texto = cliente.get(ruta).text
+        assert not emoji.search(texto), (ruta, emoji.findall(texto))
+        assert texto.count('class="icono"') >= 4, ruta                  # la barra de abajo
+
+
+# --- Lo legal y los errores ----------------------------------------------------------------
+
+def test_aviso_legal(cliente, cliente_en, cargada, monkeypatch):
+    texto = cliente.get("/legal").text
+    for frase in ("Ministerio para la Transición Ecológica", "Ley 37/2007", "FRED", "Banco Central Europeo",
+                  "OpenStreetMap", "art. 22.2 de la LSSI", "aepd.es", "github.com/GodoHZ/pumpcast/issues"):
+        assert frase in texto, frase
+    assert "Spanish Law 37/2007" in cliente_en.get("/legal").text
+    monkeypatch.setattr(config, "CONTACTO", "hola@example.com")
+    monkeypatch.setattr(config, "TITULAR", "Fulano")
+    texto = cliente.get("/legal").text
+    assert 'href="mailto:hola@example.com"' in texto and "de Fulano" in texto
+
+
+def test_todas_las_paginas_citan_la_fuente(cliente, cargada):
+    _ubicar(cliente)
+    for ruta in ("/", "/mapa", "/tendencia", "/ajustes"):
+        texto = cliente.get(ruta).text
+        assert "Precios: Ministerio para la Transición Ecológica" in texto and 'href="/legal"' in texto, ruta
+
+
+def test_pagina_que_no_existe(cliente):
+    r = cliente.get("/no-existe")
+    assert r.status_code == 404 and "Esta página no existe" in r.text and 'class="barra"' in r.text
+    assert cliente.get("/estacion/1").status_code == 404
+    assert cliente.get("/api/no-existe").json() == {"detail": "Not Found"}      # las máquinas, JSON

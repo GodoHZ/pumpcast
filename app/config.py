@@ -15,10 +15,18 @@ TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "").strip()
 TELEGRAM_CHAT = os.environ.get("TELEGRAM_CHAT", "").strip()
 TELEGRAM_THREAD = os.environ.get("TELEGRAM_THREAD", "").strip()   # tema de un grupo con temas (opcional)
 SIN_TAREAS = os.environ.get("SIN_TAREAS") == "1"       # en los tests no se descarga nada
+# Hash de la contraseña del panel de administración (python -m app.seguridad hash).
+# Sin él, el panel no existe.
+ADMIN_PASSWORD_HASH = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
+# Para el aviso legal: quién responde de la web y cómo escribirle (correo o URL). Opcionales; sin
+# contacto, la página manda a las incidencias de GitHub.
+TITULAR = os.environ.get("TITULAR", "").strip()
+CONTACTO = os.environ.get("CONTACTO", "").strip()
+REPOSITORIO = "https://github.com/GodoHZ/pumpcast"
 
 MINUTOS_ENTRE_LECTURAS = 30                             # el Ministerio actualiza cada media hora
 MINUTOS_TRAS_ERROR = 10
-MAX_PROVINCIAS = 4
+DIAS_CON_PRECIOS = 95        # precios de cada gasolinera; las medias por provincia se guardan siempre
 
 # clave interna -> campo en la API del Ministerio. Los nombres para mostrar están en i18n.
 COMBUSTIBLES = {
@@ -50,14 +58,21 @@ PROVINCIAS = [
     ("49", "Zamora", "ES-ZA"), ("50", "Zaragoza", "ES-Z"), ("51", "Ceuta", "ES-CE"),
     ("52", "Melilla", "ES-ML"),
 ]
-CODIGOS_PROVINCIA = {codigo for codigo, _, _ in PROVINCIAS}
-PROVINCIA_POR_ISO = {iso: codigo for codigo, _, iso in PROVINCIAS}
+NOMBRE_PROVINCIA = {codigo: nombre for codigo, nombre, _ in PROVINCIAS}
 
-# Lo que se cambia desde Ajustes. Se guarda en la base de datos como texto.
-# PROVINCIAS (variable de entorno) solo da el valor inicial; luego manda lo de Ajustes.
+# Hasta dónde llegan los precios del Ministerio: la península, Baleares, Canarias, Ceuta y Melilla.
+ESPANA = {"lat": (27.0, 44.5), "lon": (-18.5, 4.6)}
+MAX_RADIO_KM = 50
+
+# Lo que cada visitante elige en Ajustes. Se guarda solo en su navegador (una cookie).
+PREFERENCIAS_POR_DEFECTO = {
+    "lat": "", "lon": "", "radio_km": "10", "combustible": "g95", "litros": "40", "idioma": "auto",
+    "gps": "0",                    # "1": al abrir la app, buscar alrededor de donde estés en ese momento
+}
+
+# Los avisos de Telegram del dueño de la instalación, desde el panel de administración.
+# Se guardan en la base de datos como texto.
 AJUSTES_POR_DEFECTO = {
-    "provincias": ",".join(p.strip().zfill(2) for p in os.environ.get("PROVINCIAS", "").split(",")
-                           if p.strip()),
     "lat": "40.4168",            # Puerta del Sol, hasta que pongas tu casa
     "lon": "-3.7038",
     "radio_km": "10",
@@ -67,6 +82,5 @@ AJUSTES_POR_DEFECTO = {
     "hora_aviso": "08:30",
     "aviso_diario": "1",
     "avisos_chollo": "1",
-    "idioma": "auto",            # auto = el del navegador
-    "idioma_visto": "",          # el último idioma del navegador, para los avisos con «auto»
+    "idioma": "es",              # el de los avisos
 }

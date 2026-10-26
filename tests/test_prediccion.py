@@ -1,4 +1,3 @@
-import json
 from datetime import date, datetime, timedelta
 from math import sin
 
@@ -50,21 +49,27 @@ def test_no_mira_al_futuro():
 
 def test_sin_datos_suficientes(monkeypatch):
     precios, brent = _sintetico(dias=30)
-    monkeypatch.setattr(prediccion, "_datos", lambda aj, comb: (precios, brent))
-    p = prediccion.prevision(repo.ajustes(), "g95")
+    monkeypatch.setattr(prediccion, "_datos", lambda provincia, comb: precios)
+    p = prediccion.prevision("28", "g95", brent=brent)
     assert not p["lista"] and p["faltan"] > 0
+    assert not prediccion.prevision(None, "g95", brent=brent)["lista"]     # sitio sin gasolineras cerca
 
 
 def test_prevision_completa_y_se_apunta(monkeypatch, cargada):
     precios, brent = _sintetico()
-    monkeypatch.setattr(prediccion, "_datos", lambda aj, comb: (precios, brent))
-    p = prediccion.prevision(repo.ajustes(), "g95")
+    monkeypatch.setattr(prediccion, "_datos", lambda provincia, comb: precios)
+    monkeypatch.setattr(prediccion.mercado, "brent_euros", lambda: brent)
+    p = prediccion.prevision("28", "g95", litros=50)
     assert p["lista"] and p["semaforo"] in prediccion.SEMAFOROS
+    assert p["nombre_provincia"] == "Madrid"
     assert p["prueba"]["total"] > 0
+    assert round(p["euros_deposito"], 6) == round(abs(p["cambio"]) * 50, 6)
     assert prediccion.frase(p, "es") and prediccion.frase(p, "en") != prediccion.frase(p, "es")
-    prediccion.apuntar_de_hoy(repo.ajustes())       # «hoy» de la base de datos es el 24/10
+    apuntadas = prediccion.apuntar_de_hoy()         # una por combustible de Madrid, el día de los datos
+    assert apuntadas == len({c for e in cargada[1] for c in e["precios"]})
+    assert prediccion.apuntar_de_hoy() == 0         # y solo una vez
     with db.sesion() as con:
-        assert con.execute("SELECT COUNT(*) FROM predicciones").fetchone()[0] == 1
+        assert con.execute("SELECT COUNT(DISTINCT provincia) FROM previsiones").fetchone()[0] == 1
 
 
 def test_semaforo_y_aciertos():
@@ -77,9 +82,6 @@ def test_semaforo_y_aciertos():
 
 
 def test_lectores_del_mercado():
-    yahoo = json.dumps({"chart": {"result": [{"timestamp": [1792800000, 1792886400],
-                                              "indicators": {"quote": [{"close": [111.7, None]}]}}]}})
-    assert list(mercado.brent_yahoo(yahoo).values()) == [111.7]
     assert mercado.brent_fred("observation_date,DCOILBRENTEU\n2026-10-20,115.22\n2026-10-21,.\n") == {
         "2026-10-20": 115.22}
     bce = "KEY,FREQ,TIME_PERIOD,OBS_VALUE\nx,D,2026-10-23,1.1193\n"
@@ -95,11 +97,33 @@ def test_brent_en_euros_rellena_fines_de_semana():
     assert round(serie["2026-10-26"], 6) == 90.0
 
 
+def test_el_brent_acaba_en_el_ultimo_publicado():
+    """FRED va una semana por detrás del euro/dólar: no se inventan días con el Brent viejo, y lo
+    que quedara de otra fuente más allá de su último dato se borra."""
+    mercado.guardar({"2026-10-20": 112.0, "2026-10-26": 999.0}, {"2026-10-20": 1.12})
+    mercado.guardar({"2026-10-20": 112.0}, {"2026-10-26": 1.12})
+    serie = mercado.brent_euros()
+    assert max(serie) == "2026-10-20" and 999.0 / 1.12 not in serie.values()
+
+
 def test_historico_no_cuenta_como_lectura(lectura):
     momento, estaciones = lectura
-    repo.guardar_historico(datetime(2026, 10, 20), estaciones, "28")
+    repo.guardar_historico(datetime(2026, 10, 20), estaciones)
     assert repo.ultima_lectura(con_errores=True) is None
-    faltan = repo.dias_sin_historico("28", 5, HOY)
+    faltan = repo.dias_sin_historico(5, HOY)
     assert date(2026, 10, 20) not in faltan and len(faltan) == 4
     with db.sesion() as con:
         assert con.execute("SELECT COUNT(*) FROM precios WHERE fecha = '2026-10-20'").fetchone()[0] > 0
+        assert con.execute("SELECT COUNT(*) FROM medias_provincia WHERE fecha = '2026-10-20'").fetchone()[0] > 0
+
+
+def test_historico_antiguo_solo_guarda_medias(lectura):
+    """Los días viejos del histórico de toda España no llenan la base de datos de precios sueltos."""
+    momento, estaciones = lectura
+    repo.guardar_historico(datetime(2026, 1, 10), estaciones, con_precios=False)
+    serie = repo.serie_provincia("28", "g95")
+    assert [f["fecha"] for f in serie] == ["2026-01-10"]
+    g95 = [e["precios"]["g95"] for e in estaciones if "g95" in e["precios"]]
+    assert abs(serie[0]["media"] - sum(g95) / len(g95)) < 1e-9 and serie[0]["minimo"] == min(g95)
+    with db.sesion() as con:
+        assert con.execute("SELECT COUNT(*) FROM precios").fetchone()[0] == 0

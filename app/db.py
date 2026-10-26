@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS estaciones (
     localidad TEXT,
     municipio TEXT,
     provincia TEXT,
+    provincia_id TEXT,                      -- código INE de la provincia: «04»
     cp        TEXT,
     lat       REAL NOT NULL,
     lon       REAL NOT NULL,
@@ -29,6 +30,17 @@ CREATE TABLE IF NOT EXISTS precios (
     PRIMARY KEY (estacion_id, combustible, fecha)
 );
 CREATE INDEX IF NOT EXISTS precios_por_fecha ON precios (combustible, fecha);
+-- Media y mínimo de cada provincia por día: lo que usa la previsión. Los precios de cada
+-- gasolinera se borran a los DIAS_CON_PRECIOS días; esto se queda.
+CREATE TABLE IF NOT EXISTS medias_provincia (
+    fecha       TEXT NOT NULL,
+    provincia   TEXT NOT NULL,
+    combustible TEXT NOT NULL,
+    media       REAL NOT NULL,
+    minimo      REAL NOT NULL,
+    estaciones  INTEGER NOT NULL,
+    PRIMARY KEY (provincia, combustible, fecha)
+);
 CREATE TABLE IF NOT EXISTS ajustes (
     clave TEXT PRIMARY KEY,
     valor TEXT NOT NULL
@@ -44,7 +56,7 @@ CREATE TABLE IF NOT EXISTS avisos (
     clave   TEXT PRIMARY KEY,
     momento TEXT NOT NULL
 );
--- Días pasados ya descargados del histórico del Ministerio, por provincia.
+-- Días pasados ya descargados del histórico del Ministerio («ES» = toda España).
 CREATE TABLE IF NOT EXISTS historico (
     fecha     TEXT NOT NULL,
     provincia TEXT NOT NULL,
@@ -56,15 +68,27 @@ CREATE TABLE IF NOT EXISTS mercado (
     brent_usd REAL,
     eurusd    REAL
 );
--- Lo que la previsión dijo cada día, para comprobar luego si acertó.
-CREATE TABLE IF NOT EXISTS predicciones (
+-- Lo que la previsión dijo cada día en cada provincia, para comprobar luego si acertó.
+CREATE TABLE IF NOT EXISTS previsiones (
     fecha       TEXT NOT NULL,
+    provincia   TEXT NOT NULL,
     combustible TEXT NOT NULL,
     cambio      REAL NOT NULL,              -- euros por litro previstos a 7 días
     semaforo    TEXT NOT NULL,
-    PRIMARY KEY (fecha, combustible)
+    PRIMARY KEY (provincia, combustible, fecha)
+);
+-- Lo del panel de administración que no son ajustes: la clave de la verificación en dos pasos.
+CREATE TABLE IF NOT EXISTS secretos (
+    clave TEXT PRIMARY KEY,
+    valor TEXT NOT NULL
 );
 """
+
+# Bases de datos de antes de la 2.0, cuando se leían solo unas provincias.
+MIGRACIONES = [
+    ("estaciones", "provincia_id", "ALTER TABLE estaciones ADD COLUMN provincia_id TEXT"),
+]
+
 
 
 def conectar() -> sqlite3.Connection:
@@ -89,6 +113,11 @@ def iniciar() -> None:
     con = conectar()
     try:
         con.execute("PRAGMA journal_mode = WAL")
+        for tabla, columna, sql in MIGRACIONES:
+            existe = con.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (tabla,)).fetchone()
+            if existe and columna not in {f[1] for f in con.execute(f"PRAGMA table_info({tabla})")}:
+                con.execute(sql)
         con.executescript(ESQUEMA)
+        con.execute("CREATE INDEX IF NOT EXISTS estaciones_por_lat ON estaciones (lat)")
     finally:
         con.close()

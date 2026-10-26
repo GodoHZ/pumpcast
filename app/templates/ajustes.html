@@ -1,6 +1,8 @@
 {% extends "base.html" %}
-{% block titulo %}{{ t("aj.titulo") }} · Pumpcast{% endblock %}
-{% block h1 %}{{ t("aj.titulo") }}{% endblock %}
+{% from "_iconos.html" import icono %}
+{% set titulo = t("admin.titulo") if admin else t("aj.titulo") %}
+{% block titulo %}{{ titulo }} · Pumpcast{% endblock %}
+{% block h1 %}{{ titulo }}{% endblock %}
 {% block cabeza %}
 <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
 {% endblock %}
@@ -9,10 +11,13 @@
 {% if error %}<p class="mensaje error">{{ t(error) }}</p>{% endif %}
 {% if prueba == "ok" %}<p class="mensaje ok">{{ t("aj.prueba_ok") }}</p>{% endif %}
 {% if prueba == "error" %}<p class="mensaje error">{{ t("aj.prueba_error") }}</p>{% endif %}
+{% if lectura == "ok" %}<p class="mensaje ok">{{ t("admin.lectura_ok") }}</p>{% endif %}
+{% if lectura == "error" %}<p class="mensaje error">{{ t("admin.lectura_error") }}</p>{% endif %}
 
-<form method="post" action="/ajustes" class="formulario">
+<form method="post" action="{{ '/admin' if admin else '/ajustes' }}" class="formulario" id="formulario">
   <section class="tarjeta">
-    <h2>{{ t("aj.casa") }}</h2>
+    <h2>{{ t("admin.ubicacion") if admin else t("aj.casa") }}</h2>
+    <p class="nota">{{ t("admin.ubicacion_nota") if admin else t("aj.privacidad") }}</p>
     <div class="buscador">
       <input id="buscar" type="search" placeholder="{{ t('aj.buscar_ph') }}" autocomplete="street-address" aria-label="{{ t('aj.buscar_aria') }}">
       <button type="button" class="boton secundario" id="buscar-boton">{{ t("aj.buscar") }}</button>
@@ -20,21 +25,19 @@
     <ul class="resultados" id="resultados"></ul>
     <div id="mapa-casa" class="mapa-casa" role="region" aria-label="{{ t('aj.mapa_aria') }}"></div>
     <p class="nota" id="ubicacion-estado">{{ t("aj.mapa_ayuda") }}</p>
-    <button type="button" class="boton secundario" id="ubicacion">{{ t("aj.mi_ubicacion") }}</button>
+    <button type="button" class="boton secundario" id="ubicacion">{{ icono("ubicacion") }} {{ t("aj.mi_ubicacion") }}</button>
+    {% if not admin %}
+    <label class="interruptor"><input type="checkbox" name="gps" value="1" id="gps" {% if aj.gps == "1" %}checked{% endif %}> {{ t("aj.gps") }}</label>
+    <p class="nota">{{ t("aj.gps_nota") }}</p>
+    {% endif %}
     <details class="avanzado">
       <summary>{{ t("aj.coordenadas") }}</summary>
       <div class="fila">
-        <label>{{ t("aj.latitud") }}<input name="lat" id="lat" inputmode="decimal" value="{{ aj.lat }}" required></label>
-        <label>{{ t("aj.longitud") }}<input name="lon" id="lon" inputmode="decimal" value="{{ aj.lon }}" required></label>
+        <label>{{ t("aj.latitud") }}<input name="lat" id="lat" inputmode="decimal" value="{{ aj.lat }}"></label>
+        <label>{{ t("aj.longitud") }}<input name="lon" id="lon" inputmode="decimal" value="{{ aj.lon }}"></label>
       </div>
     </details>
     <label>{{ t("aj.radio") }}<input name="radio_km" id="radio" inputmode="decimal" value="{{ aj.radio_km }}" required></label>
-    <label>{{ t("aj.provincias") }}
-      <select name="provincias" id="provincias" multiple size="4">
-        {% for codigo, nombre, _ in provincias %}<option value="{{ codigo }}" {% if codigo in elegidas %}selected{% endif %}>{{ nombre }}</option>{% endfor %}
-      </select>
-    </label>
-    <p class="nota">{{ t("aj.provincias_nota") }}</p>
   </section>
 
   <section class="tarjeta">
@@ -47,6 +50,7 @@
     <label>{{ t("aj.litros") }}<input name="litros" inputmode="decimal" value="{{ aj.litros }}" required></label>
   </section>
 
+  {% if admin %}
   <section class="tarjeta">
     <h2>{{ t("aj.avisos") }}</h2>
     {% if not telegram %}
@@ -57,12 +61,13 @@
     <label class="interruptor"><input type="checkbox" name="avisos_chollo" value="1" {% if aj.avisos_chollo == "1" %}checked{% endif %}> {{ t("aj.chollos") }}</label>
     <label>{{ t("aj.umbral") }}<input name="umbral_chollo" inputmode="decimal" value="{{ aj.umbral_chollo|float|euros(2) }}" required></label>
   </section>
+  {% endif %}
 
   <section class="tarjeta">
     <h2>{{ t("aj.idioma") }}</h2>
-    <label>{{ t("aj.idioma") }}
+    <label>{{ t("admin.idioma_avisos") if admin else t("aj.idioma") }}
       <select name="idioma">
-        <option value="auto" {% if aj.idioma == "auto" %}selected{% endif %}>{{ t("aj.idioma_auto") }}</option>
+        {% if not admin %}<option value="auto" {% if aj.idioma == "auto" %}selected{% endif %}>{{ t("aj.idioma_auto") }}</option>{% endif %}
         <option value="es" {% if aj.idioma == "es" %}selected{% endif %}>Español</option>
         <option value="en" {% if aj.idioma == "en" %}selected{% endif %}>English</option>
       </select>
@@ -72,8 +77,14 @@
   <button class="boton ancho">{{ t("aj.guardar") }}</button>
 </form>
 
-{% if telegram %}
-<form method="post" action="/ajustes/prueba"><button class="boton secundario ancho">{{ t("aj.enviar_prueba") }}</button></form>
+{% if admin %}
+<div class="botones-admin">
+  {% if telegram %}<form method="post" action="/admin/prueba"><button class="boton secundario ancho">{{ t("aj.enviar_prueba") }}</button></form>{% endif %}
+  <form method="post" action="/admin/actualizar"><button class="boton secundario ancho">{{ t("actualizar_ahora") }}</button></form>
+  <form method="post" action="/admin/salir"><button class="boton secundario ancho">{{ t("admin.salir") }}</button></form>
+</div>
+{% elif not sin_ubicacion %}
+<form method="post" action="/ajustes/olvidar"><button class="boton secundario ancho">{{ t("aj.olvidar") }}</button></form>
 {% endif %}
 
 <p class="nota pie">{{ t("aj.version", version=version) }}{% if ultima %} · {{ t("aj.ultima", fecha=ultima.momento|fecha_corta) }}{% endif %}

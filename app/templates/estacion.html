@@ -3,7 +3,7 @@
 {% block h1 %}{{ e.rotulo|titulo }}{% endblock %}
 {% block contenido %}
 <section class="tarjeta">
-  <p class="donde">{{ e.direccion|titulo }}, {{ e.municipio }} · {{ t("estacion.de_casa", distancia=e.distancia|km) }}</p>
+  <p class="donde">{{ e.direccion|titulo }}, {{ e.municipio }}{% if e.distancia is not none %} · {{ t("estacion.de_casa", distancia=e.distancia|km) }}{% endif %}</p>
   {% if e.horario %}<p class="nota">{{ e.horario }}</p>{% endif %}
   <table class="precios">
     {% for clave in combustibles if clave in precios %}
@@ -31,11 +31,11 @@
 {% if grafica.fechas|length >= 2 %}
 <script src="/static/vendor/chart.umd.min.js"></script>
 <script src="/static/graficas.js?v={{ version }}"></script>
-<script>
+<script nonce="{{ nonce }}">
   const g = {{ grafica|tojson }};
   lineas("grafica", g.fechas, [
     { label: {{ t("serie.esta")|tojson }}, data: g.precio, principal: true },
-    { label: {{ t("serie.zona")|tojson }}, data: g.zona },
+    ...(g.zona.length ? [{ label: {{ t("serie.zona")|tojson }}, data: g.zona }] : []),
   ]);
 </script>
 {% endif %}

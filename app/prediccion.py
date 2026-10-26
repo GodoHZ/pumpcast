@@ -1,9 +1,9 @@
 """Previsión a 7 días: ¿sale a cuenta llenar hoy o esperar?
 
-Con el último año de precios de tu zona se ajusta:
+Con el último año de precios de tu provincia (la media de todas sus gasolineras) se ajusta:
 
     cambio en 7 días = a + b·(lo que se movió el Brent en euros la última semana)
-                         + c·(lo que se movió el precio de tu zona la última semana)
+                         + c·(lo que se movió el precio de la provincia la última semana)
 
 El primer término recoge que el surtidor va detrás del petróleo; el segundo, que los
 precios tienen inercia (suben como cohetes y bajan como plumas). Se probó también buscar
@@ -16,17 +16,21 @@ impuestos, puentes): es una pista, no una garantía.
 """
 from __future__ import annotations
 
+import logging
 from datetime import date, timedelta
 
-from . import db, i18n, mercado, repo
+from . import config, db, i18n, mercado, repo
 from .formato import moneda, numero
 
 HORIZONTE = 7
+RETRASO_BRENT = 7       # FRED publica el Brent con cerca de una semana de retraso
 DIAS_MINIMOS = 90
 DIAS_DE_PRUEBA = 60
 UMBRAL = 0.015        # euros por litro: un cambio menor que esto «da igual»
 
-SEMAFOROS = {"llena": "🟢", "igual": "🟡", "espera": "🔴"}     # los nombres, en i18n («sem.*»)
+SEMAFOROS = {"llena": "🟢", "igual": "🟡", "espera": "🔴"}     # para Telegram; los nombres, en i18n («sem.*»)
+
+log = logging.getLogger("pumpcast")
 
 
 def _mover(fecha: str, dias: int) -> str:
@@ -36,7 +40,7 @@ def _mover(fecha: str, dias: int) -> str:
 def _brent(brent: dict[str, float], fecha: str, hoy: str) -> float | None:
     """El Brent de esa fecha tal como se conocía el día `hoy`: nunca mira al futuro."""
     fecha = min(fecha, _mover(hoy, -1))       # el de hoy aún no ha cerrado
-    for _ in range(7):
+    for _ in range(10):
         if fecha in brent:
             return brent[fecha]
         fecha = _mover(fecha, -1)
@@ -62,10 +66,12 @@ def _minimos_cuadrados(filas: list[list[float]], ys: list[float]) -> list[float]
 
 
 def _entradas(fecha: str, precios: dict, brent: dict) -> list[float] | None:
-    """Lo que se sabe el día `fecha`: cuánto se movió el Brent y el precio la última semana."""
+    """Lo que se sabe el día `fecha`: cuánto se movió el precio la última semana y el Brent en la
+    última semana publicada. Se aprende y se prevé con el mismo retraso, el que hay de verdad."""
     antes = _mover(fecha, -HORIZONTE)
-    brent_ahora = _brent(brent, fecha, fecha)
-    brent_antes = _brent(brent, _mover(fecha, -HORIZONTE), fecha)
+    publicado = _mover(fecha, -RETRASO_BRENT)
+    brent_ahora = _brent(brent, publicado, fecha)
+    brent_antes = _brent(brent, _mover(publicado, -HORIZONTE), fecha)
     if antes not in precios or brent_ahora is None or brent_antes is None:
         return None
     return [1.0, brent_ahora - brent_antes, precios[fecha] - precios[antes]]
@@ -110,9 +116,8 @@ def acierta(previsto: str, real: float) -> bool:
     return abs(real) < 2 * UMBRAL
 
 
-def _datos(aj: dict, comb: str) -> tuple[dict, dict]:
-    precios = {f["fecha"]: f["media"] for f in repo.serie_zona(aj, comb, dias=400)}
-    return precios, mercado.brent_euros()
+def _datos(provincia: str, comb: str) -> dict:
+    return {f["fecha"]: f["media"] for f in repo.serie_provincia(provincia, comb, dias=400)}
 
 
 def _prueba(precios: dict, brent: dict) -> dict | None:
@@ -139,9 +144,10 @@ def _prueba(precios: dict, brent: dict) -> dict | None:
     return {"aciertos": aciertos, "total": total, "error_medio": sum(errores) / total}
 
 
-def _seguimiento(comb: str, precios: dict) -> dict:
+def _seguimiento(provincia: str, comb: str, precios: dict) -> dict:
     with db.sesion() as con:
-        filas = con.execute("SELECT fecha, semaforo FROM predicciones WHERE combustible = ?", (comb,)).fetchall()
+        filas = con.execute("SELECT fecha, semaforo FROM previsiones WHERE provincia = ? AND combustible = ?",
+                            (provincia, comb)).fetchall()
     aciertos = total = 0
     for f in filas:
         despues = _mover(f["fecha"], HORIZONTE)
@@ -151,8 +157,12 @@ def _seguimiento(comb: str, precios: dict) -> dict:
     return {"aciertos": aciertos, "total": total, "apuntadas": len(filas)}
 
 
-def prevision(aj: dict, comb: str) -> dict:
-    precios, brent = _datos(aj, comb)
+def prevision(provincia: str | None, comb: str, litros: float = 40, brent: dict | None = None) -> dict:
+    """La previsión de una provincia. `brent` se puede pasar para no leerlo en cada una."""
+    if not provincia:
+        return {"lista": False, "dias": 0, "faltan": DIAS_MINIMOS + HORIZONTE}
+    precios = _datos(provincia, comb)
+    brent = mercado.brent_euros() if brent is None else brent
     if len(precios) < DIAS_MINIMOS + HORIZONTE or not brent:
         return {"lista": False, "dias": len(precios), "faltan": max(0, DIAS_MINIMOS + HORIZONTE - len(precios))}
     coef = ajustar(precios, brent)
@@ -165,16 +175,18 @@ def prevision(aj: dict, comb: str) -> dict:
     brent_antes = _brent(brent, _mover(hoy, -HORIZONTE), hoy)
     return {
         "lista": True,
+        "provincia": provincia,
+        "nombre_provincia": config.NOMBRE_PROVINCIA.get(provincia, provincia),
         "fecha": hoy,
         "cambio": cambio,
         "semaforo": clave,
         "icono": SEMAFOROS[clave],
-        "euros_deposito": abs(cambio) * float(aj["litros"]),
+        "euros_deposito": abs(cambio) * float(litros),
         "brent": brent_hoy,
         "brent_semana": (brent_hoy / brent_antes - 1) if brent_hoy and brent_antes else None,
         "precio_semana": precios[hoy] - precios[_mover(hoy, -HORIZONTE)] if _mover(hoy, -HORIZONTE) in precios else None,
         "prueba": _prueba(precios, brent),
-        "seguimiento": _seguimiento(comb, precios),
+        "seguimiento": _seguimiento(provincia, comb, precios),
     }
 
 
@@ -188,16 +200,33 @@ def frase(p: dict, lang: str) -> str:
                   euros=moneda(p["euros_deposito"], 2, lang))
 
 
-def apuntar_de_hoy(aj: dict) -> None:
-    """Guarda la previsión del día para el combustible de Ajustes (una vez por día de datos)."""
-    comb = aj["combustible"]
+_probadas: set[tuple[str, str, str]] = set()     # (fecha, provincia, combustible) sin datos suficientes
+
+
+def apuntar_de_hoy() -> int:
+    """Guarda la previsión del día de cada provincia y combustible (una vez por día de datos),
+    para poder decir luego cuántas acertó. Devuelve cuántas ha apuntado."""
     with db.sesion() as con:
-        hoy = con.execute("SELECT MAX(fecha) FROM precios WHERE combustible = ?", (comb,)).fetchone()[0]
-        if not hoy or con.execute("SELECT 1 FROM predicciones WHERE fecha = ? AND combustible = ?",
-                                  (hoy, comb)).fetchone():
-            return
-    p = prevision(aj, comb)
-    if p["lista"] and p["fecha"] == hoy:
-        with db.sesion() as con:
-            con.execute("INSERT OR IGNORE INTO predicciones (fecha, combustible, cambio, semaforo) "
-                        "VALUES (?, ?, ?, ?)", (hoy, comb, p["cambio"], p["semaforo"]))
+        pendientes = con.execute(
+            """SELECT m.provincia, m.combustible, m.fecha FROM medias_provincia m
+               JOIN (SELECT combustible, MAX(fecha) AS fecha FROM precios GROUP BY combustible) u
+                 ON u.combustible = m.combustible AND u.fecha = m.fecha
+               WHERE NOT EXISTS (SELECT 1 FROM previsiones p WHERE p.provincia = m.provincia
+                                 AND p.combustible = m.combustible AND p.fecha = m.fecha)""").fetchall()
+    pendientes = [f for f in pendientes if (f["fecha"], f["provincia"], f["combustible"]) not in _probadas]
+    if not pendientes:
+        return 0
+    brent = mercado.brent_euros()
+    apuntadas = []
+    for f in pendientes:
+        p = prevision(f["provincia"], f["combustible"], brent=brent)
+        if p["lista"] and p["fecha"] == f["fecha"]:
+            apuntadas.append((f["fecha"], f["provincia"], f["combustible"], p["cambio"], p["semaforo"]))
+        else:
+            _probadas.add((f["fecha"], f["provincia"], f["combustible"]))
+    with db.sesion() as con:
+        con.executemany("INSERT OR IGNORE INTO previsiones (fecha, provincia, combustible, cambio, semaforo) "
+                        "VALUES (?, ?, ?, ?, ?)", apuntadas)
+    if apuntadas:
+        log.info("Previsiones apuntadas: %d", len(apuntadas))
+    return len(apuntadas)

@@ -9,8 +9,8 @@ from datetime import date, datetime
 from . import config
 
 BASE = "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/"
-URL = BASE + "EstacionesTerrestres/FiltroProvincia/{}"
-URL_HISTORICO = BASE + "EstacionesTerrestresHist/FiltroProvincia/{:%d-%m-%Y}/{}"
+URL = BASE + "EstacionesTerrestres/"                         # toda España, unas 11.000
+URL_HISTORICO = BASE + "EstacionesTerrestresHist/{:%d-%m-%Y}"
 
 
 def _numero(texto: str | None) -> float | None:
@@ -32,13 +32,13 @@ def _descargar(url: str) -> dict:
         return json.load(respuesta)
 
 
-def descargar(provincia: str) -> dict:
-    return _descargar(URL.format(provincia))
+def descargar() -> dict:
+    return _descargar(URL)
 
 
-def descargar_dia(provincia: str, dia: date) -> dict:
+def descargar_dia(dia: date) -> dict:
     """Los precios de un día pasado (los que había a las 00:00 de ese día)."""
-    return _descargar(URL_HISTORICO.format(dia, provincia))
+    return _descargar(URL_HISTORICO.format(dia))
 
 
 def interpretar(datos: dict) -> tuple[datetime, list[dict]]:
@@ -66,6 +66,7 @@ def interpretar(datos: dict) -> tuple[datetime, list[dict]]:
             "localidad": (e.get("Localidad") or "").strip(),
             "municipio": (e.get("Municipio") or "").strip(),
             "provincia": (e.get("Provincia") or "").strip(),
+            "provincia_id": (e.get("IDProvincia") or "").strip() or None,
             "cp": (e.get("C.P.") or "").strip(),
             "lat": lat,
             "lon": lon,

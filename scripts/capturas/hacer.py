@@ -2,6 +2,8 @@
 from playwright.sync_api import sync_playwright
 
 BASE = "http://127.0.0.1:8000"
+# El visitante de las capturas ya ha elegido dónde buscar: la Puerta del Sol, 5 km.
+UBICACION = "lat=40.4168&lon=-3.7038&radio_km=5&combustible=g95&litros=40&idioma=auto"
 PAGINAS = [("inicio", "/"), ("tendencia", "/tendencia"), ("mapa", "/mapa"), ("ajustes", "/ajustes")]
 errores = []
 
@@ -12,6 +14,7 @@ with sync_playwright() as p:
             ctx = navegador.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2,
                                         is_mobile=True, has_touch=True, locale=locale, color_scheme=tema,
                                         extra_http_headers={"Accept-Language": locale})
+            ctx.add_cookies([{"name": "pumpcast", "value": UBICACION, "url": BASE}])
             pagina = ctx.new_page()
             pagina.on("console", lambda m: errores.append(m.text) if m.type == "error" else None)
             pagina.on("pageerror", lambda e: errores.append(str(e)))

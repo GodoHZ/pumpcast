@@ -1,34 +1,31 @@
-// Ajustes: colocar la casa buscando la dirección, tocando el mapa, arrastrando la
+// Ajustes: colocar la ubicación buscando la dirección, tocando el mapa, arrastrando la
 // chincheta o con el GPS. Necesita Leaflet cargado antes y window.I18N.
+//
+// La dirección se busca en OpenStreetMap (Nominatim) directamente desde el navegador: no pasa
+// por el servidor de Pumpcast, que así ni la ve ni carga con las búsquedas de todo el mundo.
 (() => {
   const $ = (id) => document.getElementById(id);
-  const { t } = window.I18N;
+  const { t, lang } = window.I18N;
   const estado = $("ubicacion-estado");
   const numero = (texto) => parseFloat(String(texto).replace(",", "."));
-  const inicio = [numero($("lat").value), numero($("lon").value)];
+  const lat0 = numero($("lat").value), lon0 = numero($("lon").value);
+  const hayUbicacion = !isNaN(lat0) && !isNaN(lon0);
+  const inicio = hayUbicacion ? [lat0, lon0] : [40.2, -3.6];          // sin ubicación: toda España
 
-  const mapa = L.map("mapa-casa").setView(inicio, 14);
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(mapa);
-  const chincheta = L.marker(inicio, { draggable: true, autoPan: true }).addTo(mapa);
-  const circulo = L.circle(inicio, { radius: numero($("radio").value) * 1000, color: "#0f766e", weight: 1, fillOpacity: 0.05 }).addTo(mapa);
+  const mapa = L.map("mapa-casa").setView(inicio, hayUbicacion ? 14 : 5);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(mapa);
+  const chincheta = L.marker(inicio, { draggable: true, autoPan: true });
+  const circulo = L.circle(inicio, { radius: numero($("radio").value) * 1000, color: "#0f766e", weight: 1, fillOpacity: 0.05 });
+  if (hayUbicacion) { chincheta.addTo(mapa); circulo.addTo(mapa); }
 
   function poner(lat, lon, mensaje, centrar) {
+    if (!mapa.hasLayer(chincheta)) { chincheta.addTo(mapa); circulo.addTo(mapa); }
     $("lat").value = lat.toFixed(5);
     $("lon").value = lon.toFixed(5);
     chincheta.setLatLng([lat, lon]);
     circulo.setLatLng([lat, lon]);
     if (centrar) mapa.setView([lat, lon], 16);
     estado.textContent = mensaje + t.guardar;
-  }
-
-  // Al elegir una dirección, su provincia pasa a ser la de los precios.
-  function elegirProvincia(codigo) {
-    const lista = $("provincias");
-    const opcion = codigo && lista.querySelector(`option[value="${codigo}"]`);
-    if (!opcion) return "";
-    for (const o of lista.options) o.selected = o === opcion;
-    opcion.scrollIntoView({ block: "nearest" });
-    return t.provincia.replace("{p}", opcion.textContent);
   }
 
   chincheta.on("dragend", () => { const p = chincheta.getLatLng(); poner(p.lat, p.lng, t.movida); });
@@ -48,11 +45,13 @@
     if (q.length < 3) { estado.textContent = t.escribe_mas; return; }
     estado.textContent = t.buscando;
     try {
-      const r = await fetch("/api/buscar?q=" + encodeURIComponent(q));
-      if (!r.ok) throw new Error((await r.json()).detail || r.status);
-      const { resultados } = await r.json();
+      const url = "https://nominatim.openstreetmap.org/search?" + new URLSearchParams(
+        { q, format: "jsonv2", limit: "5", countrycodes: "es", "accept-language": lang });
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(r.status);
+      const resultados = (await r.json()).map((d) => ({ nombre: d.display_name, lat: parseFloat(d.lat), lon: parseFloat(d.lon) }));
       if (!resultados.length) { estado.textContent = t.no_encontrada; return; }
-      estado.textContent = t.elige;
+      estado.textContent = t.elige + " " + t.fuente_busqueda;
       for (const res of resultados) {
         const li = document.createElement("li");
         const boton = document.createElement("button");
@@ -60,7 +59,7 @@
         boton.textContent = res.nombre;
         boton.addEventListener("click", () => {
           lista.replaceChildren();
-          poner(res.lat, res.lon, t.encontrada + elegirProvincia(res.provincia), true);
+          poner(res.lat, res.lon, t.encontrada, true);
         });
         li.append(boton);
         lista.append(li);
@@ -71,6 +70,19 @@
   }
   $("buscar-boton").addEventListener("click", buscar);
   $("buscar").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); buscar(); } });
+
+  $("formulario").addEventListener("submit", (e) => {
+    if (isNaN(numero($("lat").value)) || isNaN(numero($("lon").value))) {
+      e.preventDefault();
+      estado.textContent = t.falta_ubicacion;
+      estado.scrollIntoView({ block: "center" });
+    }
+  });
+
+  // Al activar «usar dónde estoy» sin ubicación elegida, la primera la da el GPS.
+  $("gps")?.addEventListener("change", (e) => {
+    if (e.target.checked && isNaN(numero($("lat").value))) $("ubicacion").click();
+  });
 
   $("ubicacion").addEventListener("click", () => {
     if (!navigator.geolocation) { estado.textContent = t.sin_gps; return; }

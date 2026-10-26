@@ -7,13 +7,13 @@ from pathlib import Path
 
 os.environ["DATA_DIR"] = tempfile.mkdtemp(prefix="pumpcast-tests-")
 os.environ["SIN_TAREAS"] = "1"
-os.environ["PROVINCIAS"] = "28"
 os.environ.pop("TELEGRAM_TOKEN", None)
 os.environ.pop("TELEGRAM_CHAT", None)
+os.environ.pop("ADMIN_PASSWORD_HASH", None)
 
 import pytest  # noqa: E402
 
-from app import config, db, minetur, repo  # noqa: E402
+from app import config, db, minetur, repo, seguridad  # noqa: E402
 
 DATOS = json.loads((Path(__file__).parent / "datos" / "madrid.json").read_text(encoding="utf-8"))
 SOL = {"lat": "40.4168", "lon": "-3.7038"}                  # la casa de los tests: la Puerta del Sol
@@ -25,6 +25,10 @@ def base_limpia():
         config.DB_PATH.unlink()
     db.iniciar()
     repo.guardar_ajustes(SOL)
+    # Lo que seguridad.py guarda en memoria, de cero en cada test.
+    for estado in (seguridad._sesiones, seguridad._altas, seguridad._fallos, seguridad._peticiones):
+        estado.clear()
+    seguridad._ultimo_paso_usado = -1
     yield
 
 

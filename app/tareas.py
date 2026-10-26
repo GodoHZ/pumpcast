@@ -1,5 +1,8 @@
-"""La tarea de fondo: lee precios cada media hora, rellena el histórico, actualiza el
-petróleo y envía los avisos que toquen.
+"""La tarea de fondo: lee los precios de toda España cada media hora, rellena el histórico,
+actualiza el petróleo y envía los avisos que toquen.
+
+Solo esta tarea habla con el Ministerio: las visitas a la web nunca disparan una descarga,
+así que da igual cuánta gente la use.
 
 Va dentro de la app (no en un cron suelto), así todo vive en el stack de Portainer.
 """
@@ -8,21 +11,20 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from . import avisos, config, mercado, minetur, prediccion, repo
 
 log = logging.getLogger("pumpcast")
 
 DIAS_DE_HISTORICO = 365
-DIAS_DE_HISTORICO_POR_CICLO = 10      # unos 30 s por minuto: el histórico se llena en ~40 min
+DIAS_DE_HISTORICO_POR_CICLO = 1       # un día (unos 7 s) por minuto: sin agobiar al Ministerio, ~6 h
 HORAS_ENTRE_MERCADO = 6
 _ultimo_mercado = 0.0
+_ultima_limpieza: date | None = None
 
 
 def toca_leer(ahora: datetime) -> bool:
-    if not repo.provincias(repo.ajustes()):
-        return False                    # todavía no se ha elegido provincia
     ultima = repo.ultima_lectura(con_errores=True)
     if not ultima:
         return True
@@ -32,10 +34,9 @@ def toca_leer(ahora: datetime) -> bool:
 
 def leer_ahora() -> bool:
     try:
-        for provincia in repo.provincias(repo.ajustes()):
-            momento, estaciones = minetur.interpretar(minetur.descargar(provincia))
-            repo.guardar_lectura(momento, estaciones)
-            log.info("Provincia %s: %d estaciones (datos de %s)", provincia, len(estaciones), momento)
+        momento, estaciones = minetur.interpretar(minetur.descargar())
+        repo.guardar_lectura(momento, estaciones)
+        log.info("España: %d estaciones (datos de %s)", len(estaciones), momento)
         return True
     except Exception as e:  # noqa: BLE001 - el Ministerio a veces falla; se reintenta luego
         log.warning("No se pudieron leer los precios: %s", e)
@@ -44,18 +45,29 @@ def leer_ahora() -> bool:
 
 
 def rellenar_historico(ahora: datetime) -> None:
-    for provincia in repo.provincias(repo.ajustes()):
-        pendientes = repo.dias_sin_historico(provincia, DIAS_DE_HISTORICO, ahora.date())
-        for dia in pendientes[:DIAS_DE_HISTORICO_POR_CICLO]:
-            try:
-                momento, estaciones = minetur.interpretar(minetur.descargar_dia(provincia, dia))
-            except Exception as e:  # noqa: BLE001
-                log.warning("Histórico %s del %s: %s", provincia, dia, e)
-                return
-            repo.guardar_historico(momento, estaciones, provincia)
-        if pendientes:
-            log.info("Histórico %s: quedan %d días", provincia,
-                     max(0, len(pendientes) - DIAS_DE_HISTORICO_POR_CICLO))
+    hoy = ahora.date()
+    pendientes = repo.dias_sin_historico(DIAS_DE_HISTORICO, hoy)
+    for dia in pendientes[:DIAS_DE_HISTORICO_POR_CICLO]:
+        try:
+            momento, estaciones = minetur.interpretar(minetur.descargar_dia(dia))
+        except Exception as e:  # noqa: BLE001
+            log.warning("Histórico del %s: %s", dia, e)
+            return
+        repo.guardar_historico(momento, estaciones,
+                               con_precios=dia > hoy - timedelta(days=config.DIAS_CON_PRECIOS))
+    if pendientes:
+        log.info("Histórico: quedan %d días", max(0, len(pendientes) - DIAS_DE_HISTORICO_POR_CICLO))
+
+
+def limpiar(hoy: date) -> None:
+    """Una vez al día, los precios de cada gasolinera que ya no hacen falta."""
+    global _ultima_limpieza
+    if _ultima_limpieza == hoy:
+        return
+    borrados = repo.borrar_precios_viejos(hoy)
+    _ultima_limpieza = hoy
+    if borrados:
+        log.info("Borrados %d precios de hace más de %d días", borrados, config.DIAS_CON_PRECIOS)
 
 
 def actualizar_mercado() -> None:
@@ -76,7 +88,7 @@ def ciclo() -> None:
         leer_ahora()
     actualizar_mercado()
     try:
-        prediccion.apuntar_de_hoy(repo.ajustes())
+        prediccion.apuntar_de_hoy()
     except Exception as e:  # noqa: BLE001
         log.warning("No se pudo calcular la previsión: %s", e)
     try:
@@ -84,6 +96,7 @@ def ciclo() -> None:
     except Exception as e:  # noqa: BLE001
         log.warning("No se pudo enviar el aviso: %s", e)
     rellenar_historico(ahora)
+    limpiar(ahora.date())
 
 
 async def bucle() -> None:

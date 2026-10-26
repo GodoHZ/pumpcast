@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block titulo %}{{ t("admin.alta_titulo") }} · Pumpcast{% endblock %}
+{% block h1 %}{{ t("admin.alta_titulo") }}{% endblock %}
+{% block contenido %}
+{% if error %}<p class="mensaje error">{{ t(error) }}</p>{% endif %}
+<section class="tarjeta">
+  <p>{{ t("admin.alta_texto") }}</p>
+  <div id="qr" class="qr" data-enlace="{{ enlace }}" role="img" aria-label="{{ t('admin.alta_qr') }}"></div>
+  <p><a class="boton secundario ancho" href="{{ enlace }}">{{ t("admin.alta_enlace") }}</a></p>
+  <p class="nota">{{ t("admin.alta_clave") }}</p>
+  <p class="clave-totp"><code>{{ secreto }}</code></p>
+</section>
+<form method="post" action="/admin/alta" class="formulario tarjeta">
+  <label>{{ t("admin.codigo") }}<input name="codigo" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" required autofocus></label>
+  <button class="boton ancho">{{ t("admin.confirmar") }}</button>
+</form>
+{% endblock %}
+{% block scripts %}
+<script src="/static/vendor/qrcode/qrcode.js"></script>
+<script nonce="{{ nonce }}">
+  const caja = document.getElementById("qr");
+  const qr = qrcode(0, "M");
+  qr.addData(caja.dataset.enlace);
+  qr.make();
+  caja.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 3, scalable: true });
+</script>
+{% endblock %}

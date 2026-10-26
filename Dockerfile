@@ -1,6 +1,6 @@
 # Imagen de Pumpcast.
 # Se construye a mano y el stack de Portainer la usa por su etiqueta:
-#     docker build -t pumpcast:1.4.0 --build-arg VERSION=1.4.0 .
+#     docker build -t pumpcast:2.2.0 --build-arg VERSION=2.2.0 .
 # La fase "test" ejecuta pytest: si falla algo, no hay imagen.
 FROM python:3.12-alpine AS base
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
@@ -28,5 +28,8 @@ USER 1000:1000
 EXPOSE 8000
 HEALTHCHECK --interval=60s --timeout=5s --start-period=20s --retries=3 \
     CMD wget -qO- http://127.0.0.1:8000/salud >/dev/null || exit 1
+# Se fía de X-Forwarded-For/-Proto de cualquiera porque al contenedor solo se llega por la red
+# interna de Docker (el proxy o cloudflared): el puerto publicado escucha solo en 127.0.0.1.
+# Sin registro de visitas: ni IPs ni URLs (la API lleva la ubicación en la URL) en los logs.
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", \
-     "--proxy-headers", "--forwarded-allow-ips", "*", "--no-server-header"]
+     "--proxy-headers", "--forwarded-allow-ips", "*", "--no-server-header", "--no-access-log"]

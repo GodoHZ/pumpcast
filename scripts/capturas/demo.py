@@ -37,10 +37,9 @@ for n in range(150, 0, -1):
     desvio = 0.0075 * (en_euros[dia(n + 9)] - en_euros[dia(9)]) + sustos[n] - sustos[0]
     pasadas = [{**e, "precios": {c: round(p + desvio + 0.004 * math.sin(e["id"] * 7 + n), 3)
                                  for c, p in e["precios"].items()}} for e in estaciones]
-    repo.guardar_historico(datetime.combine(hoy - timedelta(days=n), time()), pasadas, "28")
+    repo.guardar_historico(datetime.combine(hoy - timedelta(days=n), time()), pasadas)
 repo.guardar_lectura(momento, estaciones)
-repo.guardar_ajustes({"provincias": "28", "lat": "40.4168", "lon": "-3.7038", "radio_km": "5"})
 from app import prediccion  # noqa: E402
 
-p = prediccion.prevision(repo.ajustes(), "g95")
+p = prediccion.prevision("28", "g95")
 print("demo lista:", len(estaciones), "estaciones,", len(brent), "días de Brent; prueba:", p.get("prueba"))

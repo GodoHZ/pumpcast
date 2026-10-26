@@ -1,15 +1,16 @@
 # Pumpcast
 
-**Gasolineras baratas cerca de casa y si sale a cuenta llenar hoy.** ⛽ 🇪🇸
+**Gasolineras baratas cerca de ti y si sale a cuenta llenar hoy.** ⛽ 🇪🇸
 
 [![tests](https://github.com/GodoHZ/pumpcast/actions/workflows/tests.yml/badge.svg)](https://github.com/GodoHZ/pumpcast/actions/workflows/tests.yml)
 [![licencia: MIT](https://img.shields.io/badge/licencia-MIT-blue.svg)](LICENSE)
 
 [English](README.md) · **Español**
 
-App web para autoalojar que encuentra las **gasolineras más baratas cerca de tu casa**, guarda
-su histórico de precios y te dice si **sale a cuenta llenar hoy o esperar** unos días. Un
-contenedor, un fichero SQLite, sin cuentas, sin claves de API y sin rastreo.
+App web que encuentra las **gasolineras más baratas cerca de ti, en cualquier punto de
+España**, guarda su histórico de precios y te dice si **sale a cuenta llenar hoy o esperar** unos
+días. Un contenedor, un fichero SQLite, sin cuentas, sin claves de API y sin rastreo. Úsala solo
+para ti o ábrela a todo el mundo: la ubicación de cada visitante se queda en su navegador.
 
 Usa los precios oficiales que toda gasolinera de España tiene que comunicar al Ministerio,
 actualizados cada 30 minutos.
@@ -23,17 +24,19 @@ actualizados cada 30 minutos.
 - **Cerca**: la más barata dentro de tu radio, lo que te cuesta tu repostaje habitual,
   cuánto ahorras frente a la media de la zona y el resto ordenadas por precio, con botón de *Cómo llegar*.
 - **¿Lleno hoy o espero?** Un semáforo a 7 días (🟢 llena ya · 🟡 da igual · 🔴 espera si
-  puedes), aprendido con un año de precios de *tu* zona: el surtidor va detrás del Brent y
-  los precios tienen inercia. Se **prueba con los últimos 60 días sin usarlos para aprender**
+  puedes), aprendido con un año de precios de *tu* provincia: el surtidor va detrás del Brent
+  y los precios tienen inercia. Se **prueba con los últimos 60 días sin usarlos para aprender**
   y apunta cada previsión, así que en pantalla ves cuánto acierta de verdad.
 - **Tendencia**: media y precio más barato de cada día con el Brent encima, cambio a 7 y 30
   días, y qué día de la semana suele salir más barato.
-- **Mapa** de todas las gasolineras de tus provincias, de verde (barata) a rojo (cara).
+- **Mapa** de las gasolineras de alrededor, de verde (barata) a rojo (cara).
 - **Historial de cada gasolinera**: 90 días de precios frente a la media de la zona.
-- **Avisos por Telegram** (opcionales): un resumen cada mañana y un aviso cuando una cercana
-  baja bastante de su media de 30 días.
-- **Fácil de poner en marcha**: busca tu dirección, toca el mapa o usa el GPS; la provincia
-  se elige sola.
+- **Avisos por Telegram** para el dueño (opcionales): un resumen cada mañana y un aviso cuando
+  una cercana baja bastante de su media de 30 días, desde un panel con contraseña y verificación
+  en dos pasos.
+- **Fácil de usar**: busca tu dirección, toca el mapa o usa el GPS. Tu ubicación se guarda en una
+  cookie de tu navegador; el servidor no la apunta. ¿De viaje? Activa *usar dónde estoy* y busca
+  a tu alrededor cada vez que la abras (redondeado a unos 100 m).
 - **Instalable como app (PWA)**: añádela a la pantalla de inicio; se abre a pantalla completa
   y, sin conexión, enseña lo último que vio.
 - **En castellano e inglés**, según el navegador o lo que elijas en Ajustes.
@@ -50,7 +53,7 @@ la app enseña su propio marcador en vez de pedirte que te fíes.
 El modelo es sencillo a propósito y vive en `app/prediccion.py`:
 
 ```
-cambio en 7 días = a + b · (Brent en € la última semana) + c · (precio de la zona la última semana)
+cambio en 7 días = a + b · (Brent en € la última semana) + c · (precio de la provincia la última semana)
 ```
 
 Una versión más elaborada, que buscaba el retraso exacto respecto al Brent, no acertaba más
@@ -63,9 +66,10 @@ git clone https://github.com/GodoHZ/pumpcast.git && cd pumpcast
 docker compose up -d --build
 ```
 
-Abre `http://127.0.0.1:8098`, entra en **Ajustes**, busca tu dirección y guarda. Los primeros
-precios llegan en un minuto. Por detrás, la app descarga un año de histórico de tu provincia
-(unos 40 minutos) y la previsión aparece cuando hay datos suficientes.
+Abre `http://127.0.0.1:8098`, entra en **Ajustes**, busca tu dirección y guarda. Los precios de
+toda España (unas 11.000 gasolineras) llegan en un minuto. Por detrás, la app descarga un año de
+histórico, un día por minuto para no agobiar al servidor del Ministerio (unas 6 horas); la
+previsión aparece cuando hay unos 100 días.
 
 El contenedor corre como el usuario `1000:1000` y escribe en `./data`. Si el tuyo es otro,
 cambia la línea `user:` del `docker-compose.yml` por lo que diga `id -u`.
@@ -74,12 +78,13 @@ Para actualizar: `git pull && docker compose up -d --build`.
 
 ### Configuración
 
-Todo lo demás se cambia desde **Ajustes**. El contenedor admite unas pocas variables:
+Cada visitante elige su ubicación y sus preferencias en **Ajustes**. El contenedor admite unas pocas variables:
 
 | Variable | Para qué | Por defecto |
 |---|---|---|
 | `TZ` | zona horaria (la usa el resumen de la mañana) | `Europe/Madrid` |
-| `PROVINCIAS` | provincia(s) de inicio, [códigos del INE](https://www.ine.es/daco/daco42/codmun/cod_provincia.htm) como `28` o `28,45` | ninguna: se elige en Ajustes |
+| `ADMIN_PASSWORD_HASH` | activa el panel de administración en `/admin` (ver abajo) | apagado |
+| `TITULAR`, `CONTACTO` | quién responde de la web y un correo o URL de contacto, para el aviso legal | incidencias de GitHub |
 | `TELEGRAM_TOKEN`, `TELEGRAM_CHAT` | avisos por Telegram | apagados |
 | `TELEGRAM_THREAD` | id del tema, si `TELEGRAM_CHAT` es un grupo con temas | — |
 | `APP_URL` | enlace que se añade al final de cada aviso | ninguno |
@@ -88,24 +93,49 @@ Todo lo demás se cambia desde **Ajustes**. El contenedor admite unas pocas vari
 **Telegram**: crea un bot con [@BotFather](https://t.me/BotFather), escríbele cualquier cosa y
 abre `https://api.telegram.org/bot<TOKEN>/getUpdates` para ver tu chat id.
 
+**Panel de administración** (donde se configuran los avisos de Telegram): genera el hash de una
+contraseña larga y ponlo en `ADMIN_PASSWORD_HASH`:
+
+```bash
+docker compose run --rm -T pumpcast python -m app.seguridad hash    # escribe la contraseña y copia la línea
+```
+
+La primera vez que entres en `/admin` te pedirá añadir la **verificación en dos pasos** a tu app
+de autenticación (Google Authenticator, Aegis, 1Password...). Si pierdes el móvil:
+`docker compose exec pumpcast python -m app.seguridad quitar-2fa` y vuelves a darla de alta.
+
 ### Seguridad
 
-- **No la expongas a internet.** Escucha en `127.0.0.1` a propósito. Llega a ella por una VPN
-  (Tailscale, WireGuard) o por un proxy inverso con HTTPS dentro de tu red.
-- **No tiene cuentas de usuario**: es para una casa. Quien llegue a ella puede cambiar los ajustes.
-- No guarda ningún dato personal salvo la ubicación de tu casa, en el fichero SQLite.
+Está hecha para poder ponerla en internet:
+
+- **Ningún dato de los visitantes en el servidor.** La ubicación y las preferencias de cada uno van
+  en una cookie de su navegador, y el buscador de direcciones va de su navegador a OpenStreetMap.
+  Sin registro de visitas (uvicorn va con `--no-access-log`); lo que llega de internet se manda
+  siempre a https.
+- **Los visitantes no pueden disparar nada pesado.** Solo la tarea de fondo habla con el Ministerio
+  (cada 30 minutos, entre quien entre). Hay un límite de peticiones por IP.
+- **Cabeceras estrictas**: Content-Security-Policy con un nonce por petición, `frame-ancestors
+  'none'`, `nosniff` y HSTS con HTTPS. Los formularios enviados desde otras webs se rechazan (CSRF).
+- **Panel de administración**: contraseña con hash scrypt, verificación en dos pasos TOTP (cada
+  código sirve una vez), bloqueo tras varios fallos y sesiones en memoria (`HttpOnly`,
+  `SameSite=Strict`). **No existe para lo que entra por Cloudflare** (lleva `CF-Connecting-IP`):
+  si la publicas con un [túnel de Cloudflare](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/),
+  al panel solo se llega desde tu red o tu VPN. No abras puertos del router directamente hacia ella.
+- **Contenedor endurecido** en `docker-compose.yml`: sistema de ficheros de solo lectura, sin
+  capacidades, `no-new-privileges` y límites de memoria y procesos. Las dependencias van fijadas.
 
 ## De dónde salen los datos
 
 | Dato | Fuente |
 |---|---|
 | Precios, de hoy y de días pasados | [Geoportal de carburantes](https://geoportalgasolineras.es), Ministerio para la Transición Ecológica (API REST pública) |
-| Brent | Yahoo Finance (`BZ=F`) y, si falla, [FRED](https://fred.stlouisfed.org/series/DCOILBRENTEU) |
+| Brent | [FRED](https://fred.stlouisfed.org/series/DCOILBRENTEU) (datos de la EIA de EE. UU., dominio público) |
 | Euro/dólar | [Banco Central Europeo](https://data.ecb.europa.eu) |
 | Buscador de direcciones y mapa | [OpenStreetMap](https://www.openstreetmap.org/copyright) (Nominatim) |
 
-Yahoo Finance no es una API oficial y puede cambiar; entonces la app tira de FRED, que va
-unos días por detrás. El servidor del Ministerio solo habla un cifrado TLS antiguo
+FRED publica el Brent con cerca de una semana de retraso, así que la previsión aprende y prevé
+con el Brent que de verdad se conocía cada día. Todas las páginas citan al Ministerio como fuente
+y enlazan a un aviso legal y de privacidad (`/legal`). El servidor del Ministerio solo habla un cifrado TLS antiguo
 (AES256-GCM-SHA384), que la app activa solo para ese servidor.
 
 ## Cómo está hecha
@@ -116,6 +146,7 @@ funcione sin conexión). Sin compilar nada: no hay npm ni bundler.
 ```
 app/
   main.py        rutas web y arranque          i18n.py      textos en castellano e inglés
+  seguridad.py   cabeceras, límites y panel    preferencias.py  la cookie de cada visitante
   minetur.py     precios del Ministerio        mercado.py   Brent y euro/dólar
   prediccion.py  la previsión a 7 días         avisos.py    avisos por Telegram
   repo.py        consultas SQL                 db.py        esquema

@@ -1,9 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app import config, db, minetur, repo
 from app.formato import centimos, euros, km
 
-from conftest import DATOS
+from conftest import DATOS, SOL
 
 
 def test_interpreta_la_lectura_real(lectura):
@@ -89,3 +89,49 @@ def test_numeros_del_ministerio():
     assert minetur._numero("1,799") == 1.799
     assert minetur._numero("") is None
     assert minetur._numero(None) is None
+
+
+def test_cercanas_igual_que_mirando_todas(cargada):
+    """El recuadro previo no se deja ninguna: da lo mismo que medir la distancia a todas."""
+    momento, estaciones = cargada
+    for radio in (1.5, 4, 9):
+        esperadas = {e["id"] for e in estaciones if "g95" in e["precios"]
+                     and repo.distancia_km(40.4168, -3.7038, e["lat"], e["lon"]) <= radio}
+        assert {e["id"] for e in repo.cercanas({**SOL, "radio_km": radio}, "g95")} == esperadas
+
+
+def test_la_lectura_guarda_las_medias_de_la_provincia(cargada):
+    serie = repo.serie_provincia("28", "diesel")
+    assert len(serie) == 1
+    diesel = [e["precios"]["diesel"] for e in cargada[1] if "diesel" in e["precios"]]
+    assert abs(serie[0]["media"] - sum(diesel) / len(diesel)) < 1e-9
+
+
+def test_provincia_de_la_gasolinera_mas_cercana(cargada):
+    assert repo.provincia_de(40.4168, -3.7038) == "28"
+    assert repo.provincia_de(28.1, -15.4) is None              # Gran Canaria: en los tests no hay datos
+
+
+def test_se_borran_los_precios_viejos_pero_no_las_medias(con_historial):
+    hoy = con_historial[0].date()
+    repo.borrar_precios_viejos(hoy + timedelta(days=config.DIAS_CON_PRECIOS - 5))
+    with db.sesion() as con:
+        fechas = [f[0] for f in con.execute("SELECT DISTINCT fecha FROM precios ORDER BY fecha")]
+    assert len(fechas) == 6                                    # quedan los últimos 5 días y hoy
+    assert len(repo.serie_provincia("28", "g95")) == 11        # las medias, todas
+
+
+def test_base_de_datos_de_antes_de_la_2_0():
+    """Una base de datos de la 1.x (sin provincia_id) se pone al día sola al arrancar."""
+    import sqlite3
+    config.DB_PATH.unlink()
+    con = sqlite3.connect(config.DB_PATH)
+    con.execute("CREATE TABLE estaciones (id INTEGER PRIMARY KEY, rotulo TEXT NOT NULL, direccion TEXT, "
+                "localidad TEXT, municipio TEXT, provincia TEXT, cp TEXT, lat REAL NOT NULL, lon REAL NOT NULL, "
+                "horario TEXT, vista TEXT NOT NULL)")
+    con.execute("INSERT INTO estaciones VALUES (1, 'X', '', '', '', '', '', 40.4, -3.7, '', '2026-10-01')")
+    con.commit()
+    con.close()
+    db.iniciar()
+    with db.sesion() as con:
+        assert con.execute("SELECT provincia_id FROM estaciones WHERE id = 1").fetchone()[0] is None

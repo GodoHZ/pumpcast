@@ -1,20 +1,17 @@
 {% extends "base.html" %}
 {% block contenido %}
-{% if sin_provincia %}
-<section class="tarjeta destacada">
-  <p>{{ t("inicio.primera_vez") }}</p>
-  <a class="boton" href="/ajustes">{{ t("inicio.ir_ajustes") }}</a>
-</section>
+{% if sin_ubicacion %}
+{% include "_sin_ubicacion.html" %}
 {% elif not lista %}
 <section class="tarjeta">
   <p>{{ t("inicio.sin_precios", comb=nombre_comb, radio=aj.radio_km) }}</p>
   <p class="nota">{{ t("inicio.sin_precios_nota") }}</p>
-  <form method="post" action="/actualizar"><button class="boton">{{ t("actualizar_ahora") }}</button></form>
+  <a class="boton" href="/ajustes">{{ t("nav.ajustes") }}</a>
 </section>
 {% else %}
 {% if prevision.lista %}
 <a class="tarjeta prevision prevision-{{ prevision.semaforo }}" href="/tendencia?c={{ comb }}#prevision">
-  <span class="semaforo">{{ prevision.icono }}</span>
+  <span class="semaforo" aria-hidden="true"></span>
   <span><b>{{ prevision.titulo }}</b><small>{{ prevision.frase }}</small></span>
 </a>
 {% endif %}
@@ -47,10 +44,7 @@
 {% endif %}
 {% endif %}
 
-{% if not sin_provincia %}
 <footer class="pie">
   <span>{% if ultima %}{{ t("pie.datos", fecha=ultima.fecha_datos|fecha_corta) }}{% else %}{{ t("pie.sin_leer") }}{% endif %}</span>
-  <form method="post" action="/actualizar"><button class="enlace">{{ t("actualizar") }}</button></form>
 </footer>
-{% endif %}
 {% endblock %}

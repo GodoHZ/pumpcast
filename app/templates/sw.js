@@ -1,6 +1,6 @@
 // Service worker: guarda los estáticos y la última versión de cada pantalla, para
-// que la app se abra y se pueda consultar sin conexión (fuera de casa sin VPN, el
-// servidor apagado...). Las pantallas siempre se piden primero a la red.
+// que la app se abra y se pueda consultar sin conexión (sin cobertura, el servidor
+// apagado...). Las pantallas siempre se piden primero a la red.
 const VERSION = {{ version|tojson }};
 const ESTATICOS = "pumpcast-estaticos-" + VERSION;
 const PANTALLAS = "pumpcast-pantallas-" + VERSION;
@@ -10,6 +10,7 @@ const PRECARGA = [
   "/static/estilo.css?v=" + VERSION,
   "/static/graficas.js?v=" + VERSION,
   "/static/ajustes.js?v=" + VERSION,
+  "/static/gps.js?v=" + VERSION,
   "/static/vendor/chart.umd.min.js",
   "/static/vendor/leaflet/leaflet.js",
   "/static/vendor/leaflet/leaflet.css",
@@ -50,6 +51,7 @@ self.addEventListener("fetch", (event) => {
   if (peticion.method !== "GET") return;                // guardar ajustes, actualizar... siempre a la red
   const url = new URL(peticion.url);
   if (url.origin !== self.location.origin) return;      // el mapa de OpenStreetMap, a su aire
+  if (url.pathname.startsWith("/admin")) return;        // el panel nunca se guarda en el móvil
 
   if (url.pathname.startsWith("/static/")) {
     event.respondWith(caches.match(peticion).then((hay) => hay || fetch(peticion).then((res) => {

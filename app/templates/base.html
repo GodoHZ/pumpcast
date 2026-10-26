@@ -1,4 +1,4 @@
-<!doctype html>
+{% from "_iconos.html" import icono %}<!doctype html>
 <html lang="{{ lang }}">
 <head>
   <meta charset="utf-8">
@@ -14,7 +14,7 @@
   <title>{% block titulo %}Pumpcast{% endblock %}</title>
   <link rel="stylesheet" href="/static/estilo.css?v={{ version }}">
   {% block cabeza %}{% endblock %}
-  <script>window.I18N = {{ js|tojson }};</script>
+  <script nonce="{{ nonce }}">window.I18N = {{ js|tojson }};</script>
 </head>
 <body class="pagina-{{ pagina }}">
   <header class="cabecera">
@@ -29,18 +29,25 @@
   </header>
 
   <main class="contenido">
+    {% set con_gps = pagina in ("inicio", "mapa", "tendencia") and not sin_ubicacion and aj.gps == "1" %}
+    {% if con_gps %}<p class="mensaje ok" id="gps-estado" role="status" hidden></p>{% endif %}
     {% block contenido %}{% endblock %}
+    <footer class="pie-legal">
+      {{ t("pie.fuente") }}{% if ultima %} · {{ t("pie.actualizado", fecha=ultima.momento|fecha_corta) }}{% endif %}
+      · <a href="/legal">{{ t("pie.legal") }}</a>
+    </footer>
   </main>
 
   <nav class="barra" aria-label="{{ t('aria.secciones') }}">
-    <a href="/?c={{ comb }}" {% if pagina == "inicio" %}aria-current="page"{% endif %}><span>⛽</span>{{ t("nav.cerca") }}</a>
-    <a href="/mapa?c={{ comb }}" {% if pagina == "mapa" %}aria-current="page"{% endif %}><span>🗺️</span>{{ t("nav.mapa") }}</a>
-    <a href="/tendencia?c={{ comb }}" {% if pagina == "tendencia" %}aria-current="page"{% endif %}><span>📈</span>{{ t("nav.tendencia") }}</a>
-    <a href="/ajustes" {% if pagina == "ajustes" %}aria-current="page"{% endif %}><span>⚙️</span>{{ t("nav.ajustes") }}</a>
+    <a href="/?c={{ comb }}" {% if pagina == "inicio" %}aria-current="page"{% endif %}>{{ icono("surtidor") }}{{ t("nav.cerca") }}</a>
+    <a href="/mapa?c={{ comb }}" {% if pagina == "mapa" %}aria-current="page"{% endif %}>{{ icono("mapa") }}{{ t("nav.mapa") }}</a>
+    <a href="/tendencia?c={{ comb }}" {% if pagina == "tendencia" %}aria-current="page"{% endif %}>{{ icono("tendencia") }}{{ t("nav.tendencia") }}</a>
+    <a href="/ajustes" {% if pagina == "ajustes" %}aria-current="page"{% endif %}>{{ icono("ajustes") }}{{ t("nav.ajustes") }}</a>
   </nav>
-  <script>
+  <script nonce="{{ nonce }}">
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
   </script>
+  {% if con_gps %}<script src="/static/gps.js?v={{ version }}"></script>{% endif %}
   {% block scripts %}{% endblock %}
 </body>
 </html>

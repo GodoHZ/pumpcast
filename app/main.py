@@ -2,11 +2,8 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
-import re
-import urllib.parse
-import urllib.request
+import threading
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from functools import partial
@@ -14,12 +11,14 @@ from pathlib import Path
 from statistics import mean
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from jinja2 import pass_context
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import avisos, config, db, formato, i18n, mercado, prediccion, repo, tareas
+from . import avisos, config, db, formato, i18n, mercado, prediccion, preferencias, repo, seguridad, tareas
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
@@ -51,35 +50,39 @@ async def vida(_app: FastAPI):
 
 
 app = FastAPI(title="Pumpcast", lifespan=vida, docs_url=None, redoc_url=None, openapi_url=None)
+app.middleware("http")(seguridad.middleware)
 app.mount("/static", StaticFiles(directory=AQUI / "static"), name="static")
 
 
-def _idioma(request: Request, aj: dict) -> str:
-    navegador = i18n.del_navegador(request.headers.get("accept-language"))
-    if aj["idioma"] == "auto" and aj["idioma_visto"] != navegador:
-        repo.guardar_ajustes({"idioma_visto": navegador})        # para los avisos de Telegram
-    return i18n.elegir(aj["idioma"], request.headers.get("accept-language"))
+def _idioma(request: Request, pref: dict | None) -> str:
+    return i18n.elegir(pref["idioma"] if pref else "auto", request.headers.get("accept-language"))
 
 
-def _elegir(c: str | None) -> tuple[dict, str]:
-    aj = repo.ajustes()
-    return aj, (c if c in config.COMBUSTIBLES else aj["combustible"])
+def _elegir(request: Request, c: str | None) -> tuple[dict | None, dict, str]:
+    """Las preferencias del visitante (None si aún no ha dicho dónde está), lo que se usa para
+    pintar (con los valores por defecto si no hay) y el combustible."""
+    pref = preferencias.leer(request)
+    aj = pref or dict(config.PREFERENCIAS_POR_DEFECTO)
+    return pref, aj, (c if c in config.COMBUSTIBLES else aj["combustible"])
 
 
-def _contexto(request: Request, pagina: str, aj: dict, comb: str, **datos) -> dict:
-    lang = _idioma(request, aj)
+def _contexto(request: Request, pagina: str, pref: dict | None, aj: dict, comb: str, **datos) -> dict:
+    lang = _idioma(request, pref)
     return {"pagina": pagina, "aj": aj, "comb": comb, "lang": lang, "t": partial(i18n.t, lang),
             "js": i18n.para_js(lang), "nombre_comb": i18n.t(lang, "comb." + comb),
             "combustibles": list(config.COMBUSTIBLES), "version": config.VERSION,
-            "ultima": repo.ultima_lectura(), "sin_provincia": not repo.provincias(aj), **datos}
+            "nonce": request.state.nonce, "ultima": repo.ultima_lectura(), "sin_ubicacion": pref is None,
+            "litros": float(aj["litros"]), **datos}
 
 
-def _pagina(request: Request, plantilla: str, pagina: str, aj: dict, comb: str, **datos):
-    return templates.TemplateResponse(request, plantilla, _contexto(request, pagina, aj, comb, **datos))
+def _pagina(request: Request, plantilla: str, pagina: str, pref: dict | None, aj: dict, comb: str,
+            status_code: int = 200, **datos):
+    return templates.TemplateResponse(request, plantilla, _contexto(request, pagina, pref, aj, comb, **datos),
+                                      status_code=status_code)
 
 
 def _prevision(aj: dict, comb: str, lang: str) -> dict:
-    p = prediccion.prevision(aj, comb)
+    p = prediccion.prevision(repo.provincia_de(float(aj["lat"]), float(aj["lon"])), comb, float(aj["litros"]))
     if p["lista"]:
         p["titulo"] = prediccion.titulo(p, lang)
         p["frase"] = prediccion.frase(p, lang)
@@ -88,14 +91,14 @@ def _prevision(aj: dict, comb: str, lang: str) -> dict:
 
 @app.get("/")
 def inicio(request: Request, c: str | None = None):
-    aj, comb = _elegir(c)
+    pref, aj, comb = _elegir(request, c)
+    if not pref:
+        return _pagina(request, "inicio.html", "inicio", pref, aj, comb, lista=[])
     lista = repo.cercanas(aj, comb)
     media = mean(e["precio"] for e in lista) if lista else None
-    litros = float(aj["litros"])
-    ahorro = (media - lista[0]["precio"]) * litros if lista else None
-    lang = _idioma(request, aj)
-    return _pagina(request, "inicio.html", "inicio", aj, comb, lista=lista[:20], total=len(lista),
-                   media=media, ahorro=ahorro, litros=litros, prevision=_prevision(aj, comb, lang))
+    ahorro = (media - lista[0]["precio"]) * float(aj["litros"]) if lista else None
+    return _pagina(request, "inicio.html", "inicio", pref, aj, comb, lista=lista[:20], total=len(lista),
+                   media=media, ahorro=ahorro, prevision=_prevision(aj, comb, _idioma(request, pref)))
 
 
 def _para_mapa(lista: list[dict]) -> list[dict]:
@@ -105,25 +108,30 @@ def _para_mapa(lista: list[dict]) -> list[dict]:
 
 @app.get("/mapa")
 def mapa(request: Request, c: str | None = None):
-    aj, comb = _elegir(c)
-    todas = repo.cercanas(aj, comb, radio_km=10_000)
-    cerca = [e["precio"] for e in todas if e["distancia"] <= float(aj["radio_km"])] or [e["precio"] for e in todas]
+    pref, aj, comb = _elegir(request, c)
+    if not pref:
+        return _pagina(request, "mapa.html", "mapa", pref, aj, comb, estaciones=[], escala={})
+    radio = float(aj["radio_km"])
+    todas = repo.cercanas(aj, comb, radio_km=min(max(3 * radio, 25), 2 * config.MAX_RADIO_KM))
+    cerca = [e["precio"] for e in todas if e["distancia"] <= radio] or [e["precio"] for e in todas]
     escala = {"min": min(cerca), "max": max(cerca)} if cerca else {"min": 0, "max": 0}
-    return _pagina(request, "mapa.html", "mapa", aj, comb, estaciones=_para_mapa(todas), escala=escala)
+    return _pagina(request, "mapa.html", "mapa", pref, aj, comb, estaciones=_para_mapa(todas), escala=escala)
 
 
 @app.get("/estacion/{estacion_id}")
 def ver_estacion(request: Request, estacion_id: int, c: str | None = None):
-    aj, comb = _elegir(c)
+    pref, aj, comb = _elegir(request, c)
     e = repo.estacion(estacion_id)
     if not e:
-        raise HTTPException(404, i18n.t(_idioma(request, aj), "estacion.no_existe"))
-    e["distancia"] = repo.distancia_km(float(aj["lat"]), float(aj["lon"]), e["lat"], e["lon"])
-    zona = {f["fecha"]: f["media"] for f in repo.serie_zona(aj, comb)}
+        raise HTTPException(404, i18n.t(_idioma(request, pref), "estacion.no_existe"))
+    e["distancia"] = repo.distancia_km(float(aj["lat"]), float(aj["lon"]), e["lat"], e["lon"]) if pref else None
     historial = repo.historial(estacion_id, comb)
+    zona = {}
+    if pref:
+        zona = {f["fecha"]: f["media"] for f in repo.serie_zona(aj, comb)}
     grafica = {"fechas": [h["fecha"] for h in historial], "precio": [h["precio"] for h in historial],
-               "zona": [zona.get(h["fecha"]) for h in historial]}
-    return _pagina(request, "estacion.html", "mapa", aj, comb, e=e, litros=float(aj["litros"]),
+               "zona": [zona.get(h["fecha"]) for h in historial] if zona else []}
+    return _pagina(request, "estacion.html", "mapa", pref, aj, comb, e=e,
                    precios=repo.precios_actuales(estacion_id), grafica=grafica)
 
 
@@ -134,7 +142,9 @@ def _brent_para_grafica(serie: list[dict]) -> list[float | None]:
 
 @app.get("/tendencia")
 def tendencia(request: Request, c: str | None = None):
-    aj, comb = _elegir(c)
+    pref, aj, comb = _elegir(request, c)
+    if not pref:
+        return _pagina(request, "tendencia.html", "tendencia", pref, aj, comb, serie=[])
     serie = repo.serie_zona(aj, comb, dias=90)
     cambios = {}
     if serie:
@@ -146,91 +156,211 @@ def tendencia(request: Request, c: str | None = None):
     semana = repo.por_dia_semana(serie)
     con_datos = [d for d in semana if d["media"] is not None]
     mejor_dia = min(con_datos, key=lambda d: d["media"])["dia"] if len(serie) >= 14 and con_datos else None
-    lang = _idioma(request, aj)
-    return _pagina(request, "tendencia.html", "tendencia", aj, comb, serie=serie, semana=semana,
-                   cambios=cambios, mejor_dia=mejor_dia, prevision=_prevision(aj, comb, lang),
+    return _pagina(request, "tendencia.html", "tendencia", pref, aj, comb, serie=serie, semana=semana,
+                   cambios=cambios, mejor_dia=mejor_dia, prevision=_prevision(aj, comb, _idioma(request, pref)),
                    brent=_brent_para_grafica(serie))
 
 
-# --- Ajustes -----------------------------------------------------------------------------
-
-def _validar(form) -> tuple[dict, str | None]:
-    """Devuelve los valores y, si algo está mal, la clave del error (en i18n)."""
-    v = {k: str(form.get(k, "")).strip().replace(",", ".") for k in config.AJUSTES_POR_DEFECTO
-         if k not in ("provincias", "idioma_visto")}
-    v["aviso_diario"] = "1" if form.get("aviso_diario") else "0"
-    v["avisos_chollo"] = "1" if form.get("avisos_chollo") else "0"
-    provincias = [p for p in form.getlist("provincias") if p in config.CODIGOS_PROVINCIA]
-    v["provincias"] = ",".join(provincias)
-    try:
-        if not (-90 <= float(v["lat"]) <= 90 and -180 <= float(v["lon"]) <= 180):
-            return v, "err.ubicacion"
-        if not 1 <= float(v["radio_km"]) <= 100:
-            return v, "err.radio"
-        if not 1 <= float(v["litros"]) <= 150:
-            return v, "err.litros"
-        if not 0 <= float(v["umbral_chollo"]) <= 1:
-            return v, "err.umbral"
-    except ValueError:
-        return v, "err.numero"
-    if not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", v["hora_aviso"]):
-        return v, "err.hora"
-    if v["combustible"] not in config.COMBUSTIBLES:
-        return v, "err.combustible"
-    if not 1 <= len(provincias) <= config.MAX_PROVINCIAS:
-        return v, "err.provincias"
-    if v["idioma"] not in (*i18n.IDIOMAS, "auto"):
-        return v, "err.idioma"
-    return v, None
-
-
-def _pagina_ajustes(request: Request, aj: dict, **datos):
-    comb = aj["combustible"] if aj.get("combustible") in config.COMBUSTIBLES else "g95"
-    elegidas = aj["provincias"].split(",")
-    # Las elegidas, arriba: la lista es corta en pantalla y si no solo se ven las de la A.
-    provincias = sorted(config.PROVINCIAS, key=lambda p: p[0] not in elegidas)
-    return _pagina(request, "ajustes.html", "ajustes", aj, comb, telegram=avisos.configurado(),
-                   provincias=provincias, elegidas=elegidas, idiomas=i18n.IDIOMAS, **datos)
-
+# --- Ajustes de cada visitante (en su navegador) -----------------------------------------
 
 @app.get("/ajustes")
-def ver_ajustes(request: Request, guardado: bool = False, prueba: str | None = None):
-    return _pagina_ajustes(request, repo.ajustes(), guardado=guardado, prueba=prueba, error=None)
+def ver_ajustes(request: Request):
+    pref, aj, comb = _elegir(request, None)
+    return _pagina(request, "ajustes.html", "ajustes", pref, aj, comb, admin=False, error=None)
 
 
 @app.post("/ajustes")
 async def guardar_ajustes(request: Request):
-    antes = repo.ajustes()
-    valores, error = _validar(await request.form())
+    pref, _, _ = _elegir(request, None)
+    valores, error = preferencias.validar(dict(await request.form()), preferencias.CAMPOS)
     if error:
-        return _pagina_ajustes(request, {**antes, **valores}, guardado=False, prueba=None, error=error)
+        aj = {**config.PREFERENCIAS_POR_DEFECTO, **valores}
+        comb = aj["combustible"] if aj["combustible"] in config.COMBUSTIBLES else "g95"
+        return _pagina(request, "ajustes.html", "ajustes", pref, aj, comb, status_code=400, admin=False, error=error)
+    respuesta = RedirectResponse("/", status_code=303)
+    preferencias.guardar(respuesta, request, valores)
+    return respuesta
+
+
+GPS_DECIMALES = 3            # ~100 m: de sobra para buscar en kilómetros, y nunca viaja la posición exacta
+GPS_MOVIMIENTO_KM = 1        # por menos de esto no merece la pena recargar
+
+
+@app.post("/ubicacion")
+async def ubicacion_actual(request: Request):
+    """Con «usar dónde estoy», el navegador manda aquí su posición al abrir la app y esto solo
+    cambia su cookie. Llega en el cuerpo y no en la URL para que no quede en los registros."""
+    pref = preferencias.leer(request)
+    if pref is None or pref["gps"] != "1":
+        return JSONResponse({"cambiada": False}, status_code=409)
+    form = await request.form()
+    try:
+        lat, lon = (round(float(str(form.get(k, "")).replace(",", ".")), GPS_DECIMALES) for k in ("lat", "lon"))
+    except ValueError:
+        return JSONResponse({"cambiada": False, "error": "err.numero"}, status_code=400)
+    valores, error = preferencias.validar({**pref, "lat": lat, "lon": lon}, preferencias.CAMPOS)
+    if error:
+        return JSONResponse({"cambiada": False, "error": error}, status_code=400)
+    movido = repo.distancia_km(float(pref["lat"]), float(pref["lon"]), lat, lon)
+    if movido < GPS_MOVIMIENTO_KM:
+        return JSONResponse({"cambiada": False})
+    respuesta = JSONResponse({"cambiada": True})
+    preferencias.guardar(respuesta, request, valores)
+    return respuesta
+
+
+@app.post("/ajustes/olvidar")
+def olvidar_ajustes():
+    respuesta = RedirectResponse("/ajustes", status_code=303)
+    preferencias.olvidar(respuesta)
+    return respuesta
+
+
+# --- Panel de administración: los avisos de Telegram del dueño ---------------------------
+# No existe sin ADMIN_PASSWORD_HASH ni para lo que entra por Cloudflare (ver seguridad.py).
+
+def _admin_disponible(request: Request) -> None:
+    if not config.ADMIN_PASSWORD_HASH or seguridad.desde_internet(request):
+        raise HTTPException(404)
+
+
+def _pagina_admin(request: Request, plantilla: str, status_code: int = 200, **datos):
+    pref, _, _ = _elegir(request, None)
+    aj = repo.ajustes()
+    comb = aj["combustible"] if aj["combustible"] in config.COMBUSTIBLES else "g95"
+    return _pagina(request, plantilla, "ajustes", pref, aj, comb, status_code=status_code, admin=True, **datos)
+
+
+def _entrar(request: Request, error: str | None = None, status_code: int = 200):
+    return _pagina_admin(request, "admin_entrar.html", status_code=status_code, error=error,
+                         con_codigo=seguridad.secreto_totp() is not None)
+
+
+def _alta(request: Request, secreto: str, error: str | None = None, status_code: int = 200):
+    return _pagina_admin(request, "admin_alta.html", status_code=status_code, error=error, secreto=secreto,
+                         enlace=seguridad.enlace_totp(secreto))
+
+
+def _con_sesion(request: Request):
+    respuesta = RedirectResponse("/admin", status_code=303)
+    seguridad.poner_cookie(respuesta, request, seguridad.COOKIE_ADMIN, seguridad.nueva_sesion(),
+                           seguridad.HORAS_DE_SESION * 3600)
+    respuesta.delete_cookie(seguridad.COOKIE_ALTA, path="/admin")
+    return respuesta
+
+
+@app.get("/admin")
+def admin(request: Request, guardado: bool = False, prueba: str | None = None, lectura: str | None = None):
+    _admin_disponible(request)
+    if not seguridad.sesion_valida(request):
+        return _entrar(request)
+    return _pagina_admin(request, "ajustes.html", guardado=guardado, prueba=prueba, lectura=lectura, error=None,
+                         telegram=avisos.configurado())
+
+
+@app.post("/admin/entrar")
+async def admin_entrar(request: Request):
+    _admin_disponible(request)
+    if seguridad.bloqueado(request):
+        return _entrar(request, "admin.bloqueado", 429)
+    form = await request.form()
+    clave, codigo = str(form.get("clave", "")), str(form.get("codigo", ""))
+    if not await asyncio.to_thread(seguridad.comprobar_clave, clave, config.ADMIN_PASSWORD_HASH):
+        seguridad.apuntar_fallo(request)
+        return _entrar(request, "admin.error", 401)
+    secreto = seguridad.secreto_totp()
+    if secreto is None:                                   # primera vez: dar de alta el segundo paso
+        ficha, nuevo = seguridad.nueva_alta()
+        respuesta = _alta(request, nuevo)
+        seguridad.poner_cookie(respuesta, request, seguridad.COOKIE_ALTA, ficha, seguridad.MINUTOS_DE_ALTA * 60)
+        return respuesta
+    if not seguridad.comprobar_totp(secreto, codigo):
+        seguridad.apuntar_fallo(request)
+        return _entrar(request, "admin.error", 401)
+    return _con_sesion(request)
+
+
+@app.post("/admin/alta")
+async def admin_alta(request: Request):
+    _admin_disponible(request)
+    secreto = seguridad.alta_pendiente(request)
+    if not secreto or seguridad.secreto_totp() is not None:
+        return RedirectResponse("/admin", status_code=303)
+    if seguridad.bloqueado(request):
+        return _alta(request, secreto, "admin.bloqueado", 429)
+    if not seguridad.comprobar_totp(secreto, str((await request.form()).get("codigo", ""))):
+        seguridad.apuntar_fallo(request)
+        return _alta(request, secreto, "admin.codigo_mal", 401)
+    repo.guardar_secreto("totp", secreto)
+    seguridad.terminar_alta(request)
+    logging.getLogger("pumpcast").info("Verificación en dos pasos del panel activada")
+    return _con_sesion(request)
+
+
+def _exigir_sesion(request: Request) -> None:
+    _admin_disponible(request)
+    if not seguridad.sesion_valida(request):
+        raise HTTPException(303, headers={"Location": "/admin"})
+
+
+@app.post("/admin")
+async def admin_guardar(request: Request):
+    _exigir_sesion(request)
+    form = await request.form()
+    campos = tuple(k for k in config.AJUSTES_POR_DEFECTO if k not in ("aviso_diario", "avisos_chollo"))
+    valores, error = preferencias.validar(dict(form), campos)
+    valores["aviso_diario"] = "1" if form.get("aviso_diario") else "0"
+    valores["avisos_chollo"] = "1" if form.get("avisos_chollo") else "0"
+    if error:
+        pref, _, _ = _elegir(request, None)
+        aj = {**repo.ajustes(), **valores}
+        comb = aj["combustible"] if aj["combustible"] in config.COMBUSTIBLES else "g95"
+        return _pagina(request, "ajustes.html", "ajustes", pref, aj, comb, status_code=400, admin=True,
+                       error=error, telegram=avisos.configurado())
     await asyncio.to_thread(repo.guardar_ajustes, valores)
-    if valores["provincias"] != antes["provincias"] and not config.SIN_TAREAS:
-        asyncio.create_task(asyncio.to_thread(tareas.leer_ahora))     # que no haya que esperar media hora
-    return RedirectResponse("/ajustes?guardado=1", status_code=303)
+    return RedirectResponse("/admin?guardado=1", status_code=303)
 
 
-@app.post("/ajustes/prueba")
-def probar_telegram():
+@app.post("/admin/prueba")
+def admin_prueba(request: Request):
+    _exigir_sesion(request)
     try:
         avisos.enviar(i18n.t(avisos.idioma(repo.ajustes()), "tg.prueba"))
         resultado = "ok"
     except Exception:  # noqa: BLE001
         resultado = "error"
-    return RedirectResponse(f"/ajustes?prueba={resultado}", status_code=303)
+    return RedirectResponse(f"/admin?prueba={resultado}", status_code=303)
 
 
-@app.post("/actualizar")
-def actualizar():
-    tareas.leer_ahora()
-    return RedirectResponse("/", status_code=303)
+_leyendo = threading.Lock()
+
+
+@app.post("/admin/actualizar")
+def admin_actualizar(request: Request):
+    _exigir_sesion(request)
+    if not _leyendo.acquire(blocking=False):              # ya hay una lectura en marcha
+        return RedirectResponse("/admin?lectura=ok", status_code=303)
+    try:
+        resultado = "ok" if tareas.leer_ahora() else "error"
+    finally:
+        _leyendo.release()
+    return RedirectResponse(f"/admin?lectura={resultado}", status_code=303)
+
+
+@app.post("/admin/salir")
+def admin_salir(request: Request):
+    _admin_disponible(request)
+    seguridad.cerrar_sesion(request)
+    respuesta = RedirectResponse("/", status_code=303)
+    respuesta.delete_cookie(seguridad.COOKIE_ADMIN, path="/admin")
+    return respuesta
 
 
 # --- App instalable (PWA) ----------------------------------------------------------------
 
 @app.get("/manifest.webmanifest")
 def manifest(request: Request):
-    lang = _idioma(request, repo.ajustes())
+    lang = _idioma(request, preferencias.leer(request))
     return JSONResponse({
         "name": "Pumpcast", "short_name": "Pumpcast", "lang": lang,
         "description": i18n.t(lang, "manifest.descripcion"),
@@ -247,31 +377,65 @@ def manifest(request: Request):
 
 @app.get("/sw.js")
 def service_worker(request: Request):
-    lang = _idioma(request, repo.ajustes())
+    lang = _idioma(request, preferencias.leer(request))
     return templates.TemplateResponse(request, "sw.js", {"version": config.VERSION, "lang": lang,
                                                          "aviso": i18n.t(lang, "off.aviso", fecha="{fecha}")},
                                       media_type="text/javascript", headers={"Cache-Control": "no-cache"})
 
 
+@app.get("/legal")
+def legal(request: Request):
+    pref, aj, comb = _elegir(request, None)
+    contacto = config.CONTACTO or config.REPOSITORIO + "/issues"
+    enlace = ("mailto:" + contacto) if "@" in contacto and "://" not in contacto else contacto
+    return _pagina(request, "legal.html", "legal", pref, aj, comb, titular=config.TITULAR,
+                   contacto=contacto, enlace_contacto=enlace, repositorio=config.REPOSITORIO)
+
+
+@app.exception_handler(StarletteHTTPException)
+async def error_http(request: Request, exc: StarletteHTTPException):
+    """Una página que no existe se ve como el resto de la web, no como un JSON pelado."""
+    if exc.status_code != 404 or request.url.path.startswith("/api/") or not hasattr(request.state, "nonce"):
+        return await http_exception_handler(request, exc)
+    pref, aj, comb = _elegir(request, None)
+    return _pagina(request, "no_encontrada.html", "error", pref, aj, comb, status_code=404)
+
+
 @app.get("/sin-conexion")
 def sin_conexion(request: Request):
-    aj, comb = _elegir(None)
-    return _pagina(request, "sin_conexion.html", "", aj, comb)
+    pref, aj, comb = _elegir(request, None)
+    return _pagina(request, "sin_conexion.html", "", pref, aj, comb)
 
 
 # --- Para máquinas -----------------------------------------------------------------------
+# La ubicación va en la URL (?lat=..&lon=..&radio_km=..) o, si no, en la cookie de Ajustes.
+
+def _ubicacion_api(request: Request) -> dict:
+    q = request.query_params
+    if "lat" in q or "lon" in q:
+        valores, error = preferencias.validar({**config.PREFERENCIAS_POR_DEFECTO, **q}, preferencias.CAMPOS)
+        if error:
+            raise HTTPException(400, i18n.t(_idioma(request, None), error))
+        return valores
+    pref = preferencias.leer(request)
+    if not pref:
+        raise HTTPException(400, i18n.t(_idioma(request, None), "api.sin_ubicacion"))
+    return pref
+
 
 @app.get("/api/estaciones")
-def api_estaciones(c: str | None = None):
-    aj, comb = _elegir(c)
+def api_estaciones(request: Request, c: str | None = None):
+    aj = _ubicacion_api(request)
+    comb = c if c in config.COMBUSTIBLES else aj["combustible"]
     return {"combustible": comb, "estaciones": _para_mapa(repo.cercanas(aj, comb))}
 
 
 @app.get("/api/resumen")
-def api_resumen():
+def api_resumen(request: Request, c: str | None = None):
     """Lo de la pantalla de inicio en JSON, para bots y atajos: media, la más barata y el semáforo."""
-    aj, comb = _elegir(None)
-    lang = avisos.idioma(aj)
+    aj = _ubicacion_api(request)
+    comb = c if c in config.COMBUSTIBLES else aj["combustible"]
+    lang = _idioma(request, aj)
     lista = repo.cercanas(aj, comb)
     p = _prevision(aj, comb, lang)
     return {"combustible": i18n.t(lang, "comb." + comb),
@@ -280,27 +444,6 @@ def api_resumen():
             "litros": float(aj["litros"]),
             "coste": round(lista[0]["precio"] * float(aj["litros"]), 2) if lista else None,
             "prevision": {k: p[k] for k in ("semaforo", "icono", "titulo", "frase", "cambio")} if p["lista"] else None}
-
-
-@app.get("/api/buscar")
-def buscar_direccion(request: Request, q: str = ""):
-    """Busca una dirección en OpenStreetMap (Nominatim), solo en España, para poner la casa.
-    Devuelve también la provincia, para elegirla sola."""
-    q = q.strip()
-    if len(q) < 3:
-        return {"resultados": []}
-    lang = _idioma(request, repo.ajustes())
-    url = "https://nominatim.openstreetmap.org/search?" + urllib.parse.urlencode(
-        {"q": q, "format": "jsonv2", "limit": 5, "countrycodes": "es", "addressdetails": 1, "accept-language": lang})
-    peticion = urllib.request.Request(url, headers={"User-Agent": f"pumpcast/{config.VERSION}"})
-    try:
-        with urllib.request.urlopen(peticion, timeout=15) as respuesta:
-            datos = json.load(respuesta)
-    except Exception:  # noqa: BLE001
-        raise HTTPException(502, i18n.t(lang, "err.buscador")) from None
-    return {"resultados": [{"nombre": d["display_name"], "lat": float(d["lat"]), "lon": float(d["lon"]),
-                            "provincia": config.PROVINCIA_POR_ISO.get((d.get("address") or {}).get("ISO3166-2-lvl6"))}
-                           for d in datos]}
 
 
 @app.get("/salud")

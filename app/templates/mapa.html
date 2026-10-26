@@ -4,23 +4,28 @@
 <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
 {% endblock %}
 {% block contenido %}
+{% if sin_ubicacion %}
+{% include "_sin_ubicacion.html" %}
+{% else %}
 <div id="mapa" class="mapa" role="region" aria-label="{{ t('mapa.aria') }}"></div>
 <p class="nota leyenda">{{ t("mapa.leyenda")|safe }}</p>
+{% endif %}
 {% endblock %}
 {% block scripts %}
+{% if not sin_ubicacion %}
 <script src="/static/vendor/leaflet/leaflet.js"></script>
-<script>
+<script nonce="{{ nonce }}">
   const estaciones = {{ estaciones|tojson }};
   const escala = {{ escala|tojson }};
-  const casa = [{{ aj.lat }}, {{ aj.lon }}];
+  const casa = [{{ aj.lat|float }}, {{ aj.lon|float }}];
   const comb = {{ comb|tojson }};
   const { t, decimal } = window.I18N;
 
   const mapa = L.map("mapa", { zoomControl: false }).setView(casa, 12);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19, attribution: "© OpenStreetMap"
+    maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   }).addTo(mapa);
-  L.circle(casa, { radius: {{ aj.radio_km }} * 1000, color: "#0f766e", weight: 1, fillOpacity: 0.04 }).addTo(mapa);
+  L.circle(casa, { radius: {{ aj.radio_km|float }} * 1000, color: "#0f766e", weight: 1, fillOpacity: 0.04 }).addTo(mapa);
   L.circleMarker(casa, { radius: 7, color: "#fff", weight: 2, fillColor: "#2563eb", fillOpacity: 1 })
     .addTo(mapa).bindPopup(t.casa);
 
@@ -44,4 +49,5 @@
       .addTo(mapa).bindPopup(popup);
   }
 </script>
+{% endif %}
 {% endblock %}

@@ -42,5 +42,5 @@ def test_numeros_en_cada_idioma():
 
 def test_provincias():
     assert len(config.PROVINCIAS) == 52
-    assert config.PROVINCIA_POR_ISO["ES-B"] == "08"
-    assert config.PROVINCIA_POR_ISO["ES-M"] == "28"
+    assert config.NOMBRE_PROVINCIA["04"] == "Almería"
+    assert config.NOMBRE_PROVINCIA["28"] == "Madrid"

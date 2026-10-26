@@ -1,4 +1,7 @@
-"""Avisos por Telegram: el resumen de cada mañana y los chollos."""
+"""Avisos por Telegram: el resumen de cada mañana y los chollos.
+
+Son del dueño de la instalación: su ubicación y sus preferencias están en el panel de
+administración, no en las de los visitantes."""
 from __future__ import annotations
 
 import html
@@ -18,10 +21,7 @@ def configurado() -> bool:
 
 
 def idioma(aj: dict) -> str:
-    """El de Ajustes; con «auto», el último que usó el navegador; si no hay, castellano."""
-    if aj["idioma"] in i18n.IDIOMAS:
-        return aj["idioma"]
-    return aj["idioma_visto"] if aj["idioma_visto"] in i18n.IDIOMAS else "es"
+    return aj["idioma"] if aj["idioma"] in i18n.IDIOMAS else "es"
 
 
 def enviar(texto: str) -> None:
@@ -64,7 +64,7 @@ def resumen_diario(aj: dict, comb: str, lang: str = "es") -> str | None:
             lineas.append(t("tg.sube" if cambio > 0 else "tg.baja", cts=numero(abs(cambio), 1, lang)))
         else:
             lineas.append(t("tg.igual"))
-    p = prediccion.prevision(aj, comb)
+    p = prediccion.prevision(repo.provincia_de(float(aj["lat"]), float(aj["lon"])), comb, litros)
     if p["lista"]:
         lineas.append(f"\n{p['icono']} <b>{prediccion.titulo(p, lang)}</b>. {prediccion.frase(p, lang)}")
     return "\n".join(lineas) + _enlace()
