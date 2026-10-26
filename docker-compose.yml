@@ -9,8 +9,8 @@ services:
     build:
       context: .
       args:
-        VERSION: "2.2.0"
-    image: pumpcast:2.2.0
+        VERSION: "2.9.1"
+    image: pumpcast:2.9.1
     container_name: pumpcast
     restart: unless-stopped
     user: "1000:1000"            # owner of ./data (check with `id -u`) / dueño de ./data
@@ -25,8 +25,10 @@ services:
       # - APP_URL=https://pumpcast.example.com       # link added to Telegram alerts
       # - TELEGRAM_TOKEN=123456:ABC...               # bot from @BotFather
       # - TELEGRAM_CHAT=123456789                    # your chat id
+      # - COPIAS_DIR=/app/copias                     # daily DB backup (needs a .pumpcast-copias file there)
     volumes:
       - ./data:/app/data
+      # - /other/disk/pumpcast-backups:/app/copias
     # Hardening / Endurecimiento: read-only filesystem, no extra privileges.
     read_only: true
     tmpfs:

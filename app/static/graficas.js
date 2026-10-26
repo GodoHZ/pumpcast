@@ -7,10 +7,10 @@ function lineas(id, fechas, series, secundaria) {
   const suave = color("--suave");
   const borde = color("--borde");
   const petroleo = color("--petroleo");
-  const { lang, decimal } = window.I18N;
-  const etiquetas = fechas.map((f) => { const [, m, d] = f.split("-"); return lang === "es" ? `${+d}/${+m}` : `${+m}/${+d}`; });
+  const { europeo, decimal } = window.I18N;
+  const etiquetas = fechas.map((f) => { const [, m, d] = f.split("-"); return europeo ? `${+d}/${+m}` : `${+m}/${+d}`; });
   const cifra = (v, d) => v.toFixed(d).replace(".", decimal);
-  const moneda = (v, d) => v == null ? "–" : (lang === "es" ? `${cifra(v, d)} €` : `€${cifra(v, d)}`);
+  const moneda = (v, d) => v == null ? "–" : (europeo ? `${cifra(v, d)} €` : `€${cifra(v, d)}`);
   const euros = (v) => moneda(v, 3);
 
   const datasets = series.map((s) => ({
@@ -25,7 +25,8 @@ function lineas(id, fechas, series, secundaria) {
     tension: 0.25,
     spanGaps: true,
   }));
-  const conSecundaria = secundaria && secundaria.data.some((v) => v != null);
+  const conSecundaria = Boolean(secundaria && secundaria.data.some((v) => v != null));
+  const ultimaSecundaria = conSecundaria ? secundaria.data.findLastIndex((v) => v != null) : -1;
   if (conSecundaria) {
     datasets.push({
       label: secundaria.label, data: secundaria.data, yAxisID: "y2", borderColor: petroleo,
@@ -39,11 +40,15 @@ function lineas(id, fechas, series, secundaria) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: false,
       interaction: { mode: "index", intersect: false },
       plugins: {
         legend: { labels: { color: suave, boxWidth: 14, boxHeight: 2 } },
         tooltip: {
           callbacks: {
+            // Los últimos días aún no tienen Brent (se publica con retraso): decirlo en vez de callarlo.
+            footer: (items) => conSecundaria && items.length && items[0].dataIndex > ultimaSecundaria
+              ? `${secundaria.label}: ${window.I18N.t.brent_pendiente}` : "",
             label: (c) => `${c.dataset.label}: ${c.dataset.yAxisID === "y2" ? moneda(c.parsed.y, 2) : euros(c.parsed.y)}`,
           },
         },

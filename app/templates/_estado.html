@@ -1,0 +1,6 @@
+{#- Si está abierta ahora, según el horario del Ministerio. Importar «with context» (usa t). -#}
+{%- macro estado(e) -%}
+{%- if e.estado -%}
+<span class="estado {{ 'abierta' if e.estado.abierta else 'cerrada' }}">{{ t("hor." ~ e.estado.clave, hora=e.estado.hora) }}</span>
+{%- endif -%}
+{%- endmacro -%}

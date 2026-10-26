@@ -1,4 +1,4 @@
-"""Textos en castellano e inglés.
+"""Textos en castellano e inglés; los de las otras lenguas de España, en app/idiomas/.
 
 Cada texto tiene una clave; los que llevan {huecos} se rellenan con t(..., hueco=valor).
 Los que llevan HTML (<b>) se pintan con |safe en las plantillas, y solo reciben números
@@ -6,14 +6,16 @@ ya formateados, nunca texto que venga de fuera.
 """
 from __future__ import annotations
 
-IDIOMAS = ("es", "en")
+# En el orden en que salen en Ajustes, con el nombre de cada una en su lengua.
+NOMBRES = {"es": "Español", "ca": "Català", "gl": "Galego", "eu": "Euskara", "oc": "Aranés", "en": "English"}
+IDIOMAS = tuple(NOMBRES)
 
 TEXTOS: dict[str, dict[str, str]] = {
     "es": {
         "nav.cerca": "Cerca", "nav.mapa": "Mapa", "nav.tendencia": "Tendencia", "nav.ajustes": "Ajustes",
         "aria.combustible": "Combustible", "aria.secciones": "Secciones",
         "comb.g95": "Gasolina 95", "comb.g98": "Gasolina 98", "comb.diesel": "Diésel",
-        "comb.diesel_plus": "Diésel+", "comb.glp": "GLP",
+        "comb.diesel_plus": "Diésel+", "comb.glp": "GLP", "comb.gnc": "GNC", "comb.gnl": "GNL",
 
         "inicio.primera_vez": "Para empezar, dinos dónde buscar gasolineras: tu casa, el trabajo o donde "
                               "estés ahora. Sirve en toda España.",
@@ -21,9 +23,11 @@ TEXTOS: dict[str, dict[str, str]] = {
         "inicio.sin_precios": "Aún no hay precios de {comb} a menos de {radio} km.",
         "inicio.sin_precios_nota": "Prueba a ampliar el radio en Ajustes.",
         "inicio.mas_barata": "La más barata a menos de {radio} km",
-        "inicio.ahorro": "Llenar {litros} L aquí te cuesta <b>{coste}</b>: ahorras <b>{ahorro}</b> frente a la "
+        "inicio.ahorro": "Llenar {litros} {unidad} aquí te cuesta <b>{coste}</b>: ahorras <b>{ahorro}</b> frente a la "
                          "media de la zona ({media}).",
         "inicio.resto": "El resto cerca",
+        "inicio.mas_cercana": "La más cercana", "inicio.ordenar": "Ordenar la lista",
+        "orden.precio": "Más baratas", "orden.distancia": "Más cercanas",
         "inicio.resto_nota": "{total} en total · céntimos frente a la media",
         "como_llegar": "Cómo llegar", "historial": "Historial",
         "actualizar_ahora": "Actualizar precios ahora",
@@ -39,7 +43,7 @@ TEXTOS: dict[str, dict[str, str]] = {
         "estacion.sin_historico": "Todavía no hay histórico: la app guarda un precio al día y la gráfica "
                                   "sale en cuanto haya dos.",
         "estacion.no_existe": "Esa gasolinera no está en la base de datos.",
-        "estacion.coste": "Llenar {litros} L de {comb} aquí: <b>{coste}</b>",
+        "estacion.coste": "Llenar {litros} {unidad} de {comb} aquí: <b>{coste}</b>",
         "serie.esta": "Esta gasolinera", "serie.zona": "Media de la zona", "serie.media": "Media",
         "serie.minimo": "La más barata", "serie.brent": "Brent (€/barril)",
 
@@ -50,10 +54,12 @@ TEXTOS: dict[str, dict[str, str]] = {
         "tend.grafica_pronto": "La gráfica sale en cuanto haya dos días de datos. La app guarda un precio al día.",
         "tend.dia_titulo": "¿Qué día sale más barato?",
         "tend.dia_mejor": "De media, el <b>{dia}</b> es el día más barato para repostar en tu zona.",
+        "tend.brent_retraso": "El Brent llega hasta el {fecha}: la EIA lo publica una vez por semana, con unos días de retraso. La previsión ya lo tiene en cuenta.",
+        "js.brent_pendiente": "aún sin publicar",
         "tend.dia_faltan": "Hacen falta al menos dos semanas de datos para saberlo. Llevas {dias} días.",
 
         "prev.titulo": "¿Lleno hoy o espero?",
-        "prev.brent": "El Brent está a {precio} el barril{cambio}.",
+        "prev.brent": "El último Brent publicado, del {fecha}, está a {precio} el barril{cambio}.",
         "prev.brent_cambio": " ({cambio} % en una semana)",
         "prev.provincia": "Calculada con los precios de toda la provincia de {provincia}.",
         "prev.como": "La previsión mira cuánto se han movido el Brent y el precio de tu provincia en la "
@@ -89,7 +95,9 @@ TEXTOS: dict[str, dict[str, str]] = {
         "aj.gps_nota": "Al abrirla, el móvil dice dónde estás (redondeado a unos 100 m) y busca ahí. "
                        "Si no puede, usa la ubicación de arriba.",
         "aj.latitud": "Latitud", "aj.longitud": "Longitud", "aj.radio": "Radio (km)",
-        "aj.coche": "Coche", "aj.combustible": "Combustible", "aj.litros": "Litros que sueles echar",
+        "aj.coche": "Coche", "aj.combustible": "Combustible", "aj.litros": "Cuánto sueles echar (litros; kilos si es gas natural)",
+        "mapas.titulo": "¿Con qué app quieres ir?", "mapas.cancelar": "Cancelar",
+        "js.como_llegar": "Cómo llegar",
         "aj.avisos": "Avisos por Telegram",
         "aj.telegram_falta": "Telegram no está configurado: añade TELEGRAM_TOKEN y TELEGRAM_CHAT al contenedor.",
         "aj.resumen": "Resumen cada mañana", "aj.hora": "Hora del resumen",
@@ -102,7 +110,7 @@ TEXTOS: dict[str, dict[str, str]] = {
         "err.ubicacion": "La ubicación no es válida.",
         "err.fuera": "Pumpcast solo tiene precios de España: elige un sitio dentro.",
         "err.radio": "El radio tiene que estar entre 1 y 50 km.",
-        "err.litros": "Los litros por repostaje tienen que estar entre 1 y 150.",
+        "err.litros": "Lo que echas en cada repostaje tiene que estar entre 1 y 150.",
         "err.umbral": "El umbral del chollo va en euros por litro, por ejemplo 0,05.",
         "err.numero": "Hay algún número mal escrito.",
         "err.hora": "La hora del aviso va como 08:30.",
@@ -121,6 +129,7 @@ TEXTOS: dict[str, dict[str, str]] = {
         "js.guardar": " Dale a Guardar.",
         "js.fuente_busqueda": "(Búsqueda: © OpenStreetMap, Nominatim)",
         "pie.fuente": "Precios: Ministerio para la Transición Ecológica y el Reto Demográfico",
+        "legal.en_castellano": "",
         "pie.actualizado": "actualizados {fecha}", "pie.legal": "Aviso legal y privacidad",
         "e404.titulo": "Esta página no existe",
         "e404.texto": "Puede que el enlace esté mal escrito o que la página ya no exista.",
@@ -157,7 +166,7 @@ TEXTOS: dict[str, dict[str, str]] = {
         "admin.lectura_error": "No se pudieron leer los precios del Ministerio. Se reintentará solo.",
 
         "tg.hoy": "⛽ <b>{comb} hoy</b> a menos de {radio} km",
-        "tg.media": "Media de la zona: {media}. Llenar {litros} L en la primera cuesta <b>{coste}</b> "
+        "tg.media": "Media de la zona: {media}. Llenar {litros} {unidad} en la primera cuesta <b>{coste}</b> "
                     "y ahorras <b>{ahorro}</b>.",
         "tg.sube": "Sube {cts} céntimos desde hace una semana.",
         "tg.baja": "Baja {cts} céntimos desde hace una semana.",
@@ -165,12 +174,52 @@ TEXTOS: dict[str, dict[str, str]] = {
         "tg.chollo": "🔥 <b>Chollo</b>: {comb} a <b>{precio}</b> en {sitio}.\n"
                      "Son {cts} céntimos menos que la media de los últimos 30 días ({media}).",
         "tg.prueba": "✅ Prueba desde Pumpcast: los avisos llegan bien.",
+        "inicio.mas_barata_abierta": "La más barata abierta a menos de {radio} km",
+        "inicio.favoritas": "Tus favoritas",
+        "orden.compensa": "Más rentables",
+        "inicio.con_viaje": "{coste} con el viaje",
+        "inicio.compensa_nota": "A la derecha, lo que pagas por {litros} {unidad} más el combustible de ir y volver, con un consumo de {consumo} {unidad}/100 km. Cámbialo en Ajustes.",
+        "hor.24h": "Abierta 24 h",
+        "hor.cierra": "Abierta · cierra a las {hora}",
+        "hor.abre": "Cerrada · abre a las {hora}",
+        "hor.cerrada": "Cerrada ahora",
+        "hor.publicado": "Horario publicado: {horario}. Los festivos pueden cambiarlo.",
+        "fav.poner": "Favorita",
+        "fav.quitar": "Quitar de favoritas",
+        "compartir": "Compartir",
+        "js.guardado": "Guardado",
+        "js.copiado": "Enlace copiado",
+        "js.cerrada": "cerrada ahora",
+        "aj.consumo": "Consumo del coche (litros o kilos a los 100 km)",
+        "err.consumo": "El consumo tiene que estar entre 1 y 40.",
+        "admin.brent_viejo": "El Brent no se actualiza desde el {fecha}: la previsión puede fallar. Mira el registro del contenedor.",
+        "aj.apariencia": "Idioma y aspecto",
+        "aj.tema": "Tema",
+        "tema.auto": "El del móvil",
+        "tema.claro": "Claro",
+        "tema.oscuro": "Oscuro",
+        "inicio.mas_cercana_abierta": "La más cercana abierta",
+        "inicio.mas_rentable": "La más rentable a menos de {radio} km",
+        "inicio.mas_rentable_abierta": "La más rentable abierta a menos de {radio} km",
+        "inicio.rentable_viaje": "Contando el viaje de ida y vuelta: {coste}",
+        "inst.titulo": "Tenla como una app",
+        "inst.texto": "Se abre a pantalla completa desde tu pantalla de inicio. No ocupa casi nada.",
+        "inst.ios_1": "Pulsa {icono} <b>Compartir</b> en la barra de Safari.",
+        "inst.ios_2": "Elige {icono} <b>Añadir a pantalla de inicio</b>.",
+        "inst.ios_3": "Pulsa <b>Añadir</b>.",
+        "inst.otra_app": "Desde aquí no se puede instalar: ábrela en Safari o en Chrome.",
+        "inst.instalar": "Instalar",
+        "inst.cerrar": "Ahora no",
+        "aj.instalar": "Instalar la app",
+        "inst.otro_1": "Abre el menú {icono} del navegador.",
+        "inst.otro_2": "Elige <b>Instalar app</b> o <b>Añadir a pantalla de inicio</b>.",
+        "aj.instalada": "Ya tienes Pumpcast instalada como app.",
     },
     "en": {
         "nav.cerca": "Nearby", "nav.mapa": "Map", "nav.tendencia": "Trends", "nav.ajustes": "Settings",
         "aria.combustible": "Fuel", "aria.secciones": "Sections",
         "comb.g95": "Petrol 95", "comb.g98": "Petrol 98", "comb.diesel": "Diesel",
-        "comb.diesel_plus": "Diesel+", "comb.glp": "LPG",
+        "comb.diesel_plus": "Diesel+", "comb.glp": "LPG", "comb.gnc": "CNG", "comb.gnl": "LNG",
 
         "inicio.primera_vez": "To get started, tell us where to look for petrol stations: home, work or "
                               "wherever you are now. It works anywhere in Spain.",
@@ -178,9 +227,11 @@ TEXTOS: dict[str, dict[str, str]] = {
         "inicio.sin_precios": "No {comb} prices within {radio} km yet.",
         "inicio.sin_precios_nota": "Try widening the radius in Settings.",
         "inicio.mas_barata": "Cheapest within {radio} km",
-        "inicio.ahorro": "Filling {litros} L here costs <b>{coste}</b>: you save <b>{ahorro}</b> versus the "
+        "inicio.ahorro": "Filling {litros} {unidad} here costs <b>{coste}</b>: you save <b>{ahorro}</b> versus the "
                          "local average ({media}).",
         "inicio.resto": "Others nearby",
+        "inicio.mas_cercana": "Nearest", "inicio.ordenar": "Sort the list",
+        "orden.precio": "Cheapest", "orden.distancia": "Nearest",
         "inicio.resto_nota": "{total} in total · cents vs. average",
         "como_llegar": "Directions", "historial": "History",
         "actualizar_ahora": "Refresh prices now",
@@ -196,7 +247,7 @@ TEXTOS: dict[str, dict[str, str]] = {
         "estacion.sin_historico": "No history yet: the app stores one price a day and the chart appears "
                                   "once there are two.",
         "estacion.no_existe": "That station is not in the database.",
-        "estacion.coste": "Filling {litros} L of {comb} here: <b>{coste}</b>",
+        "estacion.coste": "Filling {litros} {unidad} of {comb} here: <b>{coste}</b>",
         "serie.esta": "This station", "serie.zona": "Local average", "serie.media": "Average",
         "serie.minimo": "Cheapest", "serie.brent": "Brent (€/barrel)",
 
@@ -207,10 +258,12 @@ TEXTOS: dict[str, dict[str, str]] = {
         "tend.grafica_pronto": "The chart appears once there are two days of data. The app stores one price a day.",
         "tend.dia_titulo": "Which day is cheapest?",
         "tend.dia_mejor": "On average, <b>{dia}</b> is the cheapest day to fill up around you.",
+        "tend.brent_retraso": "Brent runs until {fecha}: the EIA publishes it once a week, a few days late. The forecast already allows for that.",
+        "js.brent_pendiente": "not published yet",
         "tend.dia_faltan": "At least two weeks of data are needed to tell. You have {dias} days.",
 
         "prev.titulo": "Fill up today or wait?",
-        "prev.brent": "Brent is at {precio} a barrel{cambio}.",
+        "prev.brent": "The latest published Brent, from {fecha}, is {precio} a barrel{cambio}.",
         "prev.brent_cambio": " ({cambio}% in a week)",
         "prev.provincia": "Based on prices across the province of {provincia}.",
         "prev.como": "The forecast looks at how much Brent and prices in your province moved over the last "
@@ -246,7 +299,9 @@ TEXTOS: dict[str, dict[str, str]] = {
         "aj.gps_nota": "When you open it, your phone shares where you are (rounded to about 100 m) and "
                        "searches there. If it can't, it uses the location above.",
         "aj.latitud": "Latitude", "aj.longitud": "Longitude", "aj.radio": "Radius (km)",
-        "aj.coche": "Car", "aj.combustible": "Fuel", "aj.litros": "Litres per fill-up",
+        "aj.coche": "Car", "aj.combustible": "Fuel", "aj.litros": "Usual fill-up (litres; kilos for natural gas)",
+        "mapas.titulo": "Which app do you want to use?", "mapas.cancelar": "Cancel",
+        "js.como_llegar": "Directions",
         "aj.avisos": "Telegram alerts",
         "aj.telegram_falta": "Telegram isn't set up: add TELEGRAM_TOKEN and TELEGRAM_CHAT to the container.",
         "aj.resumen": "Morning summary", "aj.hora": "Summary time",
@@ -259,7 +314,7 @@ TEXTOS: dict[str, dict[str, str]] = {
         "err.ubicacion": "That location isn't valid.",
         "err.fuera": "Pumpcast only has prices for Spain: pick a place there.",
         "err.radio": "The radius must be between 1 and 50 km.",
-        "err.litros": "Litres per fill-up must be between 1 and 150.",
+        "err.litros": "Your usual fill-up must be between 1 and 150.",
         "err.umbral": "The bargain threshold is in euros per litre, e.g. 0.05.",
         "err.numero": "One of the numbers isn't written correctly.",
         "err.hora": "Use a time like 08:30.",
@@ -278,6 +333,7 @@ TEXTOS: dict[str, dict[str, str]] = {
         "js.guardar": " Now tap Save.",
         "js.fuente_busqueda": "(Search: © OpenStreetMap, Nominatim)",
         "pie.fuente": "Prices: Spanish Ministry for the Ecological Transition",
+        "legal.en_castellano": "",
         "pie.actualizado": "updated {fecha}", "pie.legal": "Legal notice and privacy",
         "e404.titulo": "This page doesn't exist",
         "e404.texto": "The link may be mistyped, or the page may no longer exist.",
@@ -314,7 +370,7 @@ TEXTOS: dict[str, dict[str, str]] = {
         "admin.lectura_error": "Couldn't read prices from the Ministry. It will retry on its own.",
 
         "tg.hoy": "⛽ <b>{comb} today</b> within {radio} km",
-        "tg.media": "Local average: {media}. Filling {litros} L at the first one costs <b>{coste}</b> "
+        "tg.media": "Local average: {media}. Filling {litros} {unidad} at the first one costs <b>{coste}</b> "
                     "and saves <b>{ahorro}</b>.",
         "tg.sube": "Up {cts} cents from a week ago.",
         "tg.baja": "Down {cts} cents from a week ago.",
@@ -322,8 +378,52 @@ TEXTOS: dict[str, dict[str, str]] = {
         "tg.chollo": "🔥 <b>Bargain</b>: {comb} at <b>{precio}</b> at {sitio}.\n"
                      "That's {cts} cents below the 30-day average ({media}).",
         "tg.prueba": "✅ Test from Pumpcast: alerts are working.",
+        "inicio.mas_barata_abierta": "Cheapest open within {radio} km",
+        "inicio.favoritas": "Your favourites",
+        "orden.compensa": "Best value",
+        "inicio.con_viaje": "{coste} with the trip",
+        "inicio.compensa_nota": "On the right, what you pay for {litros} {unidad} plus the fuel to get there and back, at {consumo} {unidad}/100 km. Change it in Settings.",
+        "hor.24h": "Open 24 h",
+        "hor.cierra": "Open · closes at {hora}",
+        "hor.abre": "Closed · opens at {hora}",
+        "hor.cerrada": "Closed now",
+        "hor.publicado": "Published hours: {horario}. Holidays may differ.",
+        "fav.poner": "Favourite",
+        "fav.quitar": "Remove from favourites",
+        "compartir": "Share",
+        "js.guardado": "Saved",
+        "js.copiado": "Link copied",
+        "js.cerrada": "closed now",
+        "aj.consumo": "Car consumption (litres or kilos per 100 km)",
+        "err.consumo": "Consumption must be between 1 and 40.",
+        "admin.brent_viejo": "Brent hasn't updated since {fecha}: the forecast may be off. Check the container log.",
+        "aj.apariencia": "Language and look",
+        "aj.tema": "Theme",
+        "tema.auto": "Device default",
+        "tema.claro": "Light",
+        "tema.oscuro": "Dark",
+        "inicio.mas_cercana_abierta": "Nearest open",
+        "inicio.mas_rentable": "Best value within {radio} km",
+        "inicio.mas_rentable_abierta": "Best value open within {radio} km",
+        "inicio.rentable_viaje": "Including the round trip: {coste}",
+        "inst.titulo": "Get it as an app",
+        "inst.texto": "It opens full screen from your home screen and takes up almost no space.",
+        "inst.ios_1": "Tap {icono} <b>Share</b> in Safari's toolbar.",
+        "inst.ios_2": "Choose {icono} <b>Add to Home Screen</b>.",
+        "inst.ios_3": "Tap <b>Add</b>.",
+        "inst.otra_app": "It can't be installed from here: open it in Safari or Chrome.",
+        "inst.instalar": "Install",
+        "inst.cerrar": "Not now",
+        "aj.instalar": "Install the app",
+        "inst.otro_1": "Open the browser menu {icono}.",
+        "inst.otro_2": "Choose <b>Install app</b> or <b>Add to Home screen</b>.",
+        "aj.instalada": "Pumpcast is already installed as an app.",
     },
 }
+
+from .idiomas import ca, eu, gl, oc  # noqa: E402
+
+TEXTOS.update(ca=ca.TEXTOS, gl=gl.TEXTOS, eu=eu.TEXTOS, oc=oc.TEXTOS)
 
 # Los textos que necesita el JavaScript de las páginas.
 CLAVES_JS = [c for c in TEXTOS["es"] if c.startswith("js.")]
@@ -335,8 +435,11 @@ def t(lang: str, clave: str, **huecos) -> str:
 
 
 def del_navegador(accept_language: str | None) -> str:
-    """El primer idioma que tengamos de la cabecera Accept-Language; si ninguno, inglés."""
-    for parte in (accept_language or "").split(","):
+    """El primer idioma que tengamos de la cabecera Accept-Language; si ninguno, inglés. Sin
+    cabecera (los robots que leen el enlace al compartirlo en WhatsApp, Telegram...), castellano."""
+    if not accept_language:
+        return "es"
+    for parte in accept_language.split(","):
         codigo = parte.split(";")[0].strip().lower()[:2]
         if codigo in IDIOMAS:
             return codigo
@@ -347,6 +450,11 @@ def elegir(ajuste: str, accept_language: str | None) -> str:
     return ajuste if ajuste in IDIOMAS else del_navegador(accept_language)
 
 
+def europeo(lang: str) -> bool:
+    """Coma decimal, el euro detrás y el día antes que el mes: todas menos el inglés."""
+    return lang != "en"
+
+
 def para_js(lang: str) -> dict:
-    return {"lang": lang, "decimal": "," if lang == "es" else ".",
+    return {"lang": lang, "decimal": "," if europeo(lang) else ".", "europeo": europeo(lang),
             "t": {c[3:]: t(lang, c) for c in CLAVES_JS}}

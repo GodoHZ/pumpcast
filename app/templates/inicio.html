@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% from "_estado.html" import estado with context %}
+{% from "_iconos.html" import icono %}
 {% block contenido %}
 {% if sin_ubicacion %}
 {% include "_sin_ubicacion.html" %}
@@ -9,37 +11,77 @@
   <a class="boton" href="/ajustes">{{ t("nav.ajustes") }}</a>
 </section>
 {% else %}
+<nav class="segmentos" aria-label="{{ t('inicio.ordenar') }}">
+  {% for clave in ("precio", "distancia", "compensa") %}
+  <a href="?c={{ comb }}&amp;orden={{ clave }}" {% if aj.orden == clave %}class="activa" aria-current="true"{% endif %}>{{ t("orden." + clave) }}</a>
+  {% endfor %}
+</nav>
 {% if prevision.lista %}
 <a class="tarjeta prevision prevision-{{ prevision.semaforo }}" href="/tendencia?c={{ comb }}#prevision">
   <span class="semaforo" aria-hidden="true"></span>
   <span><b>{{ prevision.titulo }}</b><small>{{ prevision.frase }}</small></span>
 </a>
 {% endif %}
-{% set mejor = lista[0] %}
 <section class="tarjeta destacada">
-  <p class="etiqueta">{{ t("inicio.mas_barata", radio=aj.radio_km) }}</p>
-  <p class="precio-grande">{{ mejor.precio|euros }}<small> €/L</small></p>
+  {% set nombres = {"precio": "inicio.mas_barata", "distancia": "inicio.mas_cercana", "compensa": "inicio.mas_rentable"} %}
+  <p class="etiqueta">{{ t(nombres[aj.orden] ~ ("" if mejor.abierta is false else "_abierta"), radio=aj.radio_km) }}</p>
+  <p class="precio-grande">{{ mejor.precio|euros }}<small> €/{{ unidad }}</small></p>
   <p class="nombre">{{ mejor.rotulo|titulo }}</p>
   <p class="donde">{{ mejor.direccion|titulo }}, {{ mejor.municipio }} · {{ mejor.distancia|km }}</p>
-  <p class="ahorro">{{ t("inicio.ahorro", litros=aj.litros, coste=(mejor.precio * litros)|moneda, ahorro=ahorro|moneda, media=media|moneda(3))|safe }}</p>
+  <p>{{ estado(mejor) }}</p>
+  {% if aj.orden == "compensa" %}<p class="nota">{{ t("inicio.rentable_viaje", coste=mejor.con_viaje|moneda) }}</p>{% endif %}
+  <p class="ahorro">{{ t("inicio.ahorro", litros=aj.litros, unidad=unidad, coste=(mejor.precio * litros)|moneda, ahorro=ahorro|moneda, media=media|moneda(3))|safe }}</p>
   <div class="botones">
-    <a class="boton" href="https://maps.apple.com/?daddr={{ mejor.lat }},{{ mejor.lon }}">{{ t("como_llegar") }}</a>
+    <a class="boton" href="{{ mapas.google.format(lat=mejor.lat, lon=mejor.lon) }}" data-ir="{{ mejor.lat }},{{ mejor.lon }}" target="_blank" rel="noopener">{{ t("como_llegar") }}</a>
     <a class="boton secundario" href="/estacion/{{ mejor.id }}?c={{ comb }}">{{ t("historial") }}</a>
+    {% set marcada = mejor.id in ids_favoritas %}
+    <form method="post" action="/favorita/{{ mejor.id }}">
+      <button class="boton secundario solo-icono{% if marcada %} marcada{% endif %}" aria-pressed="{{ 'true' if marcada else 'false' }}"
+              title="{{ t('fav.quitar' if marcada else 'fav.poner') }}" aria-label="{{ t('fav.quitar' if marcada else 'fav.poner') }}">{{ icono("estrella") }}</button>
+    </form>
   </div>
+  {% if secundaria %}
+  <a class="cercana" href="/estacion/{{ secundaria.id }}?c={{ comb }}">
+    <span class="etiqueta">{{ t(nombres[otro], radio=aj.radio_km) }}</span>
+    <span><b>{{ secundaria.rotulo|titulo }}</b> · {{ secundaria.distancia|km }} · {{ secundaria.precio|euros }} €
+      {% set dif = secundaria.precio - mejor.precio %}
+      <span class="{{ 'sube' if dif > 0 else 'baja' }}">({{ dif|centimos }} {{ t("tend.cts") }})</span></span>
+  </a>
+  {% endif %}
 </section>
 
-{% if lista|length > 1 %}
+{% if favoritas %}
 <section>
-  <h2>{{ t("inicio.resto") }} <span class="nota">{{ t("inicio.resto_nota", total=total) }}</span></h2>
+  <h2>{{ icono("estrella") }} {{ t("inicio.favoritas") }}</h2>
   <ol class="lista">
-    {% for e in lista[1:] %}
-    <li><a href="/estacion/{{ e.id }}?c={{ comb }}">
-      <span class="precio">{{ e.precio|euros }}</span>
-      <span class="info"><b>{{ e.rotulo|titulo }}</b><small>{{ e.municipio }} · {{ e.distancia|km }} · {{ (e.precio * litros)|moneda }}</small></span>
-      <span class="dif {{ 'sube' if e.precio > media else 'baja' }}">{{ (e.precio - media)|centimos }}</span>
+    {% for e in favoritas %}
+    <li><a href="/estacion/{{ e.id }}?c={{ comb }}" {% if e.abierta is false %}class="cerrada"{% endif %}>
+      <span class="precio">{{ e.precio|euros if e.precio else "–" }}</span>
+      <span class="info"><b>{{ e.rotulo|titulo }}</b><small>{{ e.municipio }} · {{ e.distancia|km }}{% if e.estado %} · {{ estado(e) }}{% endif %}</small></span>
+      {% if e.precio and media %}<span class="dif {{ 'sube' if e.precio > media else 'baja' }}">{{ (e.precio - media)|centimos }}</span>{% endif %}
     </a></li>
     {% endfor %}
   </ol>
+</section>
+{% endif %}
+
+{% if resto %}
+<section>
+  <h2>{{ t("inicio.resto") }} <span class="nota">{{ t("inicio.resto_nota", total=total) }}</span></h2>
+  <ol class="lista">
+    {% for e in resto %}
+    <li><a href="/estacion/{{ e.id }}?c={{ comb }}" {% if e.abierta is false %}class="cerrada"{% endif %}>
+      <span class="precio">{{ e.precio|euros }}</span>
+      <span class="info"><b>{{ e.rotulo|titulo }}</b><small>{% if e.abierta is false %}{{ estado(e) }} · {% endif %}{{ e.distancia|km }} · {{ e.municipio }}</small></span>
+      {% if aj.orden == "compensa" %}
+      <span class="dif total" title="{{ t('inicio.con_viaje', coste=e.con_viaje|moneda) }}">{{ e.con_viaje|moneda }}</span>
+      {% else %}
+      <span class="dif {{ 'sube' if e.precio > media else 'baja' }}">{{ (e.precio - media)|centimos }}</span>
+      {% endif %}
+    </a></li>
+    {% endfor %}
+  </ol>
+  {% if aj.orden == "compensa" %}<p class="nota">{{ t("inicio.compensa_nota", consumo=aj.consumo, unidad=unidad, litros=aj.litros) }}</p>{% endif %}
 </section>
 {% endif %}
 {% endif %}

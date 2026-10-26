@@ -12,7 +12,7 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 from math import asin, cos, radians, sin, sqrt
 
-from . import config, db
+from . import cache, config, db
 
 
 def ahora_iso() -> str:
@@ -63,6 +63,7 @@ def guardar_lectura(momento: datetime, estaciones: list[dict]) -> None:
         con.execute(_MEDIAS_DEL_DIA, (fecha,))
         con.execute("INSERT INTO lecturas (momento, fecha_datos, estaciones) VALUES (?, ?, ?)",
                     (vista, momento.isoformat(sep=" "), len(estaciones)))
+    cache.invalidar()
 
 
 def _medias(estaciones: list[dict]) -> dict[tuple[str, str], list[float]]:
@@ -91,6 +92,7 @@ def guardar_historico(momento: datetime, estaciones: list[dict], con_precios: bo
             "VALUES (?, ?, ?, ?, ?, ?)",
             [(fecha, prov, comb, sum(v) / len(v), min(v), len(v)) for (prov, comb), v in _medias(estaciones).items()])
         con.execute("INSERT OR IGNORE INTO historico (fecha, provincia) VALUES (?, 'ES')", (fecha,))
+    cache.invalidar()
 
 
 def dias_sin_historico(dias: int, hoy: date) -> list[date]:
@@ -104,8 +106,10 @@ def dias_sin_historico(dias: int, hoy: date) -> list[date]:
 def borrar_precios_viejos(hoy: date) -> int:
     """Los precios de cada gasolinera de hace más de DIAS_CON_PRECIOS días (las medias se quedan)."""
     with db.sesion() as con:
-        return con.execute("DELETE FROM precios WHERE fecha < ?",
-                           ((hoy - timedelta(days=config.DIAS_CON_PRECIOS)).isoformat(),)).rowcount
+        borrados = con.execute("DELETE FROM precios WHERE fecha < ?",
+                               ((hoy - timedelta(days=config.DIAS_CON_PRECIOS)).isoformat(),)).rowcount
+    cache.invalidar()
+    return borrados
 
 
 def apuntar_error(texto: str) -> None:
@@ -184,6 +188,12 @@ def _alrededor(con, lat: float, lon: float, radio: float) -> list[tuple[dict, fl
 def cercanas(aj: dict, comb: str, radio_km: float | None = None) -> list[dict]:
     """Estaciones con precio de hoy dentro del radio, de la más barata a la más cara."""
     lat, lon, radio = _casa(aj)
+    clave = ("cercanas", round(lat, 4), round(lon, 4), radio if radio_km is None else radio_km, comb)
+    return [dict(e) for e in cache.recordar(clave, lambda: _cercanas(aj, comb, radio_km))]   # copias: se les añade cosas
+
+
+def _cercanas(aj: dict, comb: str, radio_km: float | None = None) -> list[dict]:
+    lat, lon, radio = _casa(aj)
     if radio_km is not None:
         radio = radio_km
     with db.sesion() as con:
@@ -205,6 +215,12 @@ def cercanas(aj: dict, comb: str, radio_km: float | None = None) -> list[dict]:
 def serie_zona(aj: dict, comb: str, dias: int = 90) -> list[dict]:
     """Media y mínimo de cada día entre las estaciones del radio."""
     lat, lon, radio = _casa(aj)
+    clave = ("serie", round(lat, 4), round(lon, 4), radio, comb, dias)
+    return [dict(f) for f in cache.recordar(clave, lambda: _serie_zona(aj, comb, dias))]
+
+
+def _serie_zona(aj: dict, comb: str, dias: int = 90) -> list[dict]:
+    lat, lon, radio = _casa(aj)
     with db.sesion() as con:
         hoy = _dia_referencia(con, comb)
         if not hoy:
@@ -213,15 +229,21 @@ def serie_zona(aj: dict, comb: str, dias: int = 90) -> list[dict]:
         if not ids:
             return []
         marcas = ",".join("?" * len(ids))
+        # El «+» impide usar el índice por combustible y fecha: con él, SQLite recorre los precios de
+        # toda España (unas 900.000 filas, 400 ms); por gasolinera son unas pocas miles (30 ms).
         filas = con.execute(
             f"SELECT fecha, AVG(precio) AS media, MIN(precio) AS minimo, COUNT(*) AS estaciones "
-            f"FROM precios WHERE combustible = ? AND fecha > ? AND estacion_id IN ({marcas}) "
+            f"FROM precios WHERE +combustible = ? AND fecha > ? AND estacion_id IN ({marcas}) "
             f"GROUP BY fecha ORDER BY fecha", (comb, _hace(hoy, dias), *ids)).fetchall()
     return [dict(f) for f in filas]
 
 
 def provincia_de(lat: float, lon: float) -> str | None:
     """La provincia de la gasolinera más cercana: la que se usa para la previsión."""
+    return cache.recordar(("provincia", round(lat, 3), round(lon, 3)), lambda: _provincia_de(lat, lon))
+
+
+def _provincia_de(lat: float, lon: float) -> str | None:
     with db.sesion() as con:
         for radio in (15, 60):
             cerca = [(d, e["provincia_id"]) for e, d in _alrededor(con, lat, lon, radio) if e["provincia_id"]]
@@ -254,6 +276,21 @@ def estacion(estacion_id: int) -> dict | None:
     with db.sesion() as con:
         fila = con.execute("SELECT * FROM estaciones WHERE id = ?", (estacion_id,)).fetchone()
     return dict(fila) if fila else None
+
+
+def favoritas(aj: dict, comb: str, ids: list[int]) -> list[dict]:
+    """Las favoritas del visitante con su precio de hoy, estén donde estén."""
+    if not ids:
+        return []
+    lat, lon, _ = _casa(aj)
+    marcas = ",".join("?" * len(ids))
+    with db.sesion() as con:
+        hoy = _dia_referencia(con, comb)
+        filas = con.execute(
+            f"SELECT e.*, p.precio FROM estaciones e LEFT JOIN precios p ON p.estacion_id = e.id "
+            f"AND p.combustible = ? AND p.fecha = ? WHERE e.id IN ({marcas})", (comb, hoy, *ids)).fetchall()
+    lista = [{**dict(f), "distancia": distancia_km(lat, lon, f["lat"], f["lon"])} for f in filas]
+    return sorted(lista, key=lambda e: ids.index(e["id"]))
 
 
 def precios_actuales(estacion_id: int) -> dict[str, float]:

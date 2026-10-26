@@ -11,9 +11,11 @@
   const lat0 = numero($("lat").value), lon0 = numero($("lon").value);
   const hayUbicacion = !isNaN(lat0) && !isNaN(lon0);
   const inicio = hayUbicacion ? [lat0, lon0] : [40.2, -3.6];          // sin ubicación: toda España
+  const formulario = $("formulario");
+  const automatico = "auto" in formulario.dataset;                    // los visitantes: se guarda solo
 
   const mapa = L.map("mapa-casa").setView(inicio, hayUbicacion ? 14 : 5);
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(mapa);
+  fondoMapa(mapa);
   const chincheta = L.marker(inicio, { draggable: true, autoPan: true });
   const circulo = L.circle(inicio, { radius: numero($("radio").value) * 1000, color: "#0f766e", weight: 1, fillOpacity: 0.05 });
   if (hayUbicacion) { chincheta.addTo(mapa); circulo.addTo(mapa); }
@@ -25,7 +27,8 @@
     chincheta.setLatLng([lat, lon]);
     circulo.setLatLng([lat, lon]);
     if (centrar) mapa.setView([lat, lon], 16);
-    estado.textContent = mensaje + t.guardar;
+    estado.textContent = automatico ? mensaje : mensaje + t.guardar;
+    if (automatico) guardar();
   }
 
   chincheta.on("dragend", () => { const p = chincheta.getLatLng(); poner(p.lat, p.lng, t.movida); });
@@ -71,13 +74,52 @@
   $("buscar-boton").addEventListener("click", buscar);
   $("buscar").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); buscar(); } });
 
-  $("formulario").addEventListener("submit", (e) => {
-    if (isNaN(numero($("lat").value)) || isNaN(numero($("lon").value))) {
+  const sinUbicacion = () => isNaN(numero($("lat").value)) || isNaN(numero($("lon").value));
+
+  formulario.addEventListener("submit", (e) => {
+    if (sinUbicacion()) {
       e.preventDefault();
       estado.textContent = t.falta_ubicacion;
       estado.scrollIntoView({ block: "center" });
+    } else if (automatico) {
+      e.preventDefault();
+      guardar();
     }
   });
+
+  // Guardar solo: cada cambio se manda al momento, sin salir de la página. El idioma y el tema
+  // recargan para verse ya; lo demás avisa con un «Guardado» que se va solo.
+  const aviso = $("guardado-estado");
+  let ocultar, pendiente;
+  function avisar(texto, error) {
+    aviso.textContent = texto;
+    aviso.classList.toggle("error", Boolean(error));
+    aviso.hidden = false;
+    clearTimeout(ocultar);
+    ocultar = setTimeout(() => { aviso.hidden = true; }, error ? 5000 : 1800);
+  }
+  async function guardar(recargar = false) {
+    if (sinUbicacion()) return;                          // la primera vez, hasta que haya ubicación
+    try {
+      const r = await fetch(formulario.action, { method: "POST", body: new FormData(formulario),
+                                                 headers: { Accept: "application/json" } });
+      const datos = await r.json();
+      if (!datos.ok) return avisar(datos.error, true);
+      if (recargar) return location.reload();
+      avisar(t.guardado);
+    } catch (e) {
+      avisar(t.no_se_pudo + e.message, true);
+    }
+  }
+  if (automatico) {
+    $("guardar").hidden = true;
+    formulario.addEventListener("change", (e) => {
+      if (!e.target.name || e.target.name === "lat" || e.target.name === "lon") return;   // esas, por poner()
+      clearTimeout(pendiente);
+      const recargar = e.target.name === "idioma" || e.target.name === "tema";
+      pendiente = setTimeout(() => guardar(recargar), recargar ? 0 : 250);
+    });
+  }
 
   // Al activar «usar dónde estoy» sin ubicación elegida, la primera la da el GPS.
   $("gps")?.addEventListener("change", (e) => {

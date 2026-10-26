@@ -55,7 +55,7 @@ def resumen_diario(aj: dict, comb: str, lang: str = "es") -> str | None:
     for i, e in enumerate(lista[:3], 1):
         lineas.append(f"{i}. <b>{moneda(e['precio'], 3, lang)}</b> · {_sitio(e, lang)}")
     ahorro = (media - lista[0]["precio"]) * litros
-    lineas.append("\n" + t("tg.media", media=moneda(media, 3, lang), litros=f"{litros:g}",
+    lineas.append("\n" + t("tg.media", media=moneda(media, 3, lang), litros=f"{litros:g}", unidad=config.unidad(comb),
                            coste=moneda(lista[0]["precio"] * litros, 2, lang), ahorro=moneda(ahorro, 2, lang)))
     serie = repo.serie_zona(aj, comb, dias=8)
     if len(serie) >= 2:

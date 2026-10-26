@@ -1,4 +1,4 @@
-/* Pumpcast: pensada primero para el iPhone, con modo oscuro automático. */
+/* Pumpcast: pensada primero para el iPhone, con modo oscuro automático o elegido en Ajustes. */
 :root {
   --fondo: #f4f5f4;
   --tarjeta: #ffffff;
@@ -19,8 +19,9 @@
   --luz-espera: #dc2626;
   color-scheme: light dark;
 }
+/* Oscuro: el del móvil, salvo que se elija «claro» en Ajustes; o siempre, si se elige «oscuro». */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --fondo: #0d1211;
     --tarjeta: #171e1c;
     --texto: #e8eeec;
@@ -40,9 +41,34 @@
     --luz-espera: #f87171;
   }
 }
+:root[data-theme="dark"] {
+  --fondo: #0d1211;
+  --tarjeta: #171e1c;
+  --texto: #e8eeec;
+  --suave: #96a39f;
+  --borde: #29332f;
+  --marca: #2dd4bf;
+  --marca-suave: #12302c;
+  --baja: #4ade80;
+  --sube: #f87171;
+  --sombra: none;
+  --petroleo: #facc15;
+  --semaforo-llena: #12301d;
+  --semaforo-igual: #302b0c;
+  --semaforo-espera: #351616;
+  --luz-llena: #4ade80;
+  --luz-igual: #facc15;
+  --luz-espera: #f87171;
+  color-scheme: dark;
+}
+:root[data-theme="light"] { color-scheme: light; }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+[hidden] { display: none !important; }             /* que ningún estilo (.boton...) lo vuelva a enseñar */
+html { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
+/* Al cambiar de pantalla, un fundido en vez de un parpadeo en blanco (Safari 18.2+, Chrome). */
+@view-transition { navigation: auto; }
+@media (prefers-reduced-motion: reduce) { @view-transition { navigation: none; } }
 body {
   margin: 0;
   background: var(--fondo);
@@ -77,6 +103,11 @@ h2 { font-size: 1.05rem; margin: 0 0 .7rem; }
 .nombre { font-size: 1.2rem; font-weight: 600; }
 .donde { color: var(--suave); }
 .ahorro { background: var(--marca-suave); padding: 10px 12px; border-radius: 10px; }
+.cercana { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--borde); color: inherit; text-decoration: none; }
+.titulo-lista { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: .7rem; }
+.titulo-lista h2 { margin: 0; }
+.pastillas.orden { margin: 0; padding: 0; }
+.pastillas.orden a { padding: 4px 10px; font-size: .85rem; }
 
 .prevision { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; padding: 12px 14px; }
 .prevision span:last-child { display: flex; flex-direction: column; }
@@ -148,6 +179,18 @@ details.avanzado summary { color: var(--suave); font-size: .9rem; cursor: pointe
 .formulario .fila { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .formulario .interruptor { flex-direction: row; align-items: center; gap: 10px; color: var(--texto); font-size: 1rem; }
 .formulario .interruptor input { width: 22px; height: 22px; accent-color: var(--marca); }
+.hoja {
+  border: 1px solid var(--borde); border-radius: 18px; padding: 18px 16px; width: min(420px, calc(100% - 32px));
+  background: var(--tarjeta); color: var(--texto); box-shadow: var(--sombra);
+}
+.hoja::backdrop { background: rgb(0 0 0 / .4); }
+.hoja h2 { text-align: center; }
+.hoja .boton { display: block; text-align: center; margin-bottom: 8px; }
+.hoja form { margin: 0; }
+.ventanita .botones { margin-top: 8px; display: flex; flex-wrap: nowrap; gap: 6px; }
+.ventanita .boton { padding: 6px 10px; font-size: .85rem; }
+.leaflet-popup-content .ventanita a.boton { color: var(--fondo); }
+.leaflet-popup-content .ventanita a.boton.secundario { color: var(--marca); }
 .mensaje { padding: 10px 12px; border-radius: 10px; margin: 0 0 12px; }
 .mensaje.ok { background: var(--marca-suave); color: var(--marca); }
 .mensaje.error { background: color-mix(in srgb, var(--sube) 14%, transparent); color: var(--sube); }
@@ -185,3 +228,59 @@ details.avanzado summary { color: var(--suave); font-size: .9rem; cursor: pointe
 .qr { max-width: 260px; margin: 12px auto; background: #fff; border-radius: 12px; padding: 6px; }
 .qr svg { display: block; width: 100%; height: auto; }
 .clave-totp { text-align: center; word-break: break-all; font-size: 1.05rem; letter-spacing: .05em; }
+
+/* Abierta o cerrada ahora, según el horario publicado */
+.estado { font-size: .85rem; font-weight: 600; }
+.estado.abierta { color: var(--baja); }
+.estado.cerrada { color: var(--sube); }
+.lista a.cerrada .precio, .lista a.cerrada .info b { opacity: .55; }
+.lista small .estado { font-size: inherit; }
+
+/* Favoritas y compartir */
+.botones form { margin: 0; }
+.boton .icono { width: 1.05em; height: 1.05em; vertical-align: -.15em; }
+.boton.marcada .icono { fill: currentColor; }
+h2 .icono { width: 1em; height: 1em; vertical-align: -.12em; color: var(--marca); }
+.dif.total { color: var(--texto); }
+.boton.solo-icono { padding-left: 14px; padding-right: 14px; }
+.boton.solo-icono .icono { width: 1.25em; height: 1.25em; vertical-align: -.25em; }
+.ventanita .estado { display: inline-block; margin-top: 2px; }
+.ventanita form { margin: 0; }
+
+/* Las ventanitas y los créditos del mapa, con los colores del tema («html» para ganar a leaflet.css,
+   que se carga después) */
+html .leaflet-popup-content-wrapper, html .leaflet-popup-tip { background: var(--tarjeta); color: var(--texto); box-shadow: var(--sombra), 0 3px 14px rgb(0 0 0 / 25%); }
+html .leaflet-container a.leaflet-popup-close-button { color: var(--suave); }
+html .leaflet-container .leaflet-control-attribution { background: color-mix(in srgb, var(--tarjeta) 85%, transparent); color: var(--suave); }
+html .leaflet-container .leaflet-control-attribution a { color: var(--marca); }
+
+/* El orden de Cerca, arriba del todo: un control segmentado */
+.segmentos { display: flex; gap: 4px; padding: 4px; margin-bottom: 14px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; }
+.segmentos a { flex: 1; text-align: center; padding: 8px 4px; border-radius: 9px; text-decoration: none; color: var(--suave); font-size: .9rem; font-weight: 600; white-space: nowrap; }
+.segmentos a.activa { background: var(--marca); color: var(--fondo); }
+
+/* «Guardado», flotando sobre la barra de abajo */
+.aviso-flotante {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(76px + env(safe-area-inset-bottom));
+  margin: 0; padding: 9px 16px; border-radius: 999px; background: var(--texto); color: var(--fondo);
+  font-size: .9rem; font-weight: 600; box-shadow: 0 4px 16px rgb(0 0 0 / 20%); z-index: 1000; max-width: calc(100% - 32px);
+}
+.aviso-flotante.error { background: var(--sube); color: #fff; }
+
+/* «Instálala como una app»: una hoja que sube desde abajo, encima de la barra */
+.hoja-instalar {
+  position: fixed; left: 8px; right: 8px; bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 1100;
+  max-width: 520px; margin: 0 auto; padding: 16px; border-radius: 18px;
+  background: var(--tarjeta); border: 1px solid var(--borde); box-shadow: 0 10px 40px rgb(0 0 0 / 25%);
+  animation: subir .25s ease-out;
+}
+@keyframes subir { from { transform: translateY(16px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .hoja-instalar { animation: none; } }
+.cabeza-instalar { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+.cabeza-instalar img { border-radius: 11px; flex: none; }
+.cabeza-instalar h2 { margin: 0 0 2px; }
+.cabeza-instalar p { margin: 0; }
+.pasos { margin: 0 0 4px; padding-left: 1.3em; display: grid; gap: 6px; }
+.pasos .icono { width: 1.15em; height: 1.15em; vertical-align: -.2em; color: #0a84ff; }
+.hoja-instalar .botones { margin-top: 10px; }
+.nota.centrada { text-align: center; margin: 12px 0; }

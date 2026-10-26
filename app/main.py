@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
+import urllib.parse
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from functools import partial
@@ -12,13 +13,14 @@ from statistics import mean
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exception_handlers import http_exception_handler
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from jinja2 import pass_context
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import avisos, config, db, formato, i18n, mercado, prediccion, preferencias, repo, seguridad, tareas
+from . import avisos, config, copias, db, formato, horario, i18n, mercado, prediccion, preferencias, repo, seguridad, tareas
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
@@ -36,8 +38,9 @@ def _con_idioma(funcion):
 
 templates.env.filters.update(
     euros=_con_idioma(formato.euros), moneda=_con_idioma(formato.moneda), centimos=_con_idioma(formato.centimos),
-    km=_con_idioma(formato.km), fecha_corta=_con_idioma(formato.fecha_corta), numero=_con_idioma(formato.numero),
+    km=_con_idioma(formato.km), fecha_corta=_con_idioma(formato.fecha_corta), dia=_con_idioma(formato.dia), numero=_con_idioma(formato.numero),
     titulo=formato.titulo)
+templates.env.globals.update(idiomas=i18n.NOMBRES, mapas=config.MAPAS)
 
 
 @asynccontextmanager
@@ -51,6 +54,7 @@ async def vida(_app: FastAPI):
 
 app = FastAPI(title="Pumpcast", lifespan=vida, docs_url=None, redoc_url=None, openapi_url=None)
 app.middleware("http")(seguridad.middleware)
+app.add_middleware(GZipMiddleware, minimum_size=1000)     # menos subida por el túnel: las páginas van comprimidas
 app.mount("/static", StaticFiles(directory=AQUI / "static"), name="static")
 
 
@@ -72,7 +76,8 @@ def _contexto(request: Request, pagina: str, pref: dict | None, aj: dict, comb: 
             "js": i18n.para_js(lang), "nombre_comb": i18n.t(lang, "comb." + comb),
             "combustibles": list(config.COMBUSTIBLES), "version": config.VERSION,
             "nonce": request.state.nonce, "ultima": repo.ultima_lectura(), "sin_ubicacion": pref is None,
-            "litros": float(aj["litros"]), **datos}
+            "litros": float(aj["litros"]), "unidad": config.unidad(comb),
+            "tema": (pref or {}).get("tema", "auto"), **datos}
 
 
 def _pagina(request: Request, plantilla: str, pagina: str, pref: dict | None, aj: dict, comb: str,
@@ -90,20 +95,52 @@ def _prevision(aj: dict, comb: str, lang: str) -> dict:
 
 
 @app.get("/")
-def inicio(request: Request, c: str | None = None):
+def inicio(request: Request, c: str | None = None, orden: str | None = None):
     pref, aj, comb = _elegir(request, c)
     if not pref:
         return _pagina(request, "inicio.html", "inicio", pref, aj, comb, lista=[])
-    lista = repo.cercanas(aj, comb)
+    if orden in config.ORDENES and orden != pref["orden"]:
+        pref = aj = {**pref, "orden": orden}            # se queda para la próxima vez (ver abajo)
+    lista = _con_horario(repo.cercanas(aj, comb))
+    litros, consumo = float(aj["litros"]), float(aj["consumo"])
+    for e in lista:
+        # Lo que cuesta de verdad: el repostaje más el combustible de ir y volver.
+        e["con_viaje"] = e["precio"] * (litros + 2 * e["distancia"] * config.RODEO * consumo / 100)
     media = mean(e["precio"] for e in lista) if lista else None
-    ahorro = (media - lista[0]["precio"]) * float(aj["litros"]) if lista else None
-    return _pagina(request, "inicio.html", "inicio", pref, aj, comb, lista=lista[:20], total=len(lista),
-                   media=media, ahorro=ahorro, prevision=_prevision(aj, comb, _idioma(request, pref)))
+    # Todo va en el orden elegido; la destacada es la primera que esté abierta (lo que no se sabe
+    # cuenta como abierto) y, debajo, la que sería con el otro criterio más claro.
+    clave = {"precio": lambda e: (e["precio"], e["distancia"]), "distancia": lambda e: e["distancia"],
+             "compensa": lambda e: e["con_viaje"]}
+    lista.sort(key=clave[aj["orden"]])
+    abiertas = [e for e in lista if e["abierta"] is not False] or lista
+    mejor = abiertas[0] if abiertas else None
+    ahorro = (media - mejor["precio"]) * litros if mejor else None
+    otro = "distancia" if aj["orden"] == "precio" else "precio"
+    secundaria = min(abiertas, key=clave[otro]) if abiertas else None
+    ids_favoritas = preferencias.favoritas(request)
+    favoritas = _con_horario(repo.favoritas(aj, comb, ids_favoritas))
+    respuesta = _pagina(request, "inicio.html", "inicio", pref, aj, comb, lista=lista, mejor=mejor,
+                        resto=[e for e in lista if e is not mejor][:20], total=len(lista), media=media, ahorro=ahorro,
+                        favoritas=favoritas, ids_favoritas=ids_favoritas, otro=otro,
+                        secundaria=secundaria if secundaria is not mejor else None,
+                        prevision=_prevision(aj, comb, _idioma(request, pref)))
+    if orden == aj["orden"]:
+        preferencias.guardar(respuesta, request, aj)
+    return respuesta
+
+
+def _con_horario(lista: list[dict]) -> list[dict]:
+    """Añade a cada gasolinera si está abierta ahora (None si su horario no se entiende)."""
+    ahora = datetime.now(config.TZ)
+    for e in lista:
+        e["estado"] = horario.estado(e.get("horario"), ahora, e.get("provincia_id"))
+        e["abierta"] = e["estado"]["abierta"] if e["estado"] else None
+    return lista
 
 
 def _para_mapa(lista: list[dict]) -> list[dict]:
-    return [{k: e[k] for k in ("id", "rotulo", "municipio", "lat", "lon", "precio", "distancia")}
-            for e in lista]
+    return [{k: e[k] for k in ("id", "rotulo", "municipio", "lat", "lon", "precio", "distancia", "abierta", "estado")}
+            for e in _con_horario(lista)]
 
 
 @app.get("/mapa")
@@ -115,7 +152,13 @@ def mapa(request: Request, c: str | None = None):
     todas = repo.cercanas(aj, comb, radio_km=min(max(3 * radio, 25), 2 * config.MAX_RADIO_KM))
     cerca = [e["precio"] for e in todas if e["distancia"] <= radio] or [e["precio"] for e in todas]
     escala = {"min": min(cerca), "max": max(cerca)} if cerca else {"min": 0, "max": 0}
-    return _pagina(request, "mapa.html", "mapa", pref, aj, comb, estaciones=_para_mapa(todas), escala=escala)
+    lang = _idioma(request, pref)
+    estaciones = _para_mapa(todas)
+    for e in estaciones:
+        est = e["estado"]
+        e["horario"] = i18n.t(lang, "hor." + est["clave"], hora=est["hora"]) if est else ""
+    return _pagina(request, "mapa.html", "mapa", pref, aj, comb, estaciones=estaciones, escala=escala,
+                   favoritas=preferencias.favoritas(request))
 
 
 @app.get("/estacion/{estacion_id}")
@@ -131,8 +174,23 @@ def ver_estacion(request: Request, estacion_id: int, c: str | None = None):
         zona = {f["fecha"]: f["media"] for f in repo.serie_zona(aj, comb)}
     grafica = {"fechas": [h["fecha"] for h in historial], "precio": [h["precio"] for h in historial],
                "zona": [zona.get(h["fecha"]) for h in historial] if zona else []}
-    return _pagina(request, "estacion.html", "mapa", pref, aj, comb, e=e,
+    _con_horario([e])
+    return _pagina(request, "estacion.html", "mapa", pref, aj, comb, e=e, favorita=estacion_id in preferencias.favoritas(request),
                    precios=repo.precios_actuales(estacion_id), grafica=grafica)
+
+
+@app.post("/favorita/{estacion_id}")
+def cambiar_favorita(request: Request, estacion_id: int):
+    """Marca o desmarca una favorita y vuelve a donde estaba (sin JavaScript también vale)."""
+    if not repo.estacion(estacion_id):
+        raise HTTPException(404)
+    ids = preferencias.favoritas(request)
+    ids = [i for i in ids if i != estacion_id] if estacion_id in ids else [estacion_id, *ids]
+    volver = urllib.parse.urlsplit(request.headers.get("referer", ""))
+    destino = volver.path + (f"?{volver.query}" if volver.query else "") if volver.path.startswith("/") else "/"
+    respuesta = RedirectResponse(destino if not destino.startswith("//") else "/", status_code=303)
+    preferencias.guardar_favoritas(respuesta, request, ids)
+    return respuesta
 
 
 def _brent_para_grafica(serie: list[dict]) -> list[float | None]:
@@ -155,10 +213,11 @@ def tendencia(request: Request, c: str | None = None):
             cambios[nombre] = serie[-1]["media"] - antes if antes is not None else None
     semana = repo.por_dia_semana(serie)
     con_datos = [d for d in semana if d["media"] is not None]
+    brent = _brent_para_grafica(serie)
     mejor_dia = min(con_datos, key=lambda d: d["media"])["dia"] if len(serie) >= 14 and con_datos else None
     return _pagina(request, "tendencia.html", "tendencia", pref, aj, comb, serie=serie, semana=semana,
                    cambios=cambios, mejor_dia=mejor_dia, prevision=_prevision(aj, comb, _idioma(request, pref)),
-                   brent=_brent_para_grafica(serie))
+                   brent=brent, brent_hasta=max((f["fecha"] for f, b in zip(serie, brent) if b is not None), default=None))
 
 
 # --- Ajustes de cada visitante (en su navegador) -----------------------------------------
@@ -173,6 +232,13 @@ def ver_ajustes(request: Request):
 async def guardar_ajustes(request: Request):
     pref, _, _ = _elegir(request, None)
     valores, error = preferencias.validar(dict(await request.form()), preferencias.CAMPOS)
+    if "application/json" in request.headers.get("accept", ""):
+        # Ajustes guarda solo, a cada cambio, sin salir de la página.
+        if error:
+            return JSONResponse({"ok": False, "error": i18n.t(_idioma(request, pref), error)}, status_code=400)
+        respuesta = JSONResponse({"ok": True})
+        preferencias.guardar(respuesta, request, valores)
+        return respuesta
     if error:
         aj = {**config.PREFERENCIAS_POR_DEFECTO, **valores}
         comb = aj["combustible"] if aj["combustible"] in config.COMBUSTIBLES else "g95"
@@ -255,6 +321,7 @@ def admin(request: Request, guardado: bool = False, prueba: str | None = None, l
     if not seguridad.sesion_valida(request):
         return _entrar(request)
     return _pagina_admin(request, "ajustes.html", guardado=guardado, prueba=prueba, lectura=lectura, error=None,
+                         brent_viejo=mercado.brent_viejo(mercado.ultimo_brent()), ultimo_brent=mercado.ultimo_brent(),
                          telegram=avisos.configurado())
 
 
@@ -454,5 +521,8 @@ def salud():
     if ultima:
         edad = datetime.now(config.TZ) - datetime.fromisoformat(ultima["momento"])
         estado = "ok" if edad < timedelta(hours=3) else "datos-viejos"
+    brent = mercado.ultimo_brent()
+    if estado == "ok" and mercado.brent_viejo(brent):
+        estado = "brent-viejo"
     return JSONResponse({"estado": estado, "version": config.VERSION,
-                         "ultima_lectura": ultima["momento"] if ultima else None})
+                         "ultima_lectura": ultima["momento"] if ultima else None, "ultimo_brent": brent})

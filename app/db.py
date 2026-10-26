@@ -109,6 +109,17 @@ def sesion():
         con.close()
 
 
+def _rehacer_historico_si_hay_combustibles_nuevos(con: sqlite3.Connection) -> None:
+    """Si se ha añadido un combustible, el histórico ya descargado no lo tiene: se vuelve a
+    pasar por esos días. Lo que ya había no se toca (se guarda con INSERT OR IGNORE)."""
+    if not con.execute("SELECT 1 FROM historico LIMIT 1").fetchone():
+        return
+    tienen = {f[0] for f in con.execute("SELECT DISTINCT combustible FROM medias_provincia")}
+    if set(config.COMBUSTIBLES) - tienen:
+        with con:
+            con.execute("DELETE FROM historico")
+
+
 def iniciar() -> None:
     con = conectar()
     try:
@@ -119,5 +130,6 @@ def iniciar() -> None:
                 con.execute(sql)
         con.executescript(ESQUEMA)
         con.execute("CREATE INDEX IF NOT EXISTS estaciones_por_lat ON estaciones (lat)")
+        _rehacer_historico_si_hay_combustibles_nuevos(con)
     finally:
         con.close()

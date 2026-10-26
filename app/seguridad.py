@@ -15,6 +15,7 @@ Desde la terminal del contenedor:
 from __future__ import annotations
 
 import base64
+import logging
 import hashlib
 import hmac
 import secrets
@@ -28,6 +29,8 @@ from fastapi import Request
 from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse
 
 from . import config, repo
+
+log = logging.getLogger("pumpcast")
 
 # --- Quién es quién ----------------------------------------------------------------------
 
@@ -199,7 +202,9 @@ def apuntar_fallo(request: Request) -> None:
 
 # --- Límite de peticiones ----------------------------------------------------------------
 
-PETICIONES_POR_MINUTO = 120
+PETICIONES_POR_MINUTO = 240
+# Lo que piden los navegadores solos (y no cuesta nada): no cuenta para el límite.
+SIN_LIMITE = ("/static/", "/sw.js", "/manifest.webmanifest", "/salud", "/favicon.ico", "/robots.txt")
 _peticiones: dict[str, deque] = defaultdict(deque)
 _ultima_poda = 0.0
 
@@ -222,13 +227,28 @@ def demasiadas(request: Request) -> bool:
 
 # --- Cabeceras y comprobaciones de cada petición -----------------------------------------
 
+_TEXTO_429 = {
+    "es": "Demasiadas peticiones seguidas desde tu conexión. Espera un minuto y vuelve a intentarlo.",
+    "ca": "Massa peticions seguides des de la teva connexió. Espera un minut i torna-ho a provar.",
+    "gl": "Demasiadas peticións seguidas desde a túa conexión. Agarda un minuto e volve tentalo.",
+    "eu": "Eskaera gehiegi zure konexiotik. Itxaron minutu bat eta saiatu berriro.",
+    "oc": "Massa demandes seguides dempús dera tua connexion. Demora un minut e torna-i.",
+    "en": "Too many requests from your connection in a row. Wait a minute and try again.",
+}
+
+
+def _idioma_navegador(request: Request) -> str:
+    from . import i18n
+    return i18n.del_navegador(request.headers.get("accept-language"))
+
+
 def _csp(nonce: str) -> str:
     return "; ".join([
         "default-src 'self'",
         f"script-src 'self' 'nonce-{nonce}'",
         "style-src 'self' 'unsafe-inline'",                  # Leaflet coloca el mapa con style=""
-        "img-src 'self' data: https://tile.openstreetmap.org",
-        "connect-src 'self' https://nominatim.openstreetmap.org",
+        "img-src 'self' data: blob: https://tile.openstreetmap.org",
+        "connect-src 'self' https://nominatim.openstreetmap.org https://tiles.openfreemap.org",
         "worker-src 'self'", "manifest-src 'self'",
         "object-src 'none'", "base-uri 'none'", "form-action 'self'", "frame-ancestors 'none'",
     ])
@@ -245,8 +265,9 @@ def _misma_web(request: Request) -> bool:
 
 async def middleware(request: Request, call_next):
     estatico = request.url.path.startswith("/static/")
-    if not estatico and demasiadas(request):
-        return PlainTextResponse("Demasiadas peticiones. Espera un minuto.", status_code=429,
+    if not request.url.path.startswith(SIN_LIMITE) and demasiadas(request):
+        log.warning("Límite de peticiones superado en %s", request.url.path)      # sin la IP: no se guarda
+        return PlainTextResponse(_TEXTO_429.get(_idioma_navegador(request), _TEXTO_429["en"]), status_code=429,
                                  headers={"Retry-After": "60"})
     if request.method not in ("GET", "HEAD", "OPTIONS") and not _misma_web(request):
         return PlainTextResponse("Formulario de otra web.", status_code=403)
@@ -271,6 +292,10 @@ async def middleware(request: Request, call_next):
         cabeceras["Strict-Transport-Security"] = "max-age=31536000"
     if request.url.path.startswith("/admin"):
         cabeceras["Cache-Control"] = "no-store"
+    elif estatico and respuesta.status_code == 200:
+        # Los que llevan ?v=<versión> cambian de enlace con cada versión: se guardan para siempre.
+        cabeceras["Cache-Control"] = ("public, max-age=31536000, immutable" if "v" in request.query_params
+                                      else "public, max-age=604800")
     for clave, valor in cabeceras.items():
         respuesta.headers.setdefault(clave, valor)
     return respuesta

@@ -1,5 +1,5 @@
 {% from "_iconos.html" import icono %}<!doctype html>
-<html lang="{{ lang }}">
+<html lang="{{ lang }}"{% if tema == "claro" %} data-theme="light"{% elif tema == "oscuro" %} data-theme="dark"{% endif %}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -12,6 +12,28 @@
   <link rel="icon" href="/static/iconos/icono.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/static/iconos/apple-touch-icon.png">
   <title>{% block titulo %}Pumpcast{% endblock %}</title>
+  {#- La tarjeta que sale al compartir el enlace (WhatsApp, Telegram, redes). -#}
+  {% set url_web = request.base_url|string %}
+  <meta name="description" content="{{ t('manifest.descripcion') }}">
+  {% set url_pagina = url_web ~ request.url.path[1:] %}
+  {% set url_imagen = url_web ~ "static/compartir.png?v=" ~ version %}
+  <link rel="canonical" href="{{ url_pagina }}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Pumpcast">
+  <meta property="og:locale" content="{{ {'es': 'es_ES', 'ca': 'ca_ES', 'gl': 'gl_ES', 'eu': 'eu_ES', 'oc': 'oc_ES', 'en': 'en_GB'}[lang] }}">
+  <meta property="og:title" content="{{ self.titulo() }}">
+  <meta property="og:description" content="{{ t('manifest.descripcion') }}">
+  <meta property="og:url" content="{{ url_pagina }}">
+  <meta property="og:image" content="{{ url_imagen }}">
+  <meta property="og:image:secure_url" content="{{ url_imagen }}">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="{{ t('manifest.descripcion') }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ self.titulo() }}">
+  <meta name="twitter:description" content="{{ t('manifest.descripcion') }}">
+  <meta name="twitter:image" content="{{ url_imagen }}">
   <link rel="stylesheet" href="/static/estilo.css?v={{ version }}">
   {% block cabeza %}{% endblock %}
   <script nonce="{{ nonce }}">window.I18N = {{ js|tojson }};</script>
@@ -44,10 +66,40 @@
     <a href="/tendencia?c={{ comb }}" {% if pagina == "tendencia" %}aria-current="page"{% endif %}>{{ icono("tendencia") }}{{ t("nav.tendencia") }}</a>
     <a href="/ajustes" {% if pagina == "ajustes" %}aria-current="page"{% endif %}>{{ icono("ajustes") }}{{ t("nav.ajustes") }}</a>
   </nav>
+  <dialog id="elegir-mapa" class="hoja" aria-labelledby="elegir-mapa-titulo">
+    <h2 id="elegir-mapa-titulo">{{ t("mapas.titulo") }}</h2>
+    {% for clave, nombre in (("google", "Google Maps"), ("apple", "Apple Maps"), ("waze", "Waze")) %}
+    <a class="boton ancho" data-plantilla="{{ mapas[clave] }}" href="#" target="_blank" rel="noopener">{{ nombre }}</a>
+    {% endfor %}
+    <form method="dialog"><button class="boton secundario ancho">{{ t("mapas.cancelar") }}</button></form>
+  </dialog>
+  <script src="/static/acciones.js?v={{ version }}"></script>
   <script nonce="{{ nonce }}">
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
   </script>
   {% if con_gps %}<script src="/static/gps.js?v={{ version }}"></script>{% endif %}
+  <div class="hoja-instalar" id="instalar" role="dialog" aria-labelledby="instalar-titulo" hidden
+       {% if pagina in ("inicio", "mapa", "tendencia") and not sin_ubicacion %}data-auto{% endif %}>
+    <div class="cabeza-instalar">
+      <img src="/static/iconos/icono-192.png" alt="" width="48" height="48">
+      <div><h2 id="instalar-titulo">{{ t("inst.titulo") }}</h2><p class="nota">{{ t("inst.texto") }}</p></div>
+    </div>
+    <ol class="pasos" data-ios>
+      <li>{{ t("inst.ios_1", icono=icono("compartir_ios"))|safe }}</li>
+      <li>{{ t("inst.ios_2", icono=icono("anadir"))|safe }}</li>
+      <li>{{ t("inst.ios_3")|safe }}</li>
+    </ol>
+    <ol class="pasos" data-otro hidden>
+      <li>{{ t("inst.otro_1", icono=icono("menu"))|safe }}</li>
+      <li>{{ t("inst.otro_2")|safe }}</li>
+    </ol>
+    <p class="nota" data-otra-app hidden>{{ t("inst.otra_app") }}</p>
+    <div class="botones">
+      <button class="boton" type="button" data-instalar hidden>{{ t("inst.instalar") }}</button>
+      <button class="boton secundario" type="button" data-cerrar>{{ t("inst.cerrar") }}</button>
+    </div>
+  </div>
+  <script src="/static/instalar.js?v={{ version }}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

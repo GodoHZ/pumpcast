@@ -21,16 +21,23 @@ actualizados cada 30 minutos.
 
 ## Qué hace
 
-- **Cerca**: la más barata dentro de tu radio, lo que te cuesta tu repostaje habitual,
-  cuánto ahorras frente a la media de la zona y el resto ordenadas por precio, con botón de *Cómo llegar*.
+- **Cerca**: la más barata *abierta ahora* dentro de tu radio (según el horario que publica cada
+  gasolinera), lo que te cuesta tu repostaje habitual, cuánto ahorras frente a la media de la zona y la
+  más cercana por si no compensa ir más lejos. El resto, ordenadas por precio, por distancia o por **lo que
+  compensa** (contando el combustible de ir y volver). *Cómo llegar* te deja elegir Google Maps, Apple
+  Maps o Waze.
+- **Favoritas**: marca tus gasolineras de siempre y salen arriba, con su precio de hoy. Se guardan en tu
+  navegador.
 - **¿Lleno hoy o espero?** Un semáforo a 7 días (🟢 llena ya · 🟡 da igual · 🔴 espera si
   puedes), aprendido con un año de precios de *tu* provincia: el surtidor va detrás del Brent
   y los precios tienen inercia. Se **prueba con los últimos 60 días sin usarlos para aprender**
   y apunta cada previsión, así que en pantalla ves cuánto acierta de verdad.
 - **Tendencia**: media y precio más barato de cada día con el Brent encima, cambio a 7 y 30
   días, y qué día de la semana suele salir más barato.
-- **Mapa** de las gasolineras de alrededor, de verde (barata) a rojo (cara).
-- **Historial de cada gasolinera**: 90 días de precios frente a la media de la zona.
+- **Mapa** de las gasolineras de alrededor, de verde (barata) a rojo (cara), sobre
+  [OpenFreeMap](https://openfreemap.org), con *Cómo llegar* desde cada una.
+- **Ficha de cada gasolinera**: si está abierta, su horario, 90 días de precios frente a la media de
+  la zona y un botón para compartirla.
 - **Avisos por Telegram** para el dueño (opcionales): un resumen cada mañana y un aviso cuando
   una cercana baja bastante de su media de 30 días, desde un panel con contraseña y verificación
   en dos pasos.
@@ -39,7 +46,8 @@ actualizados cada 30 minutos.
   a tu alrededor cada vez que la abras (redondeado a unos 100 m).
 - **Instalable como app (PWA)**: añádela a la pantalla de inicio; se abre a pantalla completa
   y, sin conexión, enseña lo último que vio.
-- **En castellano e inglés**, según el navegador o lo que elijas en Ajustes.
+- **En castellano, catalán/valenciano, gallego, euskera, aranés e inglés**, según el navegador o lo
+  que elijas en Ajustes.
 
 ### ¿Cuánto acierta la previsión?
 
@@ -85,6 +93,7 @@ Cada visitante elige su ubicación y sus preferencias en **Ajustes**. El contene
 | `TZ` | zona horaria (la usa el resumen de la mañana) | `Europe/Madrid` |
 | `ADMIN_PASSWORD_HASH` | activa el panel de administración en `/admin` (ver abajo) | apagado |
 | `TITULAR`, `CONTACTO` | quién responde de la web y un correo o URL de contacto, para el aviso legal | incidencias de GitHub |
+| `COPIAS_DIR`, `DIAS_DE_COPIAS` | copia diaria de la base de datos en esa carpeta, guardando esos días. La carpeta tiene que tener un fichero `.pumpcast-copias`, para no escribir nunca en un disco sin montar | apagada, `14` |
 | `TELEGRAM_TOKEN`, `TELEGRAM_CHAT` | avisos por Telegram | apagados |
 | `TELEGRAM_THREAD` | id del tema, si `TELEGRAM_CHAT` es un grupo con temas | — |
 | `APP_URL` | enlace que se añade al final de cada aviso | ninguno |
@@ -145,7 +154,7 @@ funcione sin conexión). Sin compilar nada: no hay npm ni bundler.
 
 ```
 app/
-  main.py        rutas web y arranque          i18n.py      textos en castellano e inglés
+  main.py        rutas web y arranque          i18n.py      textos (idiomas/: las otras lenguas)
   seguridad.py   cabeceras, límites y panel    preferencias.py  la cookie de cada visitante
   minetur.py     precios del Ministerio        mercado.py   Brent y euro/dólar
   prediccion.py  la previsión a 7 días         avisos.py    avisos por Telegram
@@ -168,8 +177,8 @@ Si vas a tocar el código en tu copia, hay un hook que impide commitear datos pr
 (rutas, dominios, `.db`, configuración local): `git config core.hooksPath scripts/git-hooks`.
 La lista de patrones se lee de `~/.config/pumpcast/patrones-privados.txt`.
 
-Se aceptan issues y pull requests, sobre todo idiomas nuevos: añade un bloque a
-`app/i18n.py` y los tests comprueban que no falte ningún texto.
+Se aceptan issues y pull requests, sobre todo idiomas nuevos: añade un fichero en
+`app/idiomas/` y los tests comprueban que no falte ningún texto.
 
 ## Licencia
 

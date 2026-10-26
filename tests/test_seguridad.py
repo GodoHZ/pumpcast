@@ -200,10 +200,13 @@ def test_desde_internet_siempre_https(cliente):
 
 def test_limite_de_peticiones(cliente, monkeypatch):
     monkeypatch.setattr(seguridad, "PETICIONES_POR_MINUTO", 3)
-    assert [cliente.get("/salud").status_code for _ in range(4)] == [200, 200, 200, 429]
-    assert cliente.get("/static/estilo.css").status_code == 200          # los estáticos no cuentan
+    assert [cliente.get("/legal").status_code for _ in range(4)] == [200, 200, 200, 429]
+    r = cliente.get("/legal", headers={"Accept-Language": "ca"})
+    assert "Espera un minut" in r.text and r.headers["retry-after"] == "60"
+    for ruta in ("/static/estilo.css", "/salud", "/sw.js", "/manifest.webmanifest"):
+        assert cliente.get(ruta).status_code == 200, ruta                 # lo que el navegador pide solo no cuenta
     otra_ip = {"CF-Connecting-IP": "198.51.100.1", "X-Forwarded-Proto": "https"}
-    assert cliente.get("/salud", headers=otra_ip).status_code == 200      # cada IP lleva su cuenta
+    assert cliente.get("/legal", headers=otra_ip).status_code == 200      # cada IP lleva su cuenta
 
 
 def test_comandos_de_terminal(monkeypatch, capsys):

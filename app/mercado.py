@@ -11,7 +11,7 @@ import io
 import urllib.request
 from datetime import date, timedelta
 
-from . import db
+from . import cache, db
 
 FRED = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DCOILBRENTEU&cosd={}"
 BCE = ("https://data-api.ecb.europa.eu/service/data/EXR/D.USD.EUR.SP00.A"
@@ -50,6 +50,20 @@ def guardar(brent: dict[str, float], eurusd: dict[str, float]) -> None:
         con.executemany(
             "INSERT INTO mercado (fecha, eurusd) VALUES (?, ?) "
             "ON CONFLICT(fecha) DO UPDATE SET eurusd = excluded.eurusd", eurusd.items())
+    cache.invalidar()
+
+
+DIAS_SIN_BRENT = 14         # FRED va una semana tarde; el doble ya es que algo se ha roto
+
+
+def ultimo_brent() -> str | None:
+    with db.sesion() as con:
+        return con.execute("SELECT MAX(fecha) FROM mercado WHERE brent_usd IS NOT NULL").fetchone()[0]
+
+
+def brent_viejo(ultimo: str | None, hoy: date | None = None) -> bool:
+    """Si el Brent lleva demasiado sin llegar. Sin ninguno aún (recién instalada), no avisa."""
+    return ultimo is not None and (hoy or date.today()) - date.fromisoformat(ultimo) > timedelta(days=DIAS_SIN_BRENT)
 
 
 def brent_euros() -> dict[str, float]:

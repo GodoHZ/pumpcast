@@ -1,4 +1,4 @@
-"""Cómo se escriben los números: con coma decimal en castellano y punto en inglés."""
+"""Cómo se escriben los números: con coma decimal en las lenguas de España y punto en inglés."""
 from __future__ import annotations
 
 from datetime import datetime
@@ -6,7 +6,7 @@ from datetime import datetime
 
 def numero(valor: float, decimales: int, lang: str = "es") -> str:
     texto = f"{valor:,.{decimales}f}"
-    if lang == "es":
+    if lang != "en":
         texto = texto.replace(",", " ").replace(".", ",").replace(" ", ".")
     return texto
 
@@ -22,7 +22,7 @@ def moneda(valor: float | None, decimales: int = 2, lang: str = "es") -> str:
         return "–"
     cifra = numero(abs(valor), decimales, lang)
     signo = "−" if valor < 0 else ""
-    return f"{signo}{cifra} €" if lang == "es" else f"{signo}€{cifra}"
+    return f"{signo}{cifra} €" if lang != "en" else f"{signo}€{cifra}"
 
 
 def centimos(diferencia: float | None, lang: str = "es") -> str:
@@ -44,8 +44,16 @@ def titulo(texto: str | None) -> str:
     return (texto or "").title()
 
 
+def dia(texto: str | None, lang: str = "es") -> str:
+    """Solo el día: 20/10 o Oct 20."""
+    if not texto:
+        return "–"
+    fecha = datetime.fromisoformat(texto)
+    return f"{fecha.day}/{fecha.month}" if lang != "en" else f"{fecha:%b} {fecha.day}"
+
+
 def fecha_corta(texto: str | None, lang: str = "es") -> str:
     if not texto:
         return "–"
     fecha = datetime.fromisoformat(texto)
-    return fecha.strftime("%d/%m %H:%M") if lang == "es" else fecha.strftime("%b %d, %H:%M")
+    return fecha.strftime("%d/%m %H:%M") if lang != "en" else fecha.strftime("%b %d, %H:%M")

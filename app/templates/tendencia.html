@@ -26,7 +26,7 @@
   {% set cambio_brent = t("prev.brent_cambio", cambio=signo ~ ((prevision.brent_semana|abs) * 100)|numero(1)) %}
   {% endif %}
   <p class="nota">{{ t("prev.provincia", provincia=prevision.nombre_provincia) }}
-    {{ t("prev.brent", precio=prevision.brent|moneda, cambio=cambio_brent) }}
+    {{ t("prev.brent", precio=prevision.brent|moneda, cambio=cambio_brent, fecha=prevision.brent_fecha|dia) }}
     {{ t("prev.como") }}</p>
   {% if prevision.prueba %}
   <p class="nota">{{ t("prev.prueba", aciertos=prevision.prueba.aciertos, total=prevision.prueba.total,
@@ -50,6 +50,9 @@
   <p class="nota">{{ t("tend.grafica_pronto") }}</p>
   {% else %}
   <div class="grafica"><canvas id="grafica" aria-label="{{ t('tend.zona', comb=nombre_comb, radio=aj.radio_km) }}"></canvas></div>
+  {% if brent_hasta and brent_hasta < serie[-1].fecha %}
+  <p class="nota">{{ t("tend.brent_retraso", fecha=brent_hasta|dia) }}</p>
+  {% endif %}
   {% endif %}
 </section>
 
@@ -68,7 +71,7 @@
 {% endblock %}
 {% block scripts %}
 {% if serie|length >= 2 %}
-<script src="/static/vendor/chart.umd.min.js"></script>
+<script src="/static/vendor/chart.umd.min.js?v={{ version }}"></script>
 <script src="/static/graficas.js?v={{ version }}"></script>
 <script nonce="{{ nonce }}">
   const serie = {{ serie|tojson }};

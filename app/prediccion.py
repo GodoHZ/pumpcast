@@ -19,7 +19,7 @@ from __future__ import annotations
 import logging
 from datetime import date, timedelta
 
-from . import config, db, i18n, mercado, repo
+from . import cache, config, db, i18n, mercado, repo
 from .formato import moneda, numero
 
 HORIZONTE = 7
@@ -158,7 +158,15 @@ def _seguimiento(provincia: str, comb: str, precios: dict) -> dict:
 
 
 def prevision(provincia: str | None, comb: str, litros: float = 40, brent: dict | None = None) -> dict:
-    """La previsión de una provincia. `brent` se puede pasar para no leerlo en cada una."""
+    """La previsión de una provincia. `brent` se puede pasar para no leerlo en cada una.
+    Es igual para todos hasta que llegan datos nuevos: se guarda en memoria (ver cache.py)."""
+    p = dict(cache.recordar(("prevision", provincia, comb), lambda: _prevision(provincia, comb, brent)))
+    if p.get("lista"):
+        p["euros_deposito"] = abs(p["cambio"]) * float(litros)
+    return p
+
+
+def _prevision(provincia: str | None, comb: str, brent: dict | None = None) -> dict:
     if not provincia:
         return {"lista": False, "dias": 0, "faltan": DIAS_MINIMOS + HORIZONTE}
     precios = _datos(provincia, comb)
@@ -181,8 +189,8 @@ def prevision(provincia: str | None, comb: str, litros: float = 40, brent: dict 
         "cambio": cambio,
         "semaforo": clave,
         "icono": SEMAFOROS[clave],
-        "euros_deposito": abs(cambio) * float(litros),
         "brent": brent_hoy,
+        "brent_fecha": max((f for f in brent if f < hoy), default=None),
         "brent_semana": (brent_hoy / brent_antes - 1) if brent_hoy and brent_antes else None,
         "precio_semana": precios[hoy] - precios[_mover(hoy, -HORIZONTE)] if _mover(hoy, -HORIZONTE) in precios else None,
         "prueba": _prueba(precios, brent),

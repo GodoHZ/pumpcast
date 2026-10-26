@@ -13,7 +13,7 @@ import logging
 import time
 from datetime import date, datetime, timedelta
 
-from . import avisos, config, mercado, minetur, prediccion, repo
+from . import avisos, config, copias, mercado, minetur, prediccion, repo
 
 log = logging.getLogger("pumpcast")
 
@@ -97,6 +97,10 @@ def ciclo() -> None:
         log.warning("No se pudo enviar el aviso: %s", e)
     rellenar_historico(ahora)
     limpiar(ahora.date())
+    try:
+        copias.hacer(ahora.date())
+    except Exception as e:  # noqa: BLE001
+        log.warning("No se pudo hacer la copia: %s", e)
 
 
 async def bucle() -> None:

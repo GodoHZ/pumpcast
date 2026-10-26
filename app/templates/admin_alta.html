@@ -16,7 +16,7 @@
 </form>
 {% endblock %}
 {% block scripts %}
-<script src="/static/vendor/qrcode/qrcode.js"></script>
+<script src="/static/vendor/qrcode/qrcode.js?v={{ version }}"></script>
 <script nonce="{{ nonce }}">
   const caja = document.getElementById("qr");
   const qr = qrcode(0, "M");

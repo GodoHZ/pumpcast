@@ -1,3 +1,6 @@
+import re
+from datetime import timedelta
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -74,7 +77,7 @@ def test_en_ingles(cliente_en, con_historial, una):
     _ubicar(cliente_en)
     inicio = cliente_en.get("/")
     assert '<html lang="en">' in inicio.text
-    assert "Cheapest within" in inicio.text and "Petrol 95" in inicio.text
+    assert ("Cheapest open within" in inicio.text or "Cheapest within" in inicio.text) and "Petrol 95" in inicio.text
     assert "€" in inicio.text and "La más barata" not in inicio.text
     for ruta in ("/mapa", "/tendencia", "/ajustes", f"/estacion/{una['id']}"):
         r = cliente_en.get(ruta)
@@ -280,3 +283,148 @@ def test_pagina_que_no_existe(cliente):
     assert r.status_code == 404 and "Esta página no existe" in r.text and 'class="barra"' in r.text
     assert cliente.get("/estacion/1").status_code == 404
     assert cliente.get("/api/no-existe").json() == {"detail": "Not Found"}      # las máquinas, JSON
+
+
+def test_la_grafica_dice_hasta_cuando_hay_brent(cliente, con_historial, monkeypatch):
+    """El Brent se publica con retraso: la gráfica lo explica en vez de cortarse sin más."""
+    from app import main
+    momento, _ = con_historial
+    hace_una_semana = (momento - timedelta(days=6)).date().isoformat()
+    monkeypatch.setattr(main.mercado, "brent_euros", lambda: {hace_una_semana: 100.0})
+    texto = _ubicar(cliente).get("/tendencia").text
+    assert "El Brent llega hasta el" in texto and "brent_pendiente" in texto
+
+
+def test_el_gas_natural_va_por_kilos(cliente, cargada):
+    _ubicar(cliente)
+    assert "Llenar 45 L" in cliente.get("/").text
+    gnc = cliente.get("/?c=gnc").text
+    assert "GNC" in gnc and "Llenar 45 kg" in gnc
+
+
+def test_ordenar_por_cercania_se_recuerda(cliente, cargada):
+    _ubicar(cliente)
+    por_precio = cliente.get("/").text
+    assert "Más baratas" in por_precio and "La más cercana" in por_precio
+    r = cliente.get("/?orden=distancia")
+    assert preferencias.leer_texto(r.cookies.get(preferencias.COOKIE).strip('"'))["orden"] == "distancia"
+    lista = r.text.split('class="lista"')[1]
+    distancias = [float(x.replace(",", ".")) for x in re.findall(r"· ([\d,]+) km ·", lista)]
+    assert len(distancias) > 2 and distancias == sorted(distancias)
+
+
+def test_como_llegar_pregunta_la_app(cliente, cargada, una):
+    _ubicar(cliente)
+    for texto in (cliente.get("/").text, cliente.get(f"/estacion/{una['id']}").text):
+        assert 'data-ir="' in texto and "google.com/maps/dir" in texto           # sin JavaScript, Google Maps
+        assert 'id="elegir-mapa"' in texto and "waze.com/ul" in texto and "maps.apple.com" in texto
+    assert "como_llegar" in cliente.get("/mapa").text
+
+
+def test_la_app_en_catalan(cliente, cargada):
+    _ubicar(cliente, idioma="ca")
+    assert "La més barata" in cliente.get("/").text
+    assert "Català" in cliente.get("/ajustes").text
+    legal = cliente.get("/legal").text
+    assert "en castellà" in legal and "Quién está detrás" in legal
+
+
+def test_favoritas(cliente, cargada, una):
+    _ubicar(cliente)
+    ficha = f"/estacion/{una['id']}"
+    assert "Favorita" in cliente.get(ficha).text
+    r = cliente.post(f"/favorita/{una['id']}", headers={"Referer": f"http://testserver{ficha}?c=g95"},
+                     follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == f"{ficha}?c=g95"
+    assert "Tus favoritas" in cliente.get("/").text and "Quitar de favoritas" in cliente.get(ficha).text
+    cliente.post(f"/favorita/{una['id']}")
+    assert "Tus favoritas" not in cliente.get("/").text
+    assert cliente.post("/favorita/1").status_code == 404
+    r = cliente.post(f"/favorita/{una['id']}", headers={"Referer": "https://otra.web/x"}, follow_redirects=False)
+    assert r.status_code == 403                              # desde otra web, ni se toca
+
+
+def test_ordenar_por_lo_que_compensa(cliente, cargada):
+    _ubicar(cliente, consumo="8")
+    texto = cliente.get("/?orden=compensa").text
+    assert "con el viaje" in texto and "8 L/100 km" in texto
+
+
+def test_el_horario_sale_en_la_ficha(cliente, cargada, una):
+    _ubicar(cliente)
+    texto = cliente.get(f"/estacion/{una['id']}").text
+    assert "Horario publicado" in texto or not una.get("horario")
+
+
+def test_tarjeta_para_compartir(cliente, cargada):
+    texto = cliente.get("/legal").text
+    assert 'property="og:image" content="http://testserver/static/compartir.png?v=' in texto
+    assert 'name="twitter:image"' in texto and 'property="og:locale" content="es_ES"' in texto
+    assert cliente.get("/static/compartir.png").status_code == 200
+
+
+def test_salud_avisa_si_el_brent_no_llega(cliente, cargada, monkeypatch):
+    from app import main
+    monkeypatch.setattr(main.mercado, "ultimo_brent", lambda: "2020-01-01")
+    assert cliente.get("/salud").json()["estado"] == "brent-viejo"
+    monkeypatch.setattr(main.mercado, "ultimo_brent", lambda: None)            # recién instalada
+    assert cliente.get("/salud").json()["estado"] == "ok"
+
+
+def test_el_aviso_legal_cuenta_lo_que_hace_falta(cliente):
+    texto = cliente.get("/legal").text
+    for frase in ("6.1.b", "6.1.a", "6.1.f", "Marco de", "OpenFreeMap", "pumpcast_fav", "MapLibre"):
+        assert frase in texto, frase
+
+
+def test_elegir_el_tema(cliente, cargada):
+    _ubicar(cliente)
+    assert "data-theme" not in cliente.get("/").text.split(">", 2)[1]       # automático: el del móvil
+    _ubicar(cliente, tema="oscuro")
+    assert '<html lang="es" data-theme="dark">' in cliente.get("/").text
+    _ubicar(cliente, tema="claro")
+    assert 'data-theme="light"' in cliente.get("/ajustes").text
+    _ubicar(cliente, tema="raro")
+    assert "data-theme" not in cliente.get("/").text.split(">", 2)[1]
+
+
+def test_favorita_y_horario_desde_cerca_y_el_mapa(cliente, cargada):
+    _ubicar(cliente)
+    assert 'action="/favorita/' in cliente.get("/").text
+    mapa = cliente.get("/mapa").text
+    assert "const favoritas = new Set([])" in mapa and '"horario":' in mapa
+
+
+def test_ajustes_se_guardan_solos(cliente, cargada):
+    _ubicar(cliente)
+    datos = {**PREFERENCIAS_BUENAS, **SOL, "combustible": "g95", "tema": "oscuro"}
+    r = cliente.post("/ajustes", data=datos, headers={"Accept": "application/json"})
+    assert r.json() == {"ok": True} and "tema=oscuro" in r.headers["set-cookie"]
+    r = cliente.post("/ajustes", data={**datos, "radio_km": "500"}, headers={"Accept": "application/json"})
+    assert r.status_code == 400 and "radio" in r.json()["error"]
+    assert "data-auto" in cliente.get("/ajustes").text
+
+
+def test_la_destacada_sigue_el_orden(cliente, cargada):
+    _ubicar(cliente)
+    barata = cliente.get("/?orden=precio").text
+    cercana = cliente.get("/?orden=distancia").text
+    rentable = cliente.get("/?orden=compensa").text
+    assert "La más barata" in barata and "La más cercana" in cercana and "La más rentable" in rentable
+    assert "Contando el viaje" in rentable and "Más rentables" in rentable
+    assert barata.index('class="segmentos"') < barata.index('class="tarjeta destacada"')
+
+
+def test_aviso_para_instalarla(cliente, cargada):
+    assert 'id="instalar"' in cliente.get("/").text and "data-auto" not in cliente.get("/").text.split('id="instalar"')[1][:200]
+    _ubicar(cliente)
+    texto = cliente.get("/").text
+    trozo = texto.split('id="instalar"')[1][:300]
+    assert "data-auto" in trozo and "Añadir a pantalla de inicio" in texto
+    assert 'id="instalar-abrir"' in cliente.get("/ajustes").text
+
+
+def test_las_paginas_van_comprimidas(cliente, cargada):
+    _ubicar(cliente)
+    r = cliente.get("/", headers={"Accept-Encoding": "gzip"})
+    assert r.headers.get("content-encoding") == "gzip" and "content-security-policy" in r.headers

@@ -32,6 +32,11 @@ def validar(valores: dict, campos: tuple[str, ...]) -> tuple[dict, str | None]:
         if not 1 <= float(v["litros"]) <= 150:
             return v, "err.litros"
         v["radio_km"], v["litros"] = f"{float(v['radio_km']):g}", f"{float(v['litros']):g}"
+        if "consumo" in v:
+            v["consumo"] = v["consumo"] or config.PREFERENCIAS_POR_DEFECTO["consumo"]
+            if not 1 <= float(v["consumo"]) <= 40:
+                return v, "err.consumo"
+            v["consumo"] = f"{float(v['consumo']):g}"
         if "umbral_chollo" in v and not 0 <= float(v["umbral_chollo"]) <= 1:
             return v, "err.umbral"
     except ValueError:
@@ -40,6 +45,11 @@ def validar(valores: dict, campos: tuple[str, ...]) -> tuple[dict, str | None]:
         return v, "err.hora"
     if v["combustible"] not in config.COMBUSTIBLES:
         return v, "err.combustible"
+    # Lo que no pide escribir nada se arregla en vez de dar error (y así valen las cookies de antes).
+    if "orden" in v and v["orden"] not in config.ORDENES:
+        v["orden"] = config.PREFERENCIAS_POR_DEFECTO["orden"]
+    if "tema" in v and v["tema"] not in config.TEMAS:
+        v["tema"] = config.PREFERENCIAS_POR_DEFECTO["tema"]
     if "gps" in v:
         v["gps"] = "1" if v["gps"] in ("1", "on") else "0"            # una casilla sin marcar no llega
     idiomas = (*i18n.IDIOMAS, "auto") if "hora_aviso" not in v else i18n.IDIOMAS
@@ -75,3 +85,24 @@ def guardar(respuesta, request: Request, valores: dict) -> None:
 
 def olvidar(respuesta) -> None:
     respuesta.delete_cookie(COOKIE, path="/")
+    respuesta.delete_cookie(COOKIE_FAVORITAS, path="/")
+
+
+# --- Gasolineras favoritas: otra cookie, solo con sus números -----------------------------
+
+COOKIE_FAVORITAS = "pumpcast_fav"
+
+
+def favoritas(request: Request) -> list[int]:
+    texto = request.cookies.get(COOKIE_FAVORITAS, "")[:300]
+    ids = [int(x) for x in texto.split(".") if x.isdigit()]
+    return list(dict.fromkeys(ids))[:config.MAX_FAVORITAS]
+
+
+def guardar_favoritas(respuesta, request: Request, ids: list[int]) -> None:
+    if not ids:
+        respuesta.delete_cookie(COOKIE_FAVORITAS, path="/")
+        return
+    respuesta.set_cookie(COOKIE_FAVORITAS, ".".join(map(str, ids[:config.MAX_FAVORITAS])),
+                         max_age=DIAS_DE_COOKIE * 86400, path="/", httponly=True,
+                         secure=request.url.scheme == "https", samesite="lax")

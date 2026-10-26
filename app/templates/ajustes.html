@@ -4,7 +4,8 @@
 {% block titulo %}{{ titulo }} · Pumpcast{% endblock %}
 {% block h1 %}{{ titulo }}{% endblock %}
 {% block cabeza %}
-<link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css?v={{ version }}">
+<link rel="stylesheet" href="/static/vendor/maplibre/maplibre-gl.css?v={{ version }}">
 {% endblock %}
 {% block contenido %}
 {% if guardado %}<p class="mensaje ok">{{ t("aj.guardado") }}</p>{% endif %}
@@ -13,8 +14,9 @@
 {% if prueba == "error" %}<p class="mensaje error">{{ t("aj.prueba_error") }}</p>{% endif %}
 {% if lectura == "ok" %}<p class="mensaje ok">{{ t("admin.lectura_ok") }}</p>{% endif %}
 {% if lectura == "error" %}<p class="mensaje error">{{ t("admin.lectura_error") }}</p>{% endif %}
+{% if admin and brent_viejo %}<p class="mensaje error">{{ t("admin.brent_viejo", fecha=ultimo_brent|dia) }}</p>{% endif %}
 
-<form method="post" action="{{ '/admin' if admin else '/ajustes' }}" class="formulario" id="formulario">
+<form method="post" action="{{ '/admin' if admin else '/ajustes' }}" class="formulario" id="formulario"{% if not admin %} data-auto{% endif %}>
   <section class="tarjeta">
     <h2>{{ t("admin.ubicacion") if admin else t("aj.casa") }}</h2>
     <p class="nota">{{ t("admin.ubicacion_nota") if admin else t("aj.privacidad") }}</p>
@@ -48,6 +50,10 @@
       </select>
     </label>
     <label>{{ t("aj.litros") }}<input name="litros" inputmode="decimal" value="{{ aj.litros }}" required></label>
+    {% if not admin %}
+    <label>{{ t("aj.consumo") }}<input name="consumo" inputmode="decimal" value="{{ aj.consumo }}" required></label>
+    <input type="hidden" name="orden" value="{{ aj.orden }}">
+    {% endif %}
   </section>
 
   {% if admin %}
@@ -64,17 +70,28 @@
   {% endif %}
 
   <section class="tarjeta">
-    <h2>{{ t("aj.idioma") }}</h2>
+    <h2>{{ t("aj.idioma") if admin else t("aj.apariencia") }}</h2>
     <label>{{ t("admin.idioma_avisos") if admin else t("aj.idioma") }}
       <select name="idioma">
         {% if not admin %}<option value="auto" {% if aj.idioma == "auto" %}selected{% endif %}>{{ t("aj.idioma_auto") }}</option>{% endif %}
-        <option value="es" {% if aj.idioma == "es" %}selected{% endif %}>Español</option>
-        <option value="en" {% if aj.idioma == "en" %}selected{% endif %}>English</option>
+        {% for clave, nombre in idiomas.items() %}
+        <option value="{{ clave }}" lang="{{ clave }}" {% if aj.idioma == clave %}selected{% endif %}>{{ nombre }}</option>
+        {% endfor %}
       </select>
     </label>
+    {% if not admin %}
+    <label>{{ t("aj.tema") }}
+      <select name="tema">
+        {% for clave in ("auto", "claro", "oscuro") %}
+        <option value="{{ clave }}" {% if aj.tema == clave %}selected{% endif %}>{{ t("tema." + clave) }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    {% endif %}
   </section>
 
-  <button class="boton ancho">{{ t("aj.guardar") }}</button>
+  <button class="boton ancho" id="guardar">{{ t("aj.guardar") }}</button>
+  {% if not admin %}<p class="aviso-flotante" id="guardado-estado" role="status" hidden></p>{% endif %}
 </form>
 
 {% if admin %}
@@ -84,6 +101,8 @@
   <form method="post" action="/admin/salir"><button class="boton secundario ancho">{{ t("admin.salir") }}</button></form>
 </div>
 {% elif not sin_ubicacion %}
+<button class="boton secundario ancho" type="button" id="instalar-abrir" hidden>{{ icono("anadir") }} {{ t("aj.instalar") }}</button>
+<p class="nota centrada" id="instalada" hidden>{{ t("aj.instalada") }}</p>
 <form method="post" action="/ajustes/olvidar"><button class="boton secundario ancho">{{ t("aj.olvidar") }}</button></form>
 {% endif %}
 
@@ -91,6 +110,9 @@
   · <a href="https://github.com/GodoHZ/pumpcast">GitHub</a></p>
 {% endblock %}
 {% block scripts %}
-<script src="/static/vendor/leaflet/leaflet.js"></script>
+<script src="/static/vendor/leaflet/leaflet.js?v={{ version }}"></script>
+<script src="/static/vendor/maplibre/maplibre-gl-csp.js?v={{ version }}"></script>
+<script src="/static/vendor/maplibre/leaflet-maplibre-gl.js?v={{ version }}"></script>
+<script src="/static/mapa-base.js?v={{ version }}"></script>
 <script src="/static/ajustes.js?v={{ version }}"></script>
 {% endblock %}

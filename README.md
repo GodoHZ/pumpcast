@@ -22,15 +22,22 @@ every 30 minutes.
 ## What it does
 
 - **Nearby**: the cheapest station within your radius, what your usual fill-up costs there,
-  how much you save compared with the local average, and the rest sorted by price, with a *Directions* button.
+  how much you save compared with the local average, the nearest one in case the detour isn't worth it, and the
+  rest sorted by price, distance or **worth the trip** (counting the fuel to get there and back). Only
+  stations *open now* are recommended, from the hours each one publishes. *Directions* lets you pick
+  Google Maps, Apple Maps or Waze.
+- **Favourites**: star your usual stations and they show up first with today's price. Stored in your
+  browser.
 - **Fill up today or wait?** A 7-day traffic light (🟢 fill up now · 🟡 no rush · 🔴 wait if
   you can), learnt from a year of prices in *your* province: pumps trail Brent crude, and
   prices have momentum. It is **tested on the last 60 days without learning from them** and logs
   every forecast, so the screen shows how often it actually gets it right.
 - **Trends**: local average and cheapest price per day with Brent on top, change over
   7 and 30 days, and which day of the week tends to be cheapest.
-- **Map** of the stations around you, from green (cheap) to red (expensive).
-- **Station history**: 90 days of prices against the local average.
+- **Map** of the stations around you, from green (cheap) to red (expensive), on
+  [OpenFreeMap](https://openfreemap.org), with *Directions* from each one.
+- **Station page**: whether it's open, its hours, 90 days of prices against the local average and
+  a share button.
 - **Telegram alerts** for the owner (optional): a morning summary and a heads-up when a station
   near you drops well below its 30-day average, set up from a password + two-step protected panel.
 - **Easy setup**: search your address, tap the map or use GPS. Your location is kept in a cookie
@@ -38,7 +45,8 @@ every 30 minutes.
   searches around you every time you open it (rounded to ~100 m).
 - **Installable app (PWA)**: add it to your home screen; it opens full screen and shows the
   last data it saw when you're offline.
-- **English and Spanish**, following your browser or chosen in Settings.
+- **Spanish, Catalan/Valencian, Galician, Basque, Aranese and English**, following your browser or
+  chosen in Settings.
 
 ### How good is the forecast?
 
@@ -84,6 +92,7 @@ Each visitor sets their location and preferences in **Settings**. The container 
 | `TZ` | time zone (the morning summary uses it) | `Europe/Madrid` |
 | `ADMIN_PASSWORD_HASH` | turns on the admin panel at `/admin` (see below) | off |
 | `TITULAR`, `CONTACTO` | who runs the site and a contact email or URL, for the legal notice | GitHub issues |
+| `COPIAS_DIR`, `DIAS_DE_COPIAS` | daily copy of the database to that folder, kept that many days. The folder must contain a `.pumpcast-copias` file, so nothing is written to an unmounted disk | off, `14` |
 | `TELEGRAM_TOKEN`, `TELEGRAM_CHAT` | Telegram alerts | off |
 | `TELEGRAM_THREAD` | topic id, if `TELEGRAM_CHAT` is a group with topics | — |
 | `APP_URL` | link added at the end of each alert | none |
@@ -144,7 +153,7 @@ offline). Nothing to compile: no npm, no bundler.
 
 ```
 app/
-  main.py        web routes and startup        i18n.py      English and Spanish texts
+  main.py        web routes and startup        i18n.py      texts (idiomas/: other languages)
   seguridad.py   headers, rate limit, admin    preferencias.py  each visitor's cookie
   minetur.py     Ministry prices               mercado.py   Brent and EUR/USD
   prediccion.py  the 7-day forecast            avisos.py    Telegram alerts
@@ -164,7 +173,7 @@ docker build -f scripts/capturas/Dockerfile --target export \
   --output type=local,dest=/tmp/capturas .                        # screenshots at iPhone size
 ```
 
-Issues and pull requests are welcome, especially new languages: add a block to `app/i18n.py`
+Issues and pull requests are welcome, especially new languages: add a file to `app/idiomas/`
 and the tests check that no text is missing.
 
 ## License

@@ -8,6 +8,9 @@ from zoneinfo import ZoneInfo
 VERSION = os.environ.get("APP_VERSION", "dev")
 DATA_DIR = Path(os.environ.get("DATA_DIR", "data"))
 DB_PATH = DATA_DIR / "pumpcast.db"
+# Copia diaria de la base de datos (opcional): mejor en otro disco que el de DATA_DIR.
+COPIAS_DIR = Path(os.environ["COPIAS_DIR"]) if os.environ.get("COPIAS_DIR") else None
+DIAS_DE_COPIAS = int(os.environ.get("DIAS_DE_COPIAS", "14"))
 TZ = ZoneInfo(os.environ.get("TZ", "Europe/Madrid"))
 
 APP_URL = os.environ.get("APP_URL", "").rstrip("/")
@@ -35,7 +38,19 @@ COMBUSTIBLES = {
     "diesel": "Precio Gasoleo A",
     "diesel_plus": "Precio Gasoleo Premium",
     "glp": "Precio Gases licuados del petróleo",
+    "gnc": "Precio Gas Natural Comprimido",
+    "gnl": "Precio Gas Natural Licuado",
 }
+# El biometano es el mismo combustible para el coche: si una gasolinera solo tiene ese, cuenta.
+ALTERNATIVAS = {"gnc": "Precio Biogas Natural Comprimido", "gnl": "Precio Biogas Natural Licuado"}
+
+# El gas natural se vende por kilo; el resto, por litro.
+UNIDADES = {"gnc": "kg", "gnl": "kg"}
+
+
+def unidad(comb: str) -> str:
+    return UNIDADES.get(comb, "L")
+
 
 # Código del Ministerio (el del INE), nombre y código ISO 3166-2 (el que da OpenStreetMap).
 PROVINCIAS = [
@@ -68,6 +83,19 @@ MAX_RADIO_KM = 50
 PREFERENCIAS_POR_DEFECTO = {
     "lat": "", "lon": "", "radio_km": "10", "combustible": "g95", "litros": "40", "idioma": "auto",
     "gps": "0",                    # "1": al abrir la app, buscar alrededor de donde estés en ese momento
+    "orden": "precio",             # la lista de Cerca: "precio", "distancia" o "compensa"
+    "consumo": "6",
+    "tema": "auto",                # "auto" (el del móvil), "claro" u "oscuro"                # litros (o kilos) a los 100 km, para saber si compensa ir más lejos
+}
+ORDENES = ("precio", "distancia", "compensa")
+TEMAS = ("auto", "claro", "oscuro")
+RODEO = 1.3                        # la carretera es más larga que la línea recta
+MAX_FAVORITAS = 20
+# Las apps entre las que se elige al pulsar «Cómo llegar».
+MAPAS = {
+    "google": "https://www.google.com/maps/dir/?api=1&destination={lat},{lon}",
+    "apple": "https://maps.apple.com/?daddr={lat},{lon}",
+    "waze": "https://waze.com/ul?ll={lat},{lon}&navigate=yes",
 }
 
 # Los avisos de Telegram del dueño de la instalación, desde el panel de administración.

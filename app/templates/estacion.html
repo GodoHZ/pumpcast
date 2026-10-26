@@ -1,20 +1,27 @@
 {% extends "base.html" %}
+{% from "_estado.html" import estado with context %}
+{% from "_iconos.html" import icono %}
 {% block titulo %}{{ e.rotulo|titulo }} · Pumpcast{% endblock %}
 {% block h1 %}{{ e.rotulo|titulo }}{% endblock %}
 {% block contenido %}
 <section class="tarjeta">
   <p class="donde">{{ e.direccion|titulo }}, {{ e.municipio }}{% if e.distancia is not none %} · {{ t("estacion.de_casa", distancia=e.distancia|km) }}{% endif %}</p>
-  {% if e.horario %}<p class="nota">{{ e.horario }}</p>{% endif %}
+  {% if e.estado %}<p>{{ estado(e) }}</p>{% endif %}
+  {% if e.horario %}<p class="nota">{{ t("hor.publicado", horario=e.horario) }}</p>{% endif %}
   <table class="precios">
     {% for clave in combustibles if clave in precios %}
     <tr {% if clave == comb %}class="activa"{% endif %}><th>{{ t("comb." + clave) }}</th><td>{{ precios[clave]|moneda(3) }}</td></tr>
     {% endfor %}
   </table>
   {% if comb in precios %}
-  <p class="ahorro">{{ t("estacion.coste", litros=aj.litros, comb=nombre_comb, coste=(precios[comb] * litros)|moneda)|safe }}</p>
+  <p class="ahorro">{{ t("estacion.coste", litros=aj.litros, unidad=unidad, comb=nombre_comb, coste=(precios[comb] * litros)|moneda)|safe }}</p>
   {% endif %}
   <div class="botones">
-    <a class="boton" href="https://maps.apple.com/?daddr={{ e.lat }},{{ e.lon }}">{{ t("como_llegar") }}</a>
+    <a class="boton" href="{{ mapas.google.format(lat=e.lat, lon=e.lon) }}" data-ir="{{ e.lat }},{{ e.lon }}" target="_blank" rel="noopener">{{ t("como_llegar") }}</a>
+    <form method="post" action="/favorita/{{ e.id }}">
+      <button class="boton secundario{% if favorita %} marcada{% endif %}" aria-pressed="{{ 'true' if favorita else 'false' }}">{{ icono("estrella") }} {{ t("fav.quitar" if favorita else "fav.poner") }}</button>
+    </form>
+    <button class="boton secundario" type="button" data-compartir="{{ e.rotulo|titulo }} · {{ e.municipio }}" hidden>{{ icono("compartir") }} {{ t("compartir") }}</button>
   </div>
 </section>
 
@@ -29,7 +36,7 @@
 {% endblock %}
 {% block scripts %}
 {% if grafica.fechas|length >= 2 %}
-<script src="/static/vendor/chart.umd.min.js"></script>
+<script src="/static/vendor/chart.umd.min.js?v={{ version }}"></script>
 <script src="/static/graficas.js?v={{ version }}"></script>
 <script nonce="{{ nonce }}">
   const g = {{ grafica|tojson }};

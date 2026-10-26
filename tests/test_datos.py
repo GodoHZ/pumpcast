@@ -135,3 +135,57 @@ def test_base_de_datos_de_antes_de_la_2_0():
     db.iniciar()
     with db.sesion() as con:
         assert con.execute("SELECT provincia_id FROM estaciones WHERE id = 1").fetchone()[0] is None
+
+
+def test_un_combustible_nuevo_vuelve_a_pasar_por_el_historico(con_historial, monkeypatch):
+    repo.guardar_historico(datetime(2026, 1, 1), [])
+    assert db.conectar().execute("SELECT COUNT(*) FROM historico").fetchone()[0]
+    db.iniciar()                                    # todos los combustibles tienen medias: no se toca
+    assert db.conectar().execute("SELECT COUNT(*) FROM historico").fetchone()[0]
+    monkeypatch.setitem(config.COMBUSTIBLES, "nuevo", "Precio Nuevo")
+    db.iniciar()
+    assert not db.conectar().execute("SELECT COUNT(*) FROM historico").fetchone()[0]
+
+
+def test_el_biometano_cuenta_como_gas_natural():
+    base = {"Tipo Venta": "P", "Latitud": "41,35", "Longitud (WGS84)": "2,07", "IDEESS": "1",
+            "Precio Gas Natural Comprimido": "", "Precio Biogas Natural Comprimido": "1,866"}
+    _, [solo_bio] = minetur.interpretar({"Fecha": "26/10/2026 20:00:00", "ListaEESSPrecio": [base]})
+    assert solo_bio["precios"] == {"gnc": 1.866}
+    las_dos = {**base, "Precio Gas Natural Comprimido": "1,500"}
+    _, [e] = minetur.interpretar({"Fecha": "26/10/2026 20:00:00", "ListaEESSPrecio": [las_dos]})
+    assert e["precios"] == {"gnc": 1.5}
+
+
+def test_copia_diaria(tmp_path, monkeypatch, cargada):
+    from datetime import date
+
+    from app import copias
+    monkeypatch.setattr(copias, "_ultima", None)
+    monkeypatch.setattr(config, "COPIAS_DIR", tmp_path / "no-existe")
+    assert not copias.hacer(date(2026, 10, 26))           # sin carpeta no se crea nada
+    assert not (tmp_path / "no-existe").exists()
+    monkeypatch.setattr(copias, "_ultima", None)
+    monkeypatch.setattr(config, "COPIAS_DIR", tmp_path)
+    assert not copias.hacer(date(2026, 10, 23))           # carpeta sin la marca: tampoco
+    (tmp_path / copias.MARCA).touch()
+    monkeypatch.setattr(config, "DIAS_DE_COPIAS", 2)
+    for dia in (24, 25, 26):
+        monkeypatch.setattr(copias, "_ultima", None)
+        assert copias.hacer(date(2026, 10, dia))
+    assert sorted(p.name for p in tmp_path.glob("*.db")) == ["pumpcast-2026-10-25.db", "pumpcast-2026-10-26.db"]
+    assert not copias.hacer(date(2026, 10, 26))           # una al día
+
+
+def test_la_cache_da_copias_y_se_tira_con_datos_nuevos(lectura):
+    from app import cache
+    momento, estaciones = lectura
+    repo.guardar_lectura(momento, estaciones)
+    aj = {**config.PREFERENCIAS_POR_DEFECTO, **SOL}
+    primera = repo.cercanas(aj, "g95")
+    primera[0]["tocado"] = True                                  # quien la usa le añade cosas...
+    assert "tocado" not in repo.cercanas(aj, "g95")[0]           # ...sin estropear la guardada
+    assert cache._datos
+    repo.guardar_lectura(momento + timedelta(minutes=30), estaciones[:5])
+    assert not cache._datos                                      # precios nuevos: se recalcula todo
+    assert repo.cercanas(aj, "g95") and cache._datos           # y se vuelve a guardar a la primera

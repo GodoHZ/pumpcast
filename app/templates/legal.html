@@ -1,10 +1,11 @@
 {% extends "base.html" %}
-{% set titulo = "Aviso legal y privacidad" if lang == "es" else "Legal notice and privacy" %}
+{% set titulo = t("pie.legal") %}
 {% block titulo %}{{ titulo }} · Pumpcast{% endblock %}
 {% block h1 %}{{ titulo }}{% endblock %}
 {% block contenido %}
 {#- Texto largo y que cambia poco: va aquí, en los dos idiomas, y no en i18n.py. -#}
-{% if lang == "es" %}
+{% if lang != "en" %}
+{% if lang != "es" %}<p class="nota">{{ t("legal.en_castellano") }}</p>{% endif %}
 <section class="tarjeta legal">
   <h2>Quién está detrás</h2>
   <p>Pumpcast es un proyecto personal, gratuito y sin ánimo de lucro{% if titular %} de {{ titular }}{% endif %}.
@@ -22,8 +23,11 @@
     <li><b>Petróleo Brent:</b> FRED, Federal Reserve Bank of St. Louis, serie DCOILBRENTEU de la U.S. Energy
       Information Administration.</li>
     <li><b>Cambio euro/dólar:</b> Banco Central Europeo.</li>
-    <li><b>Mapas y búsqueda de direcciones:</b> © colaboradores de
-      <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (licencia ODbL).</li>
+    <li><b>Mapas:</b> <a href="https://openfreemap.org">OpenFreeMap</a>, © OpenMapTiles, con datos de los
+      colaboradores de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (licencia ODbL).</li>
+    <li><b>Búsqueda de direcciones:</b> Nominatim, © colaboradores de OpenStreetMap (licencia ODbL).</li>
+    <li><b>Horarios:</b> los que publica cada gasolinera en el Geoportal. Los festivos no se publican y
+      pueden cambiarlos.</li>
   </ul>
 </section>
 
@@ -39,16 +43,23 @@
 <section class="tarjeta legal">
   <h2>Privacidad</h2>
   <ul>
-    <li><b>En el servidor no se guarda nada tuyo.</b> Tu ubicación, radio, combustible, litros e idioma van en
-      una cookie de tu navegador. El servidor la lee para preparar la página y no la apunta. Puedes borrarla en
-      Ajustes → «Olvidar mi ubicación».</li>
-    <li>Si activas «usar dónde estoy», tu navegador manda tu posición redondeada a unos 100 m solo para
-      actualizar esa cookie.</li>
+    <li><b>En el servidor no se guarda nada tuyo.</b> Tu ubicación, radio, combustible, litros, consumo, idioma
+      y gasolineras favoritas van en cookies de tu navegador. El servidor las lee para preparar la página y no
+      las apunta. Base legal: es lo necesario para darte el servicio que pides (art. 6.1.b del RGPD). Puedes
+      borrarlas en Ajustes → «Olvidar mi ubicación» o desde tu navegador.</li>
+    <li><b>Tu posición en directo</b>, solo si activas «usar dónde estoy»: tu navegador la manda redondeada a
+      unos 100 m solo para actualizar esa cookie. Base legal: tu consentimiento (art. 6.1.a), que retiras
+      desactivando la casilla o el permiso de ubicación del navegador.</li>
     <li><b>No hay registro de visitas.</b> Para frenar abusos, el servidor recuerda en memoria tu dirección IP
-      durante un minuto y luego la olvida (interés legítimo, art. 6.1.f del RGPD).</li>
+      durante un minuto y luego la olvida. Base legal: interés legítimo en proteger la web (art. 6.1.f).</li>
     <li><b>Terceros:</b> la web llega a ti a través de Cloudflare, que trata tu IP para servirla y protegerla.
-      El mapa y el buscador de direcciones los da directamente OpenStreetMap, que recibe tu IP y lo que buscas
-      (<a href="https://osmfoundation.org/wiki/Privacy_Policy">su política de privacidad</a>).</li>
+      Cloudflare es una empresa de EE. UU.: esa transferencia internacional está amparada por el Marco de
+      Privacidad de Datos UE-EE. UU., en el que está adherida, y por cláusulas contractuales tipo
+      (<a href="https://www.cloudflare.com/privacypolicy/">su política de privacidad</a>). El mapa lo da
+      directamente OpenFreeMap (<a href="https://openfreemap.org/privacy/">su política</a>) y el buscador de
+      direcciones, OpenStreetMap (<a href="https://osmfoundation.org/wiki/Privacy_Policy">su política</a>): ambos
+      reciben tu IP y, el buscador, lo que escribes. «Cómo llegar» abre la app de mapas que elijas, con sus
+      propias condiciones.</li>
     <li><b>Tus derechos:</b> como no se guardan datos tuyos, no hay nada que consultar ni borrar en el
       servidor. Para cualquier duda, escribe al contacto de arriba. También puedes reclamar ante la
       <a href="https://www.aepd.es">Agencia Española de Protección de Datos</a>.</li>
@@ -61,17 +72,20 @@
     (art. 22.2 de la LSSI). No hay cookies de analítica, de publicidad ni de terceros.</p>
   <ul>
     <li><code>pumpcast</code>: tus preferencias de Ajustes. Dura 400 días o hasta que la borres.</li>
+    <li><code>pumpcast_fav</code>: los números de tus gasolineras favoritas, solo si marcas alguna. Igual: 400 días.</li>
     <li><code>pumpcast_admin</code> y <code>pumpcast_alta</code>: solo para el panel del administrador.</li>
     <li>Cloudflare puede poner alguna cookie técnica de seguridad, como <code>__cf_bm</code>.</li>
   </ul>
   <p>Para que funcione sin conexión, la app guarda una copia de las páginas en tu dispositivo, nunca en el
-    servidor.</p>
+    servidor. También apunta en el almacenamiento de tu navegador si ya cerraste el aviso de instalarla y
+    cuándo recargó la página por última vez al usar dónde estás. Nada de eso sale de tu dispositivo.</p>
 </section>
 
 <section class="tarjeta legal">
   <h2>Código</h2>
   <p>Código abierto con licencia MIT en <a href="{{ repositorio }}">GitHub</a>. Usa Leaflet (BSD-2),
-    Chart.js (MIT), qrcode-generator (MIT) e iconos de Lucide (ISC).</p>
+    MapLibre GL JS (BSD-3), MapLibre GL Leaflet (ISC), Chart.js (MIT), qrcode-generator (MIT) e iconos de
+    Lucide (ISC).</p>
 </section>
 {% else %}
 <section class="tarjeta legal">
@@ -91,8 +105,11 @@
     <li><b>Brent crude:</b> FRED, Federal Reserve Bank of St. Louis, series DCOILBRENTEU from the U.S. Energy
       Information Administration.</li>
     <li><b>EUR/USD:</b> European Central Bank.</li>
-    <li><b>Maps and address search:</b> ©
+    <li><b>Maps:</b> <a href="https://openfreemap.org">OpenFreeMap</a>, © OpenMapTiles, with data from
       <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors (ODbL licence).</li>
+    <li><b>Address search:</b> Nominatim, © OpenStreetMap contributors (ODbL licence).</li>
+    <li><b>Opening hours:</b> as published by each station on the Geoportal. Holidays aren't published and
+      may differ.</li>
   </ul>
 </section>
 
@@ -108,16 +125,22 @@
 <section class="tarjeta legal">
   <h2>Privacy</h2>
   <ul>
-    <li><b>Nothing about you is stored on the server.</b> Your location, radius, fuel, litres and language
-      live in a cookie in your browser. The server reads it to build the page and doesn't record it. You can
-      delete it in Settings → "Forget my location".</li>
-    <li>If you turn on "use where I am", your browser sends your position rounded to about 100 m, only to
-      update that cookie.</li>
+    <li><b>Nothing about you is stored on the server.</b> Your location, radius, fuel, litres, consumption,
+      language and favourite stations live in cookies in your browser. The server reads them to build the page
+      and doesn't record them. Legal basis: it's what's needed to provide the service you ask for (Art. 6(1)(b)
+      GDPR). You can delete them in Settings → "Forget my location" or in your browser.</li>
+    <li><b>Your live position</b>, only if you turn on "use where I am": your browser sends it rounded to about
+      100 m, only to update that cookie. Legal basis: your consent (Art. 6(1)(a)), which you withdraw by
+      unticking the box or revoking the browser's location permission.</li>
     <li><b>No visit logs.</b> To stop abuse, the server keeps your IP address in memory for one minute and
-      then forgets it (legitimate interest, Art. 6(1)(f) GDPR).</li>
+      then forgets it. Legal basis: legitimate interest in protecting the site (Art. 6(1)(f)).</li>
     <li><b>Third parties:</b> the site reaches you through Cloudflare, which processes your IP to deliver and
-      protect it. The map and address search come straight from OpenStreetMap, which receives your IP and what
-      you search for (<a href="https://osmfoundation.org/wiki/Privacy_Policy">their privacy policy</a>).</li>
+      protect it. Cloudflare is a US company: that international transfer is covered by the EU-US Data Privacy
+      Framework, which it has joined, and by standard contractual clauses
+      (<a href="https://www.cloudflare.com/privacypolicy/">their privacy policy</a>). The map comes straight from
+      OpenFreeMap (<a href="https://openfreemap.org/privacy/">their policy</a>) and address search from
+      OpenStreetMap (<a href="https://osmfoundation.org/wiki/Privacy_Policy">their policy</a>): both receive your
+      IP and, for search, what you type. "Directions" opens the maps app you choose, under its own terms.</li>
     <li><b>Your rights:</b> since no data about you is kept, there's nothing on the server to access or
       delete. For any question, use the contact above. You can also complain to the Spanish Data Protection
       Agency (<a href="https://www.aepd.es">AEPD</a>).</li>
@@ -130,16 +153,20 @@
     Spanish Law 34/2002). No analytics, advertising or third-party cookies.</p>
   <ul>
     <li><code>pumpcast</code>: your Settings. Lasts 400 days or until you delete it.</li>
+    <li><code>pumpcast_fav</code>: the numbers of your favourite stations, only if you mark any. Also 400 days.</li>
     <li><code>pumpcast_admin</code> and <code>pumpcast_alta</code>: only for the administrator's panel.</li>
     <li>Cloudflare may set a technical security cookie such as <code>__cf_bm</code>.</li>
   </ul>
-  <p>To work offline, the app keeps a copy of pages on your device, never on the server.</p>
+  <p>To work offline, the app keeps a copy of pages on your device, never on the server. It also notes in
+    your browser's storage whether you closed the install prompt and when it last reloaded the page using
+    where you are. None of that leaves your device.</p>
 </section>
 
 <section class="tarjeta legal">
   <h2>Code</h2>
   <p>Open source under the MIT licence on <a href="{{ repositorio }}">GitHub</a>. Uses Leaflet (BSD-2),
-    Chart.js (MIT), qrcode-generator (MIT) and Lucide icons (ISC).</p>
+    MapLibre GL JS (BSD-3), MapLibre GL Leaflet (ISC), Chart.js (MIT), qrcode-generator (MIT) and Lucide
+    icons (ISC).</p>
 </section>
 {% endif %}
 {% endblock %}

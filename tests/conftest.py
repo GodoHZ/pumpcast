@@ -13,7 +13,7 @@ os.environ.pop("ADMIN_PASSWORD_HASH", None)
 
 import pytest  # noqa: E402
 
-from app import config, db, minetur, repo, seguridad  # noqa: E402
+from app import cache, config, db, minetur, repo, seguridad  # noqa: E402
 
 DATOS = json.loads((Path(__file__).parent / "datos" / "madrid.json").read_text(encoding="utf-8"))
 SOL = {"lat": "40.4168", "lon": "-3.7038"}                  # la casa de los tests: la Puerta del Sol
@@ -24,6 +24,7 @@ def base_limpia():
     if config.DB_PATH.exists():
         config.DB_PATH.unlink()
     db.iniciar()
+    cache.invalidar()
     repo.guardar_ajustes(SOL)
     # Lo que seguridad.py guarda en memoria, de cero en cada test.
     for estado in (seguridad._sesiones, seguridad._altas, seguridad._fallos, seguridad._peticiones):

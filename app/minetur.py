@@ -54,7 +54,8 @@ def interpretar(datos: dict) -> tuple[datetime, list[dict]]:
             continue
         precios = {}
         for clave, campo in config.COMBUSTIBLES.items():
-            precio = _numero(e.get(campo))
+            opciones = [p for p in (_numero(e.get(campo)), _numero(e.get(config.ALTERNATIVAS.get(clave, "")))) if p]
+            precio = min(opciones, default=None)
             if precio:
                 precios[clave] = precio
         if not precios:
