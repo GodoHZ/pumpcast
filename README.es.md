@@ -18,6 +18,8 @@ actualizados cada 30 minutos.
 | Cerca | ¿Lleno o espero? | Mapa | Ajustes |
 |---|---|---|---|
 | <img src="docs/inicio-es.png" width="200"> | <img src="docs/tendencia-es.png" width="200"> | <img src="docs/mapa-es.png" width="200"> | <img src="docs/ajustes-es.png" width="200"> |
+| **Mis repostajes** | **Tendencia, en oscuro** | | |
+| <img src="docs/repostajes-es.png" width="200"> | <img src="docs/tendencia-es-oscuro.png" width="200"> | | |
 
 ## Qué hace
 
@@ -29,13 +31,22 @@ actualizados cada 30 minutos.
 - **Favoritas**: marca tus gasolineras de siempre y salen arriba, con su precio de hoy. Se guardan en tu
   navegador.
 - **¿Lleno hoy o espero?** Un semáforo a 7 días (🟢 llena ya · 🟡 da igual · 🔴 espera si
-  puedes), aprendido con un año de precios de *tu* provincia: el surtidor va detrás del Brent
-  y los precios tienen inercia. Se **prueba con los últimos 60 días sin usarlos para aprender**
+  puedes), aprendido con un año de precios de *tu* provincia: el surtidor va detrás del gasóleo
+  y la gasolina al por mayor, sube antes de lo que baja y los precios tienen inercia. Se **prueba con los últimos 60 días sin usarlos para aprender**
   y apunta cada previsión, así que en pantalla ves cuánto acierta de verdad.
 - **Tendencia**: media y precio más barato de cada día con el Brent encima, cambio a 7 y 30
-  días, y qué día de la semana suele salir más barato.
-- **Mapa** de las gasolineras de alrededor, de verde (barata) a rojo (cara), sobre
-  [OpenFreeMap](https://openfreemap.org), con *Cómo llegar* desde cada una.
+  días, qué día de la semana suele salir más barato y **qué marcas salen más baratas o más caras**
+  en tu zona.
+- **Mapa** de las gasolineras de alrededor sobre [OpenFreeMap](https://openfreemap.org): cada una con
+  el distintivo de su marca (iniciales y color, sin logos) y su precio de verde (barata) a rojo (cara).
+  Se filtra por *abiertas ahora*, *más baratas que la media* y marcas, y tiene *Cómo llegar* desde cada una.
+- **Mis repostajes**: apunta lo que echas y te dice lo que gastas al mes y al año y tu consumo real,
+  que puedes pasar a Ajustes. Se guarda solo en tu navegador.
+- **Con Siri**: «Oye Siri, gasolinera barata» abre tu app de mapas camino de la más barata abierta.
+  La página *Con Siri* explica el atajo (o da uno ya hecho) y, en Android, deja la búsqueda a un toque
+  desde el icono.
+- **Pasar a otro móvil**: un enlace o un QR con tus ajustes, favoritas y repostajes, sin cuentas; los
+  datos van detrás del `#`, que nunca llega al servidor.
 - **Ficha de cada gasolinera**: si está abierta, su horario, 90 días de precios frente a la media de
   la zona y un botón para compartirla.
 - **Avisos por Telegram** para el dueño (opcionales): un resumen cada mañana y un aviso cuando
@@ -51,21 +62,28 @@ actualizados cada 30 minutos.
 
 ### ¿Cuánto acierta la previsión?
 
-Sinceramente: es una pista, no una bola de cristal. Con un año de precios reales de una
-provincia, en 60 días que no había visto, acertó **unas 6 de cada 10 veces** tanto en
-gasolina como en diésel, frente a 4 o 5 de cada 10 si simplemente supones que el precio no
-cambia. 2026 ha sido un año loco para los carburantes, con saltos que no tenían nada que ver
+Sinceramente: es una pista, no una bola de cristal. Probada en las 52 provincias, reentrenando
+cada 15 días durante 150 y midiendo solo días que no había visto, acierta **el 57 % de las veces
+en gasolina 95 y el 60 % en diésel**, frente al 54 % y el 50 % de suponer que el precio no
+cambia. Lo más útil es cuando avisa de un cambio: entonces acierta si sube o baja **el 88 % de
+las veces en gasolina y el 78 % en diésel**. La página de Tendencia enseña las dos cifras, la
+suya y la de «no cambia», para tu provincia. 2026 ha sido un año loco para los carburantes, con saltos que no tenían nada que ver
 con el petróleo, y ningún modelo ve venir guerras, cambios de impuestos ni puentes. Por eso
 la app enseña su propio marcador en vez de pedirte que te fíes.
 
 El modelo es sencillo a propósito y vive en `app/prediccion.py`:
 
 ```
-cambio en 7 días = a + b · (Brent en € la última semana) + c · (precio de la provincia la última semana)
+cambio en 7 días = a + b · (lo que subió el mercado la última semana) + c · (lo que bajó)
+                     + d · (lo que se movió el precio de la provincia la última semana)
 ```
 
-Una versión más elaborada, que buscaba el retraso exacto respecto al Brent, no acertaba más
-que decir «no cambia», así que se descartó.
+«El mercado» es el gasóleo o la gasolina al por mayor de Nueva York, en euros por litro, para
+el diésel y las gasolinas, y el Brent para los gases. Seguir el combustible ya refinado en vez
+del crudo, y separar subidas de bajadas, mejoró al modelo anterior (que solo miraba el Brent)
+en las dos cifras. Otras ideas que se probaron y no mejoraban: juntar Brent y producto, mirar
+dos semanas atrás, el margen de la gasolinera y buscar el retraso exacto. El día de la semana
+no sirve a 7 días: de un lunes al siguiente es el mismo día.
 
 ## Puesta en marcha
 
@@ -93,6 +111,7 @@ Cada visitante elige su ubicación y sus preferencias en **Ajustes**. El contene
 | `TZ` | zona horaria (la usa el resumen de la mañana) | `Europe/Madrid` |
 | `ADMIN_PASSWORD_HASH` | activa el panel de administración en `/admin` (ver abajo) | apagado |
 | `TITULAR`, `CONTACTO` | quién responde de la web y un correo o URL de contacto, para el aviso legal | incidencias de GitHub |
+| `ATAJO_ICLOUD`, `ATAJO_COMBUSTIBLE`, `ATAJO_MAPA` | un atajo de Siri ya hecho, compartido desde iCloud, para ofrecerlo en *Con Siri*, y con qué combustible y app de mapas viene. Apunta a tu web, así que cada instalación hace el suyo | ninguno, `g95`, `waze` |
 | `COPIAS_DIR`, `DIAS_DE_COPIAS` | copia diaria de la base de datos en esa carpeta, guardando esos días. La carpeta tiene que tener un fichero `.pumpcast-copias`, para no escribir nunca en un disco sin montar | apagada, `14` |
 | `TELEGRAM_TOKEN`, `TELEGRAM_CHAT` | avisos por Telegram | apagados |
 | `TELEGRAM_THREAD` | id del tema, si `TELEGRAM_CHAT` es un grupo con temas | — |
@@ -138,12 +157,12 @@ Está hecha para poder ponerla en internet:
 | Dato | Fuente |
 |---|---|
 | Precios, de hoy y de días pasados | [Geoportal de carburantes](https://geoportalgasolineras.es), Ministerio para la Transición Ecológica (API REST pública) |
-| Brent | [FRED](https://fred.stlouisfed.org/series/DCOILBRENTEU) (datos de la EIA de EE. UU., dominio público) |
+| Brent, gasóleo y gasolina al por mayor | FRED: [Brent](https://fred.stlouisfed.org/series/DCOILBRENTEU), [gasóleo](https://fred.stlouisfed.org/series/DDFUELNYH) y [gasolina](https://fred.stlouisfed.org/series/DGASNYH) de Nueva York (datos de la EIA de EE. UU., dominio público) |
 | Euro/dólar | [Banco Central Europeo](https://data.ecb.europa.eu) |
 | Buscador de direcciones y mapa | [OpenStreetMap](https://www.openstreetmap.org/copyright) (Nominatim) |
 
-FRED publica el Brent con cerca de una semana de retraso, así que la previsión aprende y prevé
-con el Brent que de verdad se conocía cada día. Todas las páginas citan al Ministerio como fuente
+FRED publica estas series con cerca de una semana de retraso, así que la previsión aprende y
+prevé con lo que de verdad se conocía cada día. Todas las páginas citan al Ministerio como fuente
 y enlazan a un aviso legal y de privacidad (`/legal`). El servidor del Ministerio solo habla un cifrado TLS antiguo
 (AES256-GCM-SHA384), que la app activa solo para ese servidor.
 
@@ -156,10 +175,11 @@ funcione sin conexión). Sin compilar nada: no hay npm ni bundler.
 app/
   main.py        rutas web y arranque          i18n.py      textos (idiomas/: las otras lenguas)
   seguridad.py   cabeceras, límites y panel    preferencias.py  la cookie de cada visitante
-  minetur.py     precios del Ministerio        mercado.py   Brent y euro/dólar
+  minetur.py     precios del Ministerio        mercado.py   Brent, gasóleo, gasolina y euro/dólar
   prediccion.py  la previsión a 7 días         avisos.py    avisos por Telegram
   repo.py        consultas SQL                 db.py        esquema
   tareas.py      tarea de fondo: lecturas, histórico y avisos
+  horario.py     si está abierta ahora         marcas.py    distintivos de marca del mapa
   templates/     pantallas y service worker    static/      CSS, JS, iconos y librerías
 tests/           pytest, se ejecutan dentro del docker build
 scripts/         iconos, capturas con WebKit, despliegue en Portainer, hook de git

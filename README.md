@@ -18,6 +18,8 @@ every 30 minutes.
 | Nearby | Fill up or wait? | Map | Settings |
 |---|---|---|---|
 | <img src="docs/inicio-en.png" width="200"> | <img src="docs/tendencia-en.png" width="200"> | <img src="docs/mapa-en.png" width="200"> | <img src="docs/ajustes-en.png" width="200"> |
+| **My fill-ups** | **Trends, dark mode** | | |
+| <img src="docs/repostajes-en.png" width="200"> | <img src="docs/tendencia-en-oscuro.png" width="200"> | | |
 
 ## What it does
 
@@ -29,13 +31,22 @@ every 30 minutes.
 - **Favourites**: star your usual stations and they show up first with today's price. Stored in your
   browser.
 - **Fill up today or wait?** A 7-day traffic light (🟢 fill up now · 🟡 no rush · 🔴 wait if
-  you can), learnt from a year of prices in *your* province: pumps trail Brent crude, and
-  prices have momentum. It is **tested on the last 60 days without learning from them** and logs
+  you can), learnt from a year of prices in *your* province: pumps trail wholesale diesel and
+  gasoline, rise faster than they fall, and prices have momentum. It is **tested on the last 60 days without learning from them** and logs
   every forecast, so the screen shows how often it actually gets it right.
 - **Trends**: local average and cheapest price per day with Brent on top, change over
-  7 and 30 days, and which day of the week tends to be cheapest.
-- **Map** of the stations around you, from green (cheap) to red (expensive), on
-  [OpenFreeMap](https://openfreemap.org), with *Directions* from each one.
+  7 and 30 days, which day of the week tends to be cheapest and **which brands are cheaper or dearer**
+  near you.
+- **Map** of the stations around you on [OpenFreeMap](https://openfreemap.org): each with its brand
+  badge (initials and colour, no logos) and its price from green (cheap) to red (expensive). Filter by
+  *open now*, *cheaper than average* and brand, with *Directions* from each one.
+- **My fill-ups**: log what you put in and see your monthly and yearly spend and your real fuel use,
+  which you can copy into Settings. Stored only in your browser.
+- **With Siri**: "Hey Siri, cheap fuel" opens your maps app heading to the cheapest open station. The
+  *With Siri* page explains the shortcut (or offers a ready-made one) and, on Android, puts the search
+  one tap away from the icon.
+- **Move to another phone**: a link or QR code with your settings, favourites and fill-ups, no
+  account; the data rides after the `#`, which never reaches the server.
 - **Station page**: whether it's open, its hours, 90 days of prices against the local average and
   a share button.
 - **Telegram alerts** for the owner (optional): a morning summary and a heads-up when a station
@@ -50,9 +61,11 @@ every 30 minutes.
 
 ### How good is the forecast?
 
-Honestly: a hint, not a crystal ball. With a year of real prices from one province, over 60
-days it had never seen, it was right about **6 times out of 10** for both petrol and diesel,
-against 4–5 out of 10 for simply assuming prices won't change. 2026 was a wild year for fuel,
+Honestly: a hint, not a crystal ball. Tested across all 52 provinces, retraining every 15 days
+over 150 and scoring only days it had never seen, it is right **57% of the time for 95 petrol and
+60% for diesel**, against 54% and 50% for assuming prices won't change. It is most useful when it
+calls a change: then it gets the direction right **88% of the time for petrol and 78% for
+diesel**. The Trends page shows both numbers, its own and "no change", for your province. 2026 was a wild year for fuel,
 with jumps that had nothing to do with oil, and no model sees wars, tax changes or bank
 holidays coming. That's why the app shows its own track record instead of asking you to
 trust it.
@@ -60,11 +73,15 @@ trust it.
 The model is deliberately simple and lives in `app/prediccion.py`:
 
 ```
-change in 7 days = a + b · (Brent in € over the last week) + c · (province price over the last week)
+change in 7 days = a + b · (how much the market rose last week) + c · (how much it fell)
+                   + d · (how much the province price moved last week)
 ```
 
-A fancier version that looked for the exact lag behind Brent did no better than "no change",
-so it was dropped.
+"The market" is New York wholesale diesel or gasoline, in euros per litre, for diesel and
+petrol, and Brent for gas fuels. Following refined fuel instead of crude, and splitting rises
+from falls, beat the previous Brent-only model on both numbers. Ideas that were tried and didn't
+help: Brent and product together, looking two weeks back, the station margin, and searching for
+the exact lag. Day of the week is no use over 7 days: Monday to Monday is the same day.
 
 ## Quick start
 
@@ -92,6 +109,7 @@ Each visitor sets their location and preferences in **Settings**. The container 
 | `TZ` | time zone (the morning summary uses it) | `Europe/Madrid` |
 | `ADMIN_PASSWORD_HASH` | turns on the admin panel at `/admin` (see below) | off |
 | `TITULAR`, `CONTACTO` | who runs the site and a contact email or URL, for the legal notice | GitHub issues |
+| `ATAJO_ICLOUD`, `ATAJO_COMBUSTIBLE`, `ATAJO_MAPA` | a ready-made Siri shortcut shared from iCloud, offered on the *With Siri* page, and which fuel and maps app it comes set up for. It points at your site, so each install makes its own | none, `g95`, `waze` |
 | `COPIAS_DIR`, `DIAS_DE_COPIAS` | daily copy of the database to that folder, kept that many days. The folder must contain a `.pumpcast-copias` file, so nothing is written to an unmounted disk | off, `14` |
 | `TELEGRAM_TOKEN`, `TELEGRAM_CHAT` | Telegram alerts | off |
 | `TELEGRAM_THREAD` | topic id, if `TELEGRAM_CHAT` is a group with topics | — |
@@ -137,12 +155,12 @@ It's built to be put on the internet:
 | Data | Source |
 |---|---|
 | Prices, today and past days | [Geoportal de carburantes](https://geoportalgasolineras.es), Spanish Ministry for the Ecological Transition (public REST API) |
-| Brent crude | [FRED](https://fred.stlouisfed.org/series/DCOILBRENTEU) (U.S. EIA data, public domain) |
+| Brent crude, wholesale diesel and gasoline | FRED: [Brent](https://fred.stlouisfed.org/series/DCOILBRENTEU), New York [diesel](https://fred.stlouisfed.org/series/DDFUELNYH) and [gasoline](https://fred.stlouisfed.org/series/DGASNYH) (U.S. EIA data, public domain) |
 | EUR/USD | [European Central Bank](https://data.ecb.europa.eu) |
 | Address search, map tiles | [OpenStreetMap](https://www.openstreetmap.org/copyright) (Nominatim) |
 
-FRED publishes Brent about a week late, so the forecast learns and predicts with the Brent
-that was actually published on each day. Every page credits the Ministry as its source and
+FRED publishes these series about a week late, so the forecast learns and predicts with what
+was actually published on each day. Every page credits the Ministry as its source and
 links to a legal notice and privacy page (`/legal`). The Ministry's server only speaks an old TLS cipher
 (AES256-GCM-SHA384), which the app enables for that server alone.
 
@@ -155,10 +173,11 @@ offline). Nothing to compile: no npm, no bundler.
 app/
   main.py        web routes and startup        i18n.py      texts (idiomas/: other languages)
   seguridad.py   headers, rate limit, admin    preferencias.py  each visitor's cookie
-  minetur.py     Ministry prices               mercado.py   Brent and EUR/USD
+  minetur.py     Ministry prices               mercado.py   Brent, diesel, gasoline, EUR/USD
   prediccion.py  the 7-day forecast            avisos.py    Telegram alerts
   repo.py        SQL queries                   db.py        schema
   tareas.py      background job: reads, history and alerts
+  horario.py     open right now?               marcas.py    brand badges for the map
   templates/     pages and service worker      static/      CSS, JS, icons, bundled libraries
 tests/           pytest, run inside docker build
 scripts/         icons, screenshots with WebKit, Portainer deploy, git hook

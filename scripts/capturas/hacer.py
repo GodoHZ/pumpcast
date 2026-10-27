@@ -4,7 +4,13 @@ from playwright.sync_api import sync_playwright
 BASE = "http://127.0.0.1:8000"
 # El visitante de las capturas ya ha elegido dónde buscar: la Puerta del Sol, 5 km.
 UBICACION = "lat=40.4168&lon=-3.7038&radio_km=5&combustible=g95&litros=40&idioma=auto"
-PAGINAS = [("inicio", "/"), ("tendencia", "/tendencia"), ("mapa", "/mapa"), ("ajustes", "/ajustes")]
+PAGINAS = [("inicio", "/"), ("tendencia", "/tendencia"), ("mapa", "/mapa"), ("ajustes", "/ajustes"),
+           ("repostajes", "/repostajes")]
+# Unos repostajes de ejemplo en el almacenamiento del navegador (de ahí los lee la página).
+REPOSTAJES = """localStorage.setItem("pumpcast_repostajes", JSON.stringify([
+  {id: "a", fecha: "2026-09-20", litros: 40, precio: 1.689, km: 52300, lleno: true, estacion: "Ballenoil · Madrid"},
+  {id: "b", fecha: "2026-10-05", litros: 38.5, precio: 1.702, km: 52900, lleno: true, estacion: "Repsol · Madrid"},
+  {id: "c", fecha: "2026-10-21", litros: 41.2, precio: 1.679, km: 53550, lleno: true, estacion: "Ballenoil · Madrid"}]));"""
 errores = []
 
 with sync_playwright() as p:
@@ -15,6 +21,7 @@ with sync_playwright() as p:
                                         is_mobile=True, has_touch=True, locale=locale, color_scheme=tema,
                                         extra_http_headers={"Accept-Language": locale})
             ctx.add_cookies([{"name": "pumpcast", "value": UBICACION, "url": BASE}])
+            ctx.add_init_script(REPOSTAJES)
             pagina = ctx.new_page()
             pagina.on("console", lambda m: errores.append(m.text) if m.type == "error" else None)
             pagina.on("pageerror", lambda e: errores.append(str(e)))
