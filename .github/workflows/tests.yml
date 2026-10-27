@@ -11,6 +11,6 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Construir la imagen y pasar los tests
         run: docker build --target test -t pumpcast-test .
