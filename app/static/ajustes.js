@@ -121,6 +121,15 @@
     });
   }
 
+  // Desde Mis repostajes llega el consumo real (?consumo=6.4): se pone y se guarda.
+  const consumoReal = new URLSearchParams(location.search).get("consumo");
+  if (consumoReal && automatico && !isNaN(numero(consumoReal))) {
+    $("consumo").value = numero(consumoReal).toLocaleString(lang).replace(/\s/g, "");
+    $("consumo").scrollIntoView({ block: "center" });
+    guardar();
+    history.replaceState(null, "", location.pathname);
+  }
+
   // Al activar «usar dónde estoy» sin ubicación elegida, la primera la da el GPS.
   $("gps")?.addEventListener("change", (e) => {
     if (e.target.checked && isNaN(numero($("lat").value))) $("ubicacion").click();

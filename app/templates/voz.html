@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_iconos.html" import icono %}
+{% block titulo %}{{ t("voz.titulo") }} · Pumpcast{% endblock %}
+{% block h1 %}{{ t("voz.titulo") }}{% endblock %}
+{% block contenido %}
+<section class="tarjeta">
+  <p>{{ t("voz.intro")|safe }}</p>
+  <p class="nota">{{ t("voz.ajustes", radio=aj.radio_km, comb=nombre_comb) }}</p>
+</section>
+
+<section class="tarjeta">
+  <h2>{{ t("voz.iphone") }}</h2>
+  {% if atajo %}
+  <a class="boton ancho" href="{{ atajo }}" rel="noopener">{{ icono("anadir") }} {{ t("voz.instalar") }}</a>
+  <p class="nota">{{ t("voz.atajo_viene", comb=atajo_comb, app=atajo_app) }}
+    {% if atajo_a %}{{ t("voz.atajo_cambiar", de=atajo_de|e, a=atajo_a|e)|safe }}{% endif %}</p>
+  <p>{{ t("voz.o_crealo") }}</p>
+  {% endif %}
+  <ol class="pasos">
+    <li>{{ t("voz.paso1")|safe }}</li>
+    <li>{{ t("voz.paso2")|safe }}</li>
+    <li>{{ t("voz.b2")|safe }}
+      <code class="copiable" data-copiar>{{ url_enlace }}</code>
+      <span class="nota">{{ t("voz.b2_nota")|safe }}</span></li>
+    <li>{{ t("voz.b3")|safe }}</li>
+    <li>{{ t("voz.paso3")|safe }}</li>
+  </ol>
+  <p class="nota">{{ t("voz.con_app" if app_mapa != "preguntar" else "voz.sin_app", app=t("aj.mapa_" ~ app_mapa))|safe }}</p>
+  <p class="nota">{{ t("voz.permiso")|safe }}</p>
+  <p class="nota">{{ t("voz.otros")|safe }}</p>
+  <details class="avanzado">
+    <summary>{{ t("voz.simple_titulo") }}</summary>
+    <p class="nota">{{ t("voz.simple")|safe }}</p>
+    <code class="copiable" data-copiar>{{ url_ir }}</code>
+  </details>
+  <details class="avanzado">
+    <summary>{{ t("voz.avanzado_titulo") }}</summary>
+    <p class="nota">{{ t("voz.avanzado")|safe }}</p>
+    <ol class="pasos">
+      <li>{{ t("voz.a1")|safe }}</li>
+      <li>{{ t("voz.a2")|safe }} <code class="copiable" data-copiar>{{ url_api }}</code></li>
+      <li>{{ t("voz.a3")|safe }}</li>
+      <li>{{ t("voz.a4")|safe }}</li>
+    </ol>
+  </details>
+</section>
+
+<section class="tarjeta">
+  <h2>{{ t("voz.android") }}</h2>
+  <p>{{ t("voz.android_texto")|safe }}</p>
+  <a class="boton secundario ancho" href="{{ url_ir }}">{{ t("voz.probar") }}</a>
+</section>
+{% endblock %}

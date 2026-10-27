@@ -77,7 +77,7 @@ def actualizar_mercado() -> None:
     try:
         mercado.guardar(*mercado.descargar())
         _ultimo_mercado = time.monotonic()
-        log.info("Brent y euro/dólar actualizados")
+        log.info("Brent, gasóleo, gasolina y euro/dólar actualizados")
     except Exception as e:  # noqa: BLE001
         log.warning("No se pudo leer el Brent o el euro/dólar: %s", e)
 

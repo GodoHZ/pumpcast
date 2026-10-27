@@ -24,8 +24,17 @@ TEXTOS = {
     "pie.sin_leer": "Preus del Ministeri · encara sense llegir",
 
     "mapa.titulo": "Mapa", "mapa.aria": "Mapa de benzineres",
-    "mapa.leyenda": '<span class="barata">●</span> més barata · <span class="cara">●</span> més cara, '
-                    "comparant les del teu radi. Toca'n una per veure'n el preu.",
+    "filtro.aria": "Filtrar el mapa",
+    "filtro.abiertas": "Obertes ara",
+    "filtro.baratas": "Més barates", "filtro.baratas_ayuda": "Més barates que la mitjana",
+    "filtro.marcas": "Marques",
+    "filtro.marcas_titulo": "Quines marques vols veure?",
+    "filtro.todas": "Totes",
+    "filtro.ninguna": "Cap",
+    "filtro.listo": "Fet",
+    "js.filtro_cuenta": "{n} de {total} benzineres.",
+    "mapa.leyenda": '<span class="barata" aria-hidden="true">●</span> més barata · <span class="cara" aria-hidden="true">●</span> més cara, '
+                    "comparant les del teu radi. Toca'n una per veure'n l'horari i com arribar-hi.",
 
     "estacion.de_casa": "a {distancia} de la teva ubicació",
     "estacion.ultimos": "{comb}, últims 90 dies",
@@ -47,13 +56,139 @@ TEXTOS = {
                           "dies de retard. La previsió ja ho té en compte.",
     "js.brent_pendiente": "encara sense publicar",
     "tend.dia_faltan": "Calen almenys dues setmanes de dades per saber-ho. En portes {dias} dies.",
+    "marcas.titulo": "Marques a la teva zona",
+    "marcas.nota": "Quant més barata o més cara que la mitjana surt cada marca, de mitjana els últims {dias} "
+                   "dies i a menys de {radio} km. Només marques amb almenys dues benzineres.",
+    "marcas.gasolineras": "{n} benzineres",
+    "rep.titulo": "Els meus repostatges",
+    "rep.aqui": "Apuntar repostatge",
+    "rep.este_mes": "Aquest mes",
+    "rep.doce_meses": "Últims 12 mesos",
+    "rep.consumo": "Consum ({unidad}/100 km)",
+    "rep.consumo_falta": "Per saber el teu consum real, apunta els km del comptaquilòmetres en dos "
+                         "repostatges amb el dipòsit ple.",
+    "rep.usar_consumo": "Fer servir el meu consum real a Ajustos",
+    "rep.consumo_valor": "{consumo} {unidad}/100 km",
+    "rep.apuntar": "Apuntar un repostatge",
+    "rep.fecha": "Data",
+    "rep.litros": "Quantitat ({unidad})",
+    "rep.precio": "Preu (€/{unidad})",
+    "rep.km": "Comptaquilòmetres (km, opcional)",
+    "rep.lleno": "He omplert el dipòsit",
+    "rep.guardar": "Desar el repostatge",
+    "rep.privado": "Només es desa en aquest navegador: Pumpcast no ho veu. Si canvies de mòbil o esborres les "
+                   "dades del navegador, es perd; exporta'n una còpia de tant en tant.",
+    "rep.historial": "Historial",
+    "rep.vacio": "Encara no has apuntat cap repostatge.",
+    "rep.exportar": "Exportar còpia",
+    "rep.importar": "Importar còpia",
+    "rep.error": "Revisa la quantitat i el preu (i els km, si els poses).",
+    "rep.borrar": "Esborrar",
+    "rep.borrar_seguro": "Vols esborrar aquest repostatge?",
+    "rep.importados": "S'han importat {n} repostatges.",
+    "rep.importar_mal": "Aquest fitxer no és una còpia de Pumpcast.",
+    "rep.lleno_corto": "ple",
+    "rep.km_corto": "{km} km",
+    "voz.titulo": "Amb Siri o l'assistent",
+    "voz.intro": "Demana la benzinera sense tocar el mòbil: dius <b>«Oye Siri, gasolinera barata»</b> i "
+                 "s'obre l'app de mapes camí de la més barata del voltant que estigui oberta. Pensat per al "
+                 "cotxe.",
+    "voz.ajustes": "Busca dins el radi dels teus Ajustos ({radio} km) i amb el teu carburant ({comb}).",
+    "voz.iphone": "iPhone i CarPlay: amb Siri",
+    "voz.instalar": "Instal·lar la drecera",
+    "voz.atajo_viene": "Ve preparada per a {comb} i {app}.",
+    "voz.atajo_cambiar": "Per al teu cas, després d'instal·lar-la edita l'adreça de la drecera i canvia "
+                         "<code>{de}</code> per <code>{a}</code>.",
+    "voz.o_crealo": "O crea-la tu en un parell de minuts:",
+    "voz.paso1": "Obre l'app <b>Dreceres</b> (Atajos) i toca <b>+</b> per crear-ne una de nova.",
+    "voz.paso2": "Afegeix <b>Obtenir la ubicació actual</b>.",
+    "voz.b2": "Afegeix <b>Obtenir el contingut de l'URL</b> i enganxa-hi aquesta adreça (toca-la per "
+              "copiar-la):",
+    "voz.b2_nota": "Canvia LAT per la teva posició: esborra-ho, toca «Ubicació actual» damunt del teclat, "
+                   "toca aquesta variable i tria <b>Latitud</b>. Igual amb LON i <b>Longitud</b>.",
+    "voz.b3": "Afegeix <b>Obrir URL</b>: obrirà el que ha retornat el pas anterior, que és la ruta a la teva "
+              "app de mapes.",
+    "voz.permiso": "Apple Maps mostra la ruta i cal tocar «Anar-hi»; Google Maps i Waze arrenquen sols. Amb "
+                   "el mòbil bloquejat, l'iOS pot demanar-te que el desbloquegis.",
+    "voz.simple_titulo": "Versió d'una sola acció",
+    "voz.simple": "Més fàcil de crear: només <b>Obrir URL</b> amb aquesta adreça. Però s'obre Safari, que et "
+                  "demana la ubicació (Configuració › Apps › Safari › Ubicació › Permetre, perquè no ho "
+                  "pregunti més) i, abans d'obrir el mapa, l'iOS pregunta «Obrir aquesta pàgina a…?»: cal "
+                  "tocar «Obrir».",
+    "voz.paso3": "Posa-li de nom <b>Gasolinera barata</b> (o el que vulguis dir) i desa-la. Ja està: «Oye "
+                 "Siri, gasolinera barata».",
+    "voz.otros": "Per a una altra app de mapes, afegeix al final <code>&amp;mapa=google</code>, "
+                 "<code>&amp;mapa=waze</code> o <code>&amp;mapa=apple</code>. Per a la més propera en lloc de "
+                 "la més barata, <code>&amp;orden=distancia</code>; per a la que més compensa comptant el "
+                 "viatge, <code>&amp;orden=compensa</code>.",
+    "voz.avanzado_titulo": "Que Siri et digui el preu en veu alta",
+    "voz.avanzado": "Amb unes quantes accions més, Siri contesta («La més barata a menys de 10 km és "
+                    "Ballenoil, a 1,4 km: 1,729 euros el litre») i després obre el mapa. Així tampoc cal el "
+                    "permís de Safari:",
+    "voz.a1": "Afegeix <b>Obtenir la ubicació actual</b>.",
+    "voz.a2": "Afegeix <b>Obtenir el contingut de l'URL</b> amb aquesta adreça, canviant LAT i LON per les "
+              "variables <b>Latitud</b> i <b>Longitud</b> de la ubicació:",
+    "voz.a3": "Afegeix <b>Obtenir el valor del diccionari</b> (busca «diccionari») amb la clau <b>frase</b> "
+              "i, després, l'acció que llegeix un text en veu alta (busca «text»).",
+    "voz.a4": "Torna a afegir <b>Obtenir el valor del diccionari</b>, amb la clau <b>apple</b> (o "
+              "<b>google</b>, <b>waze</b>) i, com a diccionari, el <b>Contingut de l'URL</b>. Acaba amb "
+              "<b>Obrir URL</b>.",
+    "voz.android": "Android: a un toc",
+    "voz.android_texto": "Google no deixa que una web afegeixi ordres de veu al seu assistent. El més còmode: "
+                         "instal·la Pumpcast a la pantalla d'inici, mantén premuda la seva icona i tria "
+                         "<b>Més barata a prop</b>; pots arrossegar aquest accés a la pantalla per tenir-lo a "
+                         "un toc. Obre Google Maps ja navegant cap allà.",
+    "voz.probar": "Provar-ho ara",
+    "voz.atajo": "Més barata a prop",
+    "voz.buscando": "Buscant on ets…",
+    "voz.abrir_app": "Obrir Pumpcast",
+    "pasar.titulo": "Passar a un altre mòbil",
+    "pasar.intro": "Porta els teus ajustos, les teves preferides i els teus repostatges a un altre mòbil o "
+                   "navegador, sense comptes: escaneja el codi amb la càmera de l'altre mòbil o envia't "
+                   "l'enllaç.",
+    "pasar.lleva": "Porta {que}.",
+    "pasar.ajustes": "els teus ajustos i la teva ubicació",
+    "pasar.favoritas": "{n} preferides",
+    "pasar.repostajes": "{n} repostatges",
+    "pasar.y": "i ",
+    "pasar.nada": "Encara no hi ha res per passar: tria la teva ubicació a Ajustos.",
+    "pasar.qr_aria": "Codi QR amb l'enllaç per passar les teves dades",
+    "pasar.grande": "Hi ha massa dades per a un codi QR: fes servir l'enllaç.",
+    "pasar.compartir": "Compartir l'enllaç",
+    "pasar.copiar": "Copiar l'enllaç",
+    "pasar.privado": "Tot va dins l'enllaç, darrere del «#»: aquesta part no arriba mai al servidor. Qui "
+                     "tingui l'enllaç veu la teva ubicació, així que envia-te'l només a tu.",
+    "pasar.importar_titulo": "Portar des d'un altre mòbil",
+    "pasar.importar_intro": "Aquest enllaç porta",
+    "pasar.importar_aviso": "Substitueix els ajustos i les preferides d'aquest mòbil; els repostatges se "
+                            "sumen als que hi hagi.",
+    "pasar.importar_boton": "Importar en aquest mòbil",
+    "pasar.importado": "Fet: ja ho tens tot en aquest mòbil.",
+    "pasar.importar_mal": "Aquest enllaç està incomplet o no és de Pumpcast.",
+    "pasar.ir_inicio": "Anar a Pumpcast",
+    "voz.precio": "La més barata a menys de {radio} km és {nombre}, a {municipio}, a {distancia}: {precio} "
+                  "euros el {unidad}.",
+    "voz.distancia": "La més propera és {nombre}, a {municipio}, a {distancia}: {precio} euros el {unidad}.",
+    "voz.compensa": "La que més et compensa a menys de {radio} km és {nombre}, a {municipio}, a {distancia}: "
+                    "{precio} euros el {unidad}.",
+    "voz.nada": "No trobo benzineres amb preu a menys de {radio} km.",
+    "voz.fuera": "Aquesta ubicació és fora d'Espanya, i Pumpcast només té les benzineres d'Espanya.",
+    "voz.unidad_l": "litre",
+    "voz.unidad_kg": "quilo",
+    "voz.hor_24h": "És oberta les 24 hores.",
+    "voz.hor_cierra": "Tanca a les {hora}.",
+    "voz.hor_abre": "Ara és tancada; obre a les {hora}.",
+    "voz.hor_cerrada": "Ara és tancada.",
 
     "prev.titulo": "Omplo avui o m'espero?",
-    "prev.brent": "L'últim Brent publicat, del {fecha}, és a {precio} el barril{cambio}.",
-    "prev.brent_cambio": " ({cambio} % en una setmana)",
     "prev.provincia": "Calculada amb els preus de tota la província de {provincia}.",
-    "prev.como": "La previsió mira quant s'han mogut el Brent i el preu de la teva província l'última "
-                 "setmana: el sortidor va darrere del petroli i els preus tenen inèrcia.",
+    "prev.nombre_gasoil": "Gasoil a l'engròs", "prev.nombre_gasolina": "Gasolina a l'engròs",
+    "prev.semana_hasta": "setmana fins al {fecha}",
+    "prev.acierta": "Encerta el {pct} % de les vegades; dir sempre «Tant és», el {base} %.",
+    "prev.detalles": "Com es calcula?",
+    "prev.como": "La previsió mira quant ha pujat o baixat el carburant a l'engròs (el Brent, per als gasos) "
+                 "l'última setmana publicada i quant s'ha mogut el preu de la teva província: el sortidor va "
+                 "darrere del mercat, puja abans que no baixa i els preus tenen inèrcia.",
     "prev.prueba": "Provada amb els últims 60 dies sense fer-los servir per aprendre: hauria encertat "
                    "<b>{aciertos} de {total}</b> vegades ({pct} %), amb un error mitjà de {error} cèntims.",
     "prev.seguimiento": "Des que s'apunten: <b>{aciertos} de {total}</b> encerts.",
@@ -186,6 +321,17 @@ TEXTOS = {
     "admin.brent_viejo": "El Brent no s'actualitza des del {fecha}: la previsió pot fallar. Mira el registre del contenidor.",
     "aj.apariencia": "Idioma i aspecte",
     "aj.tema": "Tema",
+    "aj.mapa": "App de mapes per anar-hi",
+    "aj.mapa_preguntar": "Preguntar cada vegada",
+    "aj.mapa_google": "Google Maps",
+    "aj.mapa_apple": "Apple Maps",
+    "aj.mapa_waze": "Waze",
+    "voz.elegir_una_vez": "Per no haver de triar, posa la teva app a <a href=\"/ajustes\">Ajustos</a> i torna a "
+                          "copiar l'adreça de la drecera a <a href=\"/voz\">Amb Siri</a>.",
+    "voz.con_app": "L'adreça ja obre <b>{app}</b>, l'app de mapes dels teus Ajustos. Si la canvies, torna-la "
+                   "a copiar.",
+    "voz.sin_app": "Així et preguntarà cada vegada amb quina app anar-hi. Perquè hi vagi directa, tria la "
+                   "teva app de mapes a <a href=\"/ajustes\">Ajustos</a> i torna aquí a copiar l'adreça.",
     "tema.auto": "El del mòbil",
     "tema.claro": "Clar",
     "tema.oscuro": "Fosc",

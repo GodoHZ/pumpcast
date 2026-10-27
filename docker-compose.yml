@@ -9,8 +9,8 @@ services:
     build:
       context: .
       args:
-        VERSION: "2.9.1"
-    image: pumpcast:2.9.1
+        VERSION: "2.13.1"
+    image: pumpcast:2.13.1
     container_name: pumpcast
     restart: unless-stopped
     user: "1000:1000"            # owner of ./data (check with `id -u`) / dueño de ./data
@@ -22,6 +22,9 @@ services:
       # - ADMIN_PASSWORD_HASH=scrypt:...             # admin panel (/admin): see README / ver README
       # - TITULAR=Your name                          # legal notice (/legal) / aviso legal
       # - CONTACTO=you@example.com
+      # - ATAJO_ICLOUD=https://www.icloud.com/shortcuts/...   # ready-made Siri shortcut for /voz
+      # - ATAJO_COMBUSTIBLE=g95                               # ...and what it comes set up with
+      # - ATAJO_MAPA=waze
       # - APP_URL=https://pumpcast.example.com       # link added to Telegram alerts
       # - TELEGRAM_TOKEN=123456:ABC...               # bot from @BotFather
       # - TELEGRAM_CHAT=123456789                    # your chat id

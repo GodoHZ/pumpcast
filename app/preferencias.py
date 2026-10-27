@@ -50,6 +50,8 @@ def validar(valores: dict, campos: tuple[str, ...]) -> tuple[dict, str | None]:
         v["orden"] = config.PREFERENCIAS_POR_DEFECTO["orden"]
     if "tema" in v and v["tema"] not in config.TEMAS:
         v["tema"] = config.PREFERENCIAS_POR_DEFECTO["tema"]
+    if "mapa" in v and v["mapa"] not in config.APPS_MAPAS:
+        v["mapa"] = config.PREFERENCIAS_POR_DEFECTO["mapa"]
     if "gps" in v:
         v["gps"] = "1" if v["gps"] in ("1", "on") else "0"            # una casilla sin marcar no llega
     idiomas = (*i18n.IDIOMAS, "auto") if "hora_aviso" not in v else i18n.IDIOMAS

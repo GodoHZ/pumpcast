@@ -51,8 +51,16 @@
     </label>
     <label>{{ t("aj.litros") }}<input name="litros" inputmode="decimal" value="{{ aj.litros }}" required></label>
     {% if not admin %}
-    <label>{{ t("aj.consumo") }}<input name="consumo" inputmode="decimal" value="{{ aj.consumo }}" required></label>
+    <label>{{ t("aj.consumo") }}<input name="consumo" id="consumo" inputmode="decimal" value="{{ aj.consumo }}" required></label>
     <input type="hidden" name="orden" value="{{ aj.orden }}">
+    <label>{{ t("aj.mapa") }}
+      <select name="mapa">
+        {% for clave in ("preguntar", "google", "apple", "waze") %}
+        <option value="{{ clave }}" {% if aj.mapa == clave %}selected{% endif %}>{{ t("aj.mapa_" ~ clave) }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <a class="boton secundario ancho" href="/repostajes">{{ icono("surtidor") }} {{ t("rep.titulo") }}</a>
     {% endif %}
   </section>
 
@@ -101,6 +109,8 @@
   <form method="post" action="/admin/salir"><button class="boton secundario ancho">{{ t("admin.salir") }}</button></form>
 </div>
 {% elif not sin_ubicacion %}
+<a class="boton secundario ancho" href="/voz">{{ icono("ubicacion") }} {{ t("voz.titulo") }}</a>
+<a class="boton secundario ancho" href="/pasar">{{ icono("compartir") }} {{ t("pasar.titulo") }}</a>
 <button class="boton secundario ancho" type="button" id="instalar-abrir" hidden>{{ icono("anadir") }} {{ t("aj.instalar") }}</button>
 <p class="nota centrada" id="instalada" hidden>{{ t("aj.instalada") }}</p>
 <form method="post" action="/ajustes/olvidar"><button class="boton secundario ancho">{{ t("aj.olvidar") }}</button></form>

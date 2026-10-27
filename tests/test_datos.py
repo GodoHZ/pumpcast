@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from app import config, db, minetur, repo
-from app.formato import centimos, euros, km
+from app.formato import centimos, euros, km, municipio, porcentaje, titulo
 
 from conftest import DATOS, SOL
 
@@ -80,6 +80,12 @@ def test_formato():
     assert euros(1234.5, 2) == "1.234,50"
     assert centimos(0.032) == "+3,2"
     assert centimos(-0.01) == "−1,0"
+    assert porcentaje(0.027) == "+2,7 %" and porcentaje(-0.086, "en") == "−8.6%"
+    assert porcentaje(0.1, "eu") == "% +10,0"
+    assert titulo("CALLE DE LA PAZ, 12") == "Calle de la Paz, 12"
+    assert municipio("Hospitalet de Llobregat (L')") == "L'Hospitalet de Llobregat"
+    assert municipio("Palmas de Gran Canaria (Las)") == "Las Palmas de Gran Canaria" and municipio("Madrid") == "Madrid"
+    assert titulo("BP") == "BP" and titulo("GM OIL") == "GM Oil" and titulo("A DE B") == "A de B"
     assert centimos(0.0001) == "0,0"
     assert km(0.35) == "350 m"
     assert km(3.24) == "3,2 km"
@@ -189,3 +195,12 @@ def test_la_cache_da_copias_y_se_tira_con_datos_nuevos(lectura):
     repo.guardar_lectura(momento + timedelta(minutes=30), estaciones[:5])
     assert not cache._datos                                      # precios nuevos: se recalcula todo
     assert repo.cercanas(aj, "g95") and cache._datos           # y se vuelve a guardar a la primera
+
+
+def test_distintivos_de_marca():
+    from app import marcas
+    assert marcas.insignia("REPSOL") == {"marca": "REPSOL", "texto": "R", "fondo": "#ef7d00", "tinta": "#ffffff"}
+    assert marcas.insignia("shell")["tinta"] == "#111827"                 # amarillo: letra oscura
+    otra = marcas.insignia("GASOLINERA  PEPE")
+    assert otra == marcas.insignia("Gasolinera Pepe") and otra["texto"] == "G" and otra["fondo"].startswith("#")
+    assert marcas.insignia("(SIN RÓTULO)")["texto"] == "·" and marcas.insignia(None)["marca"] == "—"

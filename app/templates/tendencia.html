@@ -20,25 +20,32 @@
   {% if prevision.lista %}
   <p class="prevision-grande prevision-{{ prevision.semaforo }}"><span class="semaforo" aria-hidden="true"></span> <b>{{ prevision.titulo }}</b></p>
   <p>{{ prevision.frase }}</p>
-  {% set cambio_brent = "" %}
-  {% if prevision.brent_semana is not none %}
-  {% set signo = "+" if prevision.brent_semana >= 0 else "−" %}
-  {% set cambio_brent = t("prev.brent_cambio", cambio=signo ~ ((prevision.brent_semana|abs) * 100)|numero(1)) %}
+  {% set partes = [] %}
+  {% if prevision.mercado != "brent" and prevision.mercado_semana is not none %}
+  {% set _ = partes.append(t("prev.nombre_" ~ prevision.mercado) ~ " " ~ prevision.mercado_semana|porcentaje) %}
   {% endif %}
-  <p class="nota">{{ t("prev.provincia", provincia=prevision.nombre_provincia) }}
-    {{ t("prev.brent", precio=prevision.brent|moneda, cambio=cambio_brent, fecha=prevision.brent_fecha|dia) }}
-    {{ t("prev.como") }}</p>
+  {% if prevision.brent_semana is not none %}{% set _ = partes.append("Brent " ~ prevision.brent_semana|porcentaje) %}{% endif %}
+  {% if prevision.brent_fecha %}{% set _ = partes.append(t("prev.semana_hasta", fecha=prevision.brent_fecha|dia)) %}{% endif %}
+  {% if partes %}<p class="nota">{{ partes|join(" · ") }}</p>{% endif %}
   {% if prevision.prueba %}
-  <p class="nota">{{ t("prev.prueba", aciertos=prevision.prueba.aciertos, total=prevision.prueba.total,
-      pct=(100 * prevision.prueba.aciertos / prevision.prueba.total)|round|int,
-      error=(prevision.prueba.error_medio * 100)|numero(1))|safe }}</p>
+  <p class="nota">{{ t("prev.acierta", pct=(100 * prevision.prueba.aciertos / prevision.prueba.total)|round|int,
+      base=(100 * prevision.prueba.siempre_igual / prevision.prueba.total)|round|int) }}</p>
   {% endif %}
-  {% if prevision.seguimiento.total %}
-  <p class="nota">{{ t("prev.seguimiento", aciertos=prevision.seguimiento.aciertos, total=prevision.seguimiento.total)|safe }}</p>
-  {% elif prevision.seguimiento.apuntadas %}
-  <p class="nota">{{ t("prev.apuntando") }}</p>
-  {% endif %}
-  <p class="nota">{{ t("prev.aviso") }}</p>
+  <details class="avanzado">
+    <summary>{{ t("prev.detalles") }}</summary>
+    <p class="nota">{{ t("prev.provincia", provincia=prevision.nombre_provincia) }} {{ t("prev.como") }}</p>
+    {% if prevision.prueba %}
+    <p class="nota">{{ t("prev.prueba", aciertos=prevision.prueba.aciertos, total=prevision.prueba.total,
+        pct=(100 * prevision.prueba.aciertos / prevision.prueba.total)|round|int,
+        error=(prevision.prueba.error_medio * 100)|numero(1))|safe }}</p>
+    {% endif %}
+    {% if prevision.seguimiento.total %}
+    <p class="nota">{{ t("prev.seguimiento", aciertos=prevision.seguimiento.aciertos, total=prevision.seguimiento.total)|safe }}</p>
+    {% elif prevision.seguimiento.apuntadas %}
+    <p class="nota">{{ t("prev.apuntando") }}</p>
+    {% endif %}
+    <p class="nota">{{ t("prev.aviso") }}</p>
+  </details>
   {% else %}
   <p class="nota">{{ t("prev.cargando", dias=prevision.dias) }}</p>
   {% endif %}
@@ -67,6 +74,23 @@
   <p class="nota">{{ t("tend.dia_faltan", dias=serie|length) }}</p>
   {% endif %}
 </section>
+
+{% if marcas|length >= 2 %}
+<section class="tarjeta">
+  <h2>{{ t("marcas.titulo") }}</h2>
+  <p class="nota">{{ t("marcas.nota", dias=dias_marcas, radio=aj.radio_km) }}</p>
+  <table class="precios marcas">
+    {% for m in marcas %}
+    {% if m %}
+    <tr><th>{{ m.marca|titulo }} <small>{{ t("marcas.gasolineras", n=m.gasolineras) }}</small></th>
+      <td class="dif {{ 'baja' if m.diferencia < 0 else 'sube' }}">{{ m.diferencia|centimos }} {{ t("tend.cts") }}</td></tr>
+    {% else %}
+    <tr class="hueco"><th colspan="2">⋯</th></tr>
+    {% endif %}
+    {% endfor %}
+  </table>
+</section>
+{% endif %}
 {% endif %}
 {% endblock %}
 {% block scripts %}

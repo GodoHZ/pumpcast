@@ -24,8 +24,17 @@ TEXTOS = {
     "pie.sin_leer": "Prètzi deth Ministèri · encara sense léger",
 
     "mapa.titulo": "Mapa", "mapa.aria": "Mapa de gasolinères",
-    "mapa.leyenda": '<span class="barata">●</span> mès barata · <span class="cara">●</span> mès cara, '
-                    "comparant es deth tòn rai. Toca-ne ua entà veir eth sòn prètz.",
+    "filtro.aria": "Filtrar eth mapa",
+    "filtro.abiertas": "Dubèrtes ara",
+    "filtro.baratas": "Mès barates", "filtro.baratas_ayuda": "Mès barates que eth mejan",
+    "filtro.marcas": "Marques",
+    "filtro.marcas_titulo": "Quines marques vòs veir?",
+    "filtro.todas": "Totes",
+    "filtro.ninguna": "Cap",
+    "filtro.listo": "Fèt",
+    "js.filtro_cuenta": "{n} de {total} gasolinères.",
+    "mapa.leyenda": '<span class="barata" aria-hidden="true">●</span> mès barata · <span class="cara" aria-hidden="true">●</span> mès cara, '
+                    "comparant es deth tòn rai. Toca-ne ua entà veir eth sòn orari e com i arribar.",
 
     "estacion.de_casa": "a {distancia} dera tua localizacion",
     "estacion.ultimos": "{comb}, darrèrs 90 dies",
@@ -47,13 +56,138 @@ TEXTOS = {
                           "quauqui dies de retard. Era prevision ja ac tie en compde.",
     "js.brent_pendiente": "encara sense publicar",
     "tend.dia_faltan": "Calen aumens dues setmanes de donades entà saber-ac. N'as {dias} dies.",
+    "marcas.titulo": "Marques ena tua zòna",
+    "marcas.nota": "Guaire mès barata o mès cara que eth mejan ges cada marca, de mejana enes darrèrs {dias} "
+                   "dies e a mens de {radio} km. Solet marques damb aumens dues gasolinères.",
+    "marcas.gasolineras": "{n} gasolinères",
+    "rep.titulo": "Es mèns aprovisionaments",
+    "rep.aqui": "Apuntar aprovisionament",
+    "rep.este_mes": "Aguest mes",
+    "rep.doce_meses": "Darrèrs 12 mesi",
+    "rep.consumo": "Consum ({unidad}/100 km)",
+    "rep.consumo_falta": "Entà saber eth tò consum reau, apunta es km deth comptaquilomètres en dus "
+                         "aprovisionaments damb eth depòsit plen.",
+    "rep.usar_consumo": "Emplegar eth mèn consum reau en Ajustaments",
+    "rep.consumo_valor": "{consumo} {unidad}/100 km",
+    "rep.apuntar": "Apuntar un aprovisionament",
+    "rep.fecha": "Data",
+    "rep.litros": "Quantitat ({unidad})",
+    "rep.precio": "Prètz (€/{unidad})",
+    "rep.km": "Comptaquilomètres (km, opcionau)",
+    "rep.lleno": "È plenat eth depòsit",
+    "rep.guardar": "Guardar er aprovisionament",
+    "rep.privado": "Se guarde solet en aguest navegador: Pumpcast non ac ve. Se cambies de mobil o esborres "
+                   "es donades deth navegador, se pèrd; exporta ua còpia de tant en tant.",
+    "rep.historial": "Istoric",
+    "rep.vacio": "Encara non as apuntat cap aprovisionament.",
+    "rep.exportar": "Exportar còpia",
+    "rep.importar": "Importar còpia",
+    "rep.error": "Revisa era quantitat e eth prètz (e es km, se les botes).",
+    "rep.borrar": "Esborrar",
+    "rep.borrar_seguro": "Esborrar aguest aprovisionament?",
+    "rep.importados": "S'an importat {n} aprovisionaments.",
+    "rep.importar_mal": "Aguest fichèr non ei ua còpia de Pumpcast.",
+    "rep.lleno_corto": "plen",
+    "rep.km_corto": "{km} km",
+    "voz.titulo": "Damb Siri o er assistent",
+    "voz.intro": "Demana era gasolinèra sense tocar eth mobil: dides <b>«Oye Siri, gasolinera barata»</b> e "
+                 "se daurís era app de mapes camin dera mès barata des entorns que sigue dubèrta. Pensat "
+                 "entath cotxe.",
+    "voz.ajustes": "Cèrque en radi des tòns Ajustaments ({radio} km) e damb eth tòn carburant ({comb}).",
+    "voz.iphone": "iPhone e CarPlay: damb Siri",
+    "voz.instalar": "Installar er acorchi",
+    "voz.atajo_viene": "Ven preparat entà {comb} e {app}.",
+    "voz.atajo_cambiar": "Entath tòn cas, dempús d'installar-lo edita era adreça der acorchi e cambia "
+                         "<code>{de}</code> per <code>{a}</code>.",
+    "voz.o_crealo": "O crea-lo tu en un parelh de minuts:",
+    "voz.paso1": "Daurís era app <b>Atajos</b> e toca <b>+</b> entà crear-ne un nau.",
+    "voz.paso2": "Higeja <b>Obtener ubicación actual</b>.",
+    "voz.b2": "Higeja <b>Obtener contenido de URL</b> e pega aguesta adreça (toca-la entà copiar-la):",
+    "voz.b2_nota": "Cambia LAT pera tua posicion: esborra-ac, toca «Ubicación actual» dessús deth teclat, "
+                   "toca aguesta variabla e tria <b>Latitud</b>. Parièr damb LON e <b>Longitud</b>.",
+    "voz.b3": "Higeja <b>Abrir URL</b>: daurirà çò qu'a tornat eth pas d'abans, qu'ei era rota ena tua app de "
+              "mapes.",
+    "voz.permiso": "Apple Maps mòstre era rota e cau tocar «Ir»; Google Maps e Waze artiguen solets. Damb eth "
+                   "mobil blocat, iOS pòt demanar-te de desblocar-lo.",
+    "voz.simple_titulo": "Version d'ua soleta accion",
+    "voz.simple": "Mès aisit de crear: solet <b>Abrir URL</b> damb aguesta adreça. Mès se daurís Safari, que "
+                  "te demane era localizacion (Ajustes › Apps › Safari › Ubicación › Permitir, entà que non "
+                  "demane mès) e, abans de daurir eth mapa, iOS demane «¿Abrir esta página en…?»: cau tocar "
+                  "«Abrir».",
+    "voz.paso3": "Bota-li de nòm <b>Gasolinera barata</b> (o çò que vulgues díder) e guarda-lo. Ja ei: «Oye "
+                 "Siri, gasolinera barata».",
+    "voz.otros": "Entà ua auta app de mapes, higeja ara fin <code>&amp;mapa=google</code>, "
+                 "<code>&amp;mapa=waze</code> o <code>&amp;mapa=apple</code>. Entara mès pròcha en lòc dera "
+                 "mès barata, <code>&amp;orden=distancia</code>; entara que mès compense en tot comptar eth "
+                 "viatge, <code>&amp;orden=compensa</code>.",
+    "voz.avanzado_titulo": "Que Siri te digue eth prètz en votz nauta",
+    "voz.avanzado": "Damb quauques accions mès, Siri respon («La más barata a menos de 10 km es Ballenoil, a "
+                    "1,4 km: 1,729 euros el litro») e dempús daurís eth mapa. Atau tanpòc cau eth permís de "
+                    "Safari:",
+    "voz.a1": "Higeja <b>Obtener ubicación actual</b>.",
+    "voz.a2": "Higeja <b>Obtener contenido de URL</b> damb aguesta adreça, en tot cambiar LAT e LON pes "
+              "variables <b>Latitud</b> e <b>Longitud</b> dera localizacion:",
+    "voz.a3": "Higeja <b>Obtener valor de diccionario</b> (cèrca «diccionario») damb era clau <b>frase</b> e, "
+              "dempús, era accion que liég un tèxte en votz nauta (cèrca «texto»).",
+    "voz.a4": "Torna a higer <b>Obtener valor de diccionario</b>, damb era clau <b>apple</b> (o "
+              "<b>google</b>, <b>waze</b>) e, coma diccionari, eth <b>Contenido de la URL</b>. Acaba damb "
+              "<b>Abrir URL</b>.",
+    "voz.android": "Android: a un tòc",
+    "voz.android_texto": "Google non dèishe qu'ua web higesque òrdres de votz ath sòn assistent. Çò mès "
+                         "comòde: installa Pumpcast ena pantalha d'inici, tien quichada era sua icòna e tria "
+                         "<b>Mès barata a prèp</b>; pòs arrossegar aguest accès ena pantalha entà auer-lo a "
+                         "un tòc. Daurís Google Maps ja navigant entà era.",
+    "voz.probar": "Provar ara",
+    "voz.atajo": "Mès barata a prèp",
+    "voz.buscando": "Cercant a on ès…",
+    "voz.abrir_app": "Daurir Pumpcast",
+    "pasar.titulo": "Passar a un aute mobil",
+    "pasar.intro": "Pòrta es tòns ajustaments, es tues favorites e es tòns aprovisionaments a un aute mobil o "
+                   "navegador, sense comptes: escaneja eth còdi damb era camèra der aute mobil o manda-te eth "
+                   "ligam.",
+    "pasar.lleva": "Pòrte {que}.",
+    "pasar.ajustes": "es tòns ajustaments e era tua localizacion",
+    "pasar.favoritas": "{n} favorites",
+    "pasar.repostajes": "{n} aprovisionaments",
+    "pasar.y": "e ",
+    "pasar.nada": "Encara non i a arren de passar: tria era tua localizacion en Ajustaments.",
+    "pasar.qr_aria": "Còdi QR damb eth ligam entà passar es tues donades",
+    "pasar.grande": "I a massa donades entà un còdi QR: emplega eth ligam.",
+    "pasar.compartir": "Compartir eth ligam",
+    "pasar.copiar": "Copiar eth ligam",
+    "pasar.privado": "Tot va laguens deth ligam, darrèr deth «#»: aguesta part jamès arribe ath servidor. Qui "
+                     "age eth ligam ve era tua localizacion, atau que manda-te-lo solet a tu.",
+    "pasar.importar_titulo": "Hèr vier d'un aute mobil",
+    "pasar.importar_intro": "Aguest ligam pòrte",
+    "pasar.importar_aviso": "Substituís es ajustaments e es favorites d'aguest mobil; es aprovisionaments se "
+                            "sumen as que i age.",
+    "pasar.importar_boton": "Importar en aguest mobil",
+    "pasar.importado": "Fèt: ja ac as tot en aguest mobil.",
+    "pasar.importar_mal": "Aguest ligam ei incomplet o non ei de Pumpcast.",
+    "pasar.ir_inicio": "Anar a Pumpcast",
+    "voz.precio": "Era mès barata a mens de {radio} km ei {nombre}, en {municipio}, a {distancia}: {precio} "
+                  "euros eth {unidad}.",
+    "voz.distancia": "Era mès pròcha ei {nombre}, en {municipio}, a {distancia}: {precio} euros eth {unidad}.",
+    "voz.compensa": "Era que mès te compense a mens de {radio} km ei {nombre}, en {municipio}, a {distancia}: "
+                    "{precio} euros eth {unidad}.",
+    "voz.nada": "Non trapi gasolinères damb prètz a mens de {radio} km.",
+    "voz.fuera": "Aguesta localizacion ei hòra d'Espanha, e Pumpcast solet a es gasolinères d'Espanha.",
+    "voz.unidad_l": "litre",
+    "voz.unidad_kg": "quilò",
+    "voz.hor_24h": "Ei dubèrta es 24 ores.",
+    "voz.hor_cierra": "Barre a {hora}.",
+    "voz.hor_abre": "Ara ei barrada; daurís a {hora}.",
+    "voz.hor_cerrada": "Ara ei barrada.",
 
     "prev.titulo": "Plii aué o demori?",
-    "prev.brent": "Eth darrèr Brent publicat, deth {fecha}, ei a {precio} eth barril{cambio}.",
-    "prev.brent_cambio": " ({cambio} % en ua setmana)",
     "prev.provincia": "Calculada damb es prètzi de tota era província de {provincia}.",
-    "prev.como": "Era prevision guarde guaire s'an mogut eth Brent e eth prètz dera tua província era "
-                 "darrèra setmana: eth sortidor va darrèr deth petròli e es prètzi an inèrcia.",
+    "prev.nombre_gasoil": "Gasòli en gròs", "prev.nombre_gasolina": "Gasolina en gròs",
+    "prev.semana_hasta": "setmana enquiath {fecha}",
+    "prev.acierta": "Encèrte eth {pct} % des còps; díder tostemp «Tant ei», eth {base} %.",
+    "prev.detalles": "Com se calcula?",
+    "prev.como": "Era prevision guarde guaire a pujat o baishat eth carburant en gròs (eth Brent, entàs gasi) "
+                 "era darrèra setmana publicada e guaire s'a mogut eth prètz dera tua província: eth sortidor "
+                 "va darrèr deth mercat, puge abans que non baishe e es prètzi an inèrcia.",
     "prev.prueba": "Provada damb es darrèrs 60 dies sense emplegar-les entà apréner: aurie encertat "
                    "<b>{aciertos} de {total}</b> còps ({pct} %), damb un error mejan de {error} cèntims.",
     "prev.seguimiento": "Dempús que s'apunten: <b>{aciertos} de {total}</b> encèrts.",
@@ -187,6 +321,18 @@ TEXTOS = {
     "admin.brent_viejo": "Eth Brent non s'actualize dempús deth {fecha}: era prevision pòt fallar. Guarda eth registre deth contenedor.",
     "aj.apariencia": "Lengua e aspècte",
     "aj.tema": "Tèma",
+    "aj.mapa": "App de mapes entà anar-i",
+    "aj.mapa_preguntar": "Demanar cada viatge",
+    "aj.mapa_google": "Google Maps",
+    "aj.mapa_apple": "Apple Maps",
+    "aj.mapa_waze": "Waze",
+    "voz.elegir_una_vez": "Entà non auer de triar, bota era tua app en <a href=\"/ajustes\">Ajustaments</a> e "
+                          "torna a copiar era adreça der acorchi en <a href=\"/voz\">Damb Siri</a>.",
+    "voz.con_app": "Era adreça ja daurís <b>{app}</b>, era app de mapes des tòns Ajustaments. Se la cambies, "
+                   "torna-la a copiar.",
+    "voz.sin_app": "Atau te demanarà cada viatge damb quina app anar-i. Entà que i vague dirèctament, tria "
+                   "era tua app de mapes en <a href=\"/ajustes\">Ajustaments</a> e torna aciu a copiar era "
+                   "adreça.",
     "tema.auto": "Eth deth mobil",
     "tema.claro": "Clar",
     "tema.oscuro": "Escur",

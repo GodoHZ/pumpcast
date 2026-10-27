@@ -21,6 +21,7 @@
     <form method="post" action="/favorita/{{ e.id }}">
       <button class="boton secundario{% if favorita %} marcada{% endif %}" aria-pressed="{{ 'true' if favorita else 'false' }}">{{ icono("estrella") }} {{ t("fav.quitar" if favorita else "fav.poner") }}</button>
     </form>
+    <a class="boton secundario" href="/repostajes?estacion={{ e.id }}&amp;c={{ comb }}">{{ icono("anadir") }} {{ t("rep.aqui") }}</a>
     <button class="boton secundario" type="button" data-compartir="{{ e.rotulo|titulo }} · {{ e.municipio }}" hidden>{{ icono("compartir") }} {{ t("compartir") }}</button>
   </div>
 </section>

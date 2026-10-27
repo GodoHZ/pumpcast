@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "_iconos.html" import icono %}
+{% block titulo %}{{ t("pasar.titulo") }} · Pumpcast{% endblock %}
+{% block cabeza %}<meta name="robots" content="noindex">{% endblock %}
+{% block h1 %}{{ t("pasar.titulo") }}{% endblock %}
+{% block contenido %}
+{#- Con «#…» en la dirección: viene de otro móvil y se importa. Sin él: se prepara el enlace. Lo que
+    se lleva va detrás de «#», que el navegador nunca manda al servidor (pasar.js). -#}
+<section class="tarjeta" id="pasar-traer" hidden>
+  <h2>{{ t("pasar.importar_titulo") }}</h2>
+  <p>{{ t("pasar.importar_intro") }} <b id="pasar-trae"></b></p>
+  <p class="nota">{{ t("pasar.importar_aviso") }}</p>
+  <button class="boton ancho" type="button" id="pasar-importar">{{ t("pasar.importar_boton") }}</button>
+  <p class="mensaje" id="pasar-estado" role="status" hidden></p>
+  <a class="boton secundario ancho" href="/" id="pasar-inicio" hidden>{{ t("pasar.ir_inicio") }}</a>
+</section>
+
+<section class="tarjeta" id="pasar-llevar">
+  <p>{{ t("pasar.intro") }}</p>
+  <p class="nota" id="pasar-lleva"></p>
+  <div id="pasar-qr" class="qr" role="img" aria-label="{{ t('pasar.qr_aria') }}"></div>
+  <p class="nota" id="pasar-grande" hidden>{{ t("pasar.grande") }}</p>
+  <div class="botones">
+    <button class="boton" type="button" id="pasar-compartir" hidden>{{ icono("compartir") }} {{ t("pasar.compartir") }}</button>
+    <button class="boton secundario" type="button" id="pasar-copiar">{{ t("pasar.copiar") }}</button>
+  </div>
+  <p class="nota">{{ t("pasar.privado") }}</p>
+</section>
+{% endblock %}
+{% block scripts %}
+<script nonce="{{ nonce }}">
+  window.PASAR = {{ {"mios": mios, "base": request.base_url|string,
+    "t": {"ajustes": t("pasar.ajustes"), "favoritas": t("pasar.favoritas", n="{n}"), "repostajes": t("pasar.repostajes", n="{n}"),
+          "nada": t("pasar.nada"), "lleva": t("pasar.lleva", que="{que}"), "y": t("pasar.y"),
+          "importado": t("pasar.importado"), "mal": t("pasar.importar_mal"), "copiado": t("js.copiado"),
+          "no_se_pudo": t("js.no_se_pudo")}}|tojson }};
+</script>
+<script src="/static/vendor/qrcode/qrcode.js?v={{ version }}"></script>
+<script src="/static/pasar.js?v={{ version }}"></script>
+{% endblock %}

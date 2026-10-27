@@ -35,8 +35,17 @@ TEXTOS: dict[str, dict[str, str]] = {
         "pie.sin_leer": "Precios del Ministerio · sin leer todavía",
 
         "mapa.titulo": "Mapa", "mapa.aria": "Mapa de gasolineras",
-        "mapa.leyenda": '<span class="barata">●</span> más barata · <span class="cara">●</span> más cara, '
-                        "comparando las de tu radio. Toca una para ver su precio.",
+        "filtro.aria": "Filtrar el mapa",
+        "filtro.abiertas": "Abiertas ahora",
+        "filtro.baratas": "Más baratas", "filtro.baratas_ayuda": "Más baratas que la media",
+        "filtro.marcas": "Marcas",
+        "filtro.marcas_titulo": "¿Qué marcas quieres ver?",
+        "filtro.todas": "Todas",
+        "filtro.ninguna": "Ninguna",
+        "filtro.listo": "Listo",
+        "js.filtro_cuenta": "{n} de {total} gasolineras.",
+        "mapa.leyenda": '<span class="barata" aria-hidden="true">●</span> más barata · <span class="cara" aria-hidden="true">●</span> más cara, '
+                        "comparando las de tu radio. Toca una para ver su horario y cómo llegar.",
 
         "estacion.de_casa": "a {distancia} de tu ubicación",
         "estacion.ultimos": "{comb}, últimos 90 días",
@@ -57,13 +66,139 @@ TEXTOS: dict[str, dict[str, str]] = {
         "tend.brent_retraso": "El Brent llega hasta el {fecha}: la EIA lo publica una vez por semana, con unos días de retraso. La previsión ya lo tiene en cuenta.",
         "js.brent_pendiente": "aún sin publicar",
         "tend.dia_faltan": "Hacen falta al menos dos semanas de datos para saberlo. Llevas {dias} días.",
+        "marcas.titulo": "Marcas en tu zona",
+        "marcas.nota": "Cuánto más barata o más cara que la media sale cada marca, de media en los últimos "
+                       "{dias} días y a menos de {radio} km. Solo marcas con al menos dos gasolineras.",
+        "marcas.gasolineras": "{n} gasolineras",
+        "rep.titulo": "Mis repostajes",
+        "rep.aqui": "Apuntar repostaje",
+        "rep.este_mes": "Este mes",
+        "rep.doce_meses": "Últimos 12 meses",
+        "rep.consumo": "Consumo ({unidad}/100 km)",
+        "rep.consumo_falta": "Para saber tu consumo real, apunta los km del cuentakilómetros en dos "
+                             "repostajes de depósito lleno.",
+        "rep.usar_consumo": "Usar mi consumo real en Ajustes",
+        "rep.consumo_valor": "{consumo} {unidad}/100 km",
+        "rep.apuntar": "Apuntar un repostaje",
+        "rep.fecha": "Fecha",
+        "rep.litros": "Cantidad ({unidad})",
+        "rep.precio": "Precio (€/{unidad})",
+        "rep.km": "Cuentakilómetros (km, opcional)",
+        "rep.lleno": "He llenado el depósito",
+        "rep.guardar": "Guardar repostaje",
+        "rep.privado": "Se guarda solo en este navegador: Pumpcast no lo ve. Si cambias de móvil o borras los "
+                       "datos del navegador, se pierde; exporta una copia de vez en cuando.",
+        "rep.historial": "Historial",
+        "rep.vacio": "Aún no has apuntado ningún repostaje.",
+        "rep.exportar": "Exportar copia",
+        "rep.importar": "Importar copia",
+        "rep.error": "Revisa la cantidad y el precio (y los km, si los pones).",
+        "rep.borrar": "Borrar",
+        "rep.borrar_seguro": "¿Borrar este repostaje?",
+        "rep.importados": "Importados {n} repostajes.",
+        "rep.importar_mal": "Ese archivo no es una copia de Pumpcast.",
+        "rep.lleno_corto": "lleno",
+        "rep.km_corto": "{km} km",
+        "voz.titulo": "Con Siri o el asistente",
+        "voz.intro": "Pide la gasolinera sin tocar el móvil: dices <b>«Oye Siri, gasolinera barata»</b> y se "
+                     "abre la app de mapas camino de la más barata de alrededor que esté abierta. Pensado "
+                     "para el coche.",
+        "voz.ajustes": "Busca en tu radio de Ajustes ({radio} km) y con tu combustible ({comb}).",
+        "voz.iphone": "iPhone y CarPlay: con Siri",
+        "voz.instalar": "Instalar el atajo",
+        "voz.atajo_viene": "Viene preparado para {comb} y {app}.",
+        "voz.atajo_cambiar": "Para lo tuyo, después de instalarlo edita la dirección del atajo y cambia "
+                             "<code>{de}</code> por <code>{a}</code>.",
+        "voz.o_crealo": "O créalo tú en un par de minutos:",
+        "voz.paso1": "Abre la app <b>Atajos</b> y toca <b>+</b> para crear uno nuevo.",
+        "voz.paso2": "Añade <b>Obtener ubicación actual</b>.",
+        "voz.b2": "Añade <b>Obtener contenido de URL</b> y pega esta dirección (tócala para copiarla):",
+        "voz.b2_nota": "Cambia LAT por tu posición: bórralo, toca «Ubicación actual» encima del teclado, toca "
+                       "esa variable y elige <b>Latitud</b>. Igual con LON y <b>Longitud</b>.",
+        "voz.b3": "Añade <b>Abrir URL</b>: abrirá lo que ha devuelto el paso anterior, que es la ruta en tu "
+                  "app de mapas.",
+        "voz.permiso": "Apple Maps enseña la ruta y hay que tocar «Ir»; Google Maps y Waze arrancan solos. "
+                       "Con el móvil bloqueado, iOS puede pedirte desbloquearlo.",
+        "voz.simple_titulo": "Versión de una sola acción",
+        "voz.simple": "Más fácil de crear: solo <b>Abrir URL</b> con esta dirección. Pero se abre Safari, que "
+                      "te pide la ubicación (Ajustes › Apps › Safari › Ubicación › Permitir, para que no "
+                      "pregunte más) y, antes de abrir el mapa, iOS pregunta «¿Abrir esta página en…?»: hay "
+                      "que tocar «Abrir».",
+        "voz.paso3": "Ponle de nombre <b>Gasolinera barata</b> (o lo que quieras decir) y guárdalo. Ya está: "
+                     "«Oye Siri, gasolinera barata».",
+        "voz.otros": "Para otra app de mapas, añade al final <code>&amp;mapa=google</code>, "
+                     "<code>&amp;mapa=waze</code> o <code>&amp;mapa=apple</code>. Para la más cercana en vez "
+                     "de la más barata, <code>&amp;orden=distancia</code>; para la que más compensa contando "
+                     "el viaje, <code>&amp;orden=compensa</code>.",
+        "voz.avanzado_titulo": "Que Siri te diga el precio en voz alta",
+        "voz.avanzado": "Con unas acciones más, Siri contesta («La más barata a menos de 10 km es Ballenoil, "
+                        "a 1,4 km: 1,729 euros el litro») y luego abre el mapa. Así tampoco hace falta el "
+                        "permiso de Safari:",
+        "voz.a1": "Añade <b>Obtener ubicación actual</b>.",
+        "voz.a2": "Añade <b>Obtener contenido de URL</b> con esta dirección, cambiando LAT y LON por las "
+                  "variables <b>Latitud</b> y <b>Longitud</b> de la ubicación:",
+        "voz.a3": "Añade <b>Obtener valor de diccionario</b> (busca «diccionario») con la clave <b>frase</b> "
+                  "y, después, la acción que lee un texto en voz alta (busca «texto»).",
+        "voz.a4": "Añade otra vez <b>Obtener valor de diccionario</b>, con la clave <b>apple</b> (o "
+                  "<b>google</b>, <b>waze</b>) y, como diccionario, el <b>Contenido de la URL</b>. Termina "
+                  "con <b>Abrir URL</b>.",
+        "voz.android": "Android: a un toque",
+        "voz.android_texto": "Google no deja que una web añada órdenes de voz a su asistente. Lo más cómodo: "
+                             "instala Pumpcast en la pantalla de inicio, mantén pulsado su icono y elige "
+                             "<b>Más barata cerca</b>; puedes arrastrar ese acceso a la pantalla para tenerlo "
+                             "a un toque. Abre Google Maps ya navegando hacia ella.",
+        "voz.probar": "Probar ahora",
+        "voz.atajo": "Más barata cerca",
+        "voz.buscando": "Buscando dónde estás…",
+        "voz.abrir_app": "Abrir Pumpcast",
+        "pasar.titulo": "Pasar a otro móvil",
+        "pasar.intro": "Lleva tus ajustes, tus favoritas y tus repostajes a otro móvil o navegador, sin "
+                       "cuentas: escanea el código con la cámara del otro móvil o mándate el enlace.",
+        "pasar.lleva": "Lleva {que}.",
+        "pasar.ajustes": "tus ajustes y tu ubicación",
+        "pasar.favoritas": "{n} favoritas",
+        "pasar.repostajes": "{n} repostajes",
+        "pasar.y": "y ",
+        "pasar.nada": "Aún no hay nada que pasar: elige tu ubicación en Ajustes.",
+        "pasar.qr_aria": "Código QR con el enlace para pasar tus datos",
+        "pasar.grande": "Hay demasiados datos para un código QR: usa el enlace.",
+        "pasar.compartir": "Compartir el enlace",
+        "pasar.copiar": "Copiar el enlace",
+        "pasar.privado": "Todo va dentro del enlace, detrás del «#»: esa parte nunca llega al servidor. Quien "
+                         "tenga el enlace ve tu ubicación, así que mándatelo solo a ti.",
+        "pasar.importar_titulo": "Traer desde otro móvil",
+        "pasar.importar_intro": "Este enlace trae",
+        "pasar.importar_aviso": "Sustituye los ajustes y las favoritas de este móvil; los repostajes se suman "
+                                "a los que haya.",
+        "pasar.importar_boton": "Importar en este móvil",
+        "pasar.importado": "Hecho: ya lo tienes todo en este móvil.",
+        "pasar.importar_mal": "Este enlace está incompleto o no es de Pumpcast.",
+        "pasar.ir_inicio": "Ir a Pumpcast",
+        "voz.precio": "La más barata a menos de {radio} km es {nombre}, en {municipio}, a {distancia}: "
+                      "{precio} euros el {unidad}.",
+        "voz.distancia": "La más cercana es {nombre}, en {municipio}, a {distancia}: {precio} euros el "
+                         "{unidad}.",
+        "voz.compensa": "La que más te compensa a menos de {radio} km es {nombre}, en {municipio}, a "
+                        "{distancia}: {precio} euros el {unidad}.",
+        "voz.nada": "No encuentro gasolineras con precio a menos de {radio} km.",
+        "voz.fuera": "Esa ubicación está fuera de España, y Pumpcast solo tiene las gasolineras de España.",
+        "voz.unidad_l": "litro",
+        "voz.unidad_kg": "kilo",
+        "voz.hor_24h": "Está abierta las 24 horas.",
+        "voz.hor_cierra": "Cierra a las {hora}.",
+        "voz.hor_abre": "Ahora está cerrada; abre a las {hora}.",
+        "voz.hor_cerrada": "Ahora está cerrada.",
 
         "prev.titulo": "¿Lleno hoy o espero?",
-        "prev.brent": "El último Brent publicado, del {fecha}, está a {precio} el barril{cambio}.",
-        "prev.brent_cambio": " ({cambio} % en una semana)",
         "prev.provincia": "Calculada con los precios de toda la provincia de {provincia}.",
-        "prev.como": "La previsión mira cuánto se han movido el Brent y el precio de tu provincia en la "
-                     "última semana: el surtidor va detrás del petróleo y los precios tienen inercia.",
+        "prev.nombre_gasoil": "Gasóleo mayorista", "prev.nombre_gasolina": "Gasolina mayorista",
+        "prev.semana_hasta": "semana hasta el {fecha}",
+        "prev.acierta": "Acierta el {pct} % de las veces; decir siempre «Da igual», el {base} %.",
+        "prev.detalles": "¿Cómo se calcula?",
+        "prev.como": "La previsión mira cuánto ha subido o bajado el combustible al por mayor (el Brent, para "
+                     "los gases) en la última semana publicada y cuánto se ha movido el precio de tu "
+                     "provincia: el surtidor va detrás del mercado, sube antes de lo que baja y los precios "
+                     "tienen inercia.",
         "prev.prueba": "Probado con los últimos 60 días sin usarlos para aprender: habría acertado "
                        "<b>{aciertos} de {total}</b> veces ({pct} %), con un error medio de {error} céntimos.",
         "prev.seguimiento": "Desde que se apuntan: <b>{aciertos} de {total}</b> aciertos.",
@@ -195,6 +330,17 @@ TEXTOS: dict[str, dict[str, str]] = {
         "admin.brent_viejo": "El Brent no se actualiza desde el {fecha}: la previsión puede fallar. Mira el registro del contenedor.",
         "aj.apariencia": "Idioma y aspecto",
         "aj.tema": "Tema",
+        "aj.mapa": "App de mapas para ir",
+        "aj.mapa_preguntar": "Preguntar cada vez",
+        "aj.mapa_google": "Google Maps",
+        "aj.mapa_apple": "Apple Maps",
+        "aj.mapa_waze": "Waze",
+        "voz.elegir_una_vez": "Para no tener que elegir, pon tu app en <a href=\"/ajustes\">Ajustes</a> y "
+                              "vuelve a copiar la dirección del atajo en <a href=\"/voz\">Con Siri</a>.",
+        "voz.con_app": "La dirección ya abre <b>{app}</b>, la app de mapas de tus Ajustes. Si la cambias, "
+                       "vuelve a copiarla.",
+        "voz.sin_app": "Así te preguntará cada vez con qué app ir. Para que vaya directa, elige tu app de "
+                       "mapas en <a href=\"/ajustes\">Ajustes</a> y vuelve aquí a copiar la dirección.",
         "tema.auto": "El del móvil",
         "tema.claro": "Claro",
         "tema.oscuro": "Oscuro",
@@ -239,8 +385,17 @@ TEXTOS: dict[str, dict[str, str]] = {
         "pie.sin_leer": "Prices from Spain's Ministry · not read yet",
 
         "mapa.titulo": "Map", "mapa.aria": "Map of petrol stations",
-        "mapa.leyenda": '<span class="barata">●</span> cheapest · <span class="cara">●</span> most expensive, '
-                        "compared within your radius. Tap one to see its price.",
+        "filtro.aria": "Filter the map",
+        "filtro.abiertas": "Open now",
+        "filtro.baratas": "Cheaper", "filtro.baratas_ayuda": "Cheaper than average",
+        "filtro.marcas": "Brands",
+        "filtro.marcas_titulo": "Which brands do you want to see?",
+        "filtro.todas": "All",
+        "filtro.ninguna": "None",
+        "filtro.listo": "Done",
+        "js.filtro_cuenta": "{n} of {total} stations.",
+        "mapa.leyenda": '<span class="barata" aria-hidden="true">●</span> cheapest · <span class="cara" aria-hidden="true">●</span> most expensive, '
+                        "compared within your radius. Tap one for its hours and directions.",
 
         "estacion.de_casa": "{distancia} from your location",
         "estacion.ultimos": "{comb}, last 90 days",
@@ -261,13 +416,136 @@ TEXTOS: dict[str, dict[str, str]] = {
         "tend.brent_retraso": "Brent runs until {fecha}: the EIA publishes it once a week, a few days late. The forecast already allows for that.",
         "js.brent_pendiente": "not published yet",
         "tend.dia_faltan": "At least two weeks of data are needed to tell. You have {dias} days.",
+        "marcas.titulo": "Brands near you",
+        "marcas.nota": "How much cheaper or dearer than the local average each brand is, on average over the "
+                       "last {dias} days within {radio} km. Only brands with at least two stations.",
+        "marcas.gasolineras": "{n} stations",
+        "rep.titulo": "My fill-ups",
+        "rep.aqui": "Log a fill-up",
+        "rep.este_mes": "This month",
+        "rep.doce_meses": "Last 12 months",
+        "rep.consumo": "Use ({unidad}/100 km)",
+        "rep.consumo_falta": "To get your real fuel use, enter the odometer reading on two full-tank "
+                             "fill-ups.",
+        "rep.usar_consumo": "Use my real fuel use in Settings",
+        "rep.consumo_valor": "{consumo} {unidad}/100 km",
+        "rep.apuntar": "Log a fill-up",
+        "rep.fecha": "Date",
+        "rep.litros": "Amount ({unidad})",
+        "rep.precio": "Price (€/{unidad})",
+        "rep.km": "Odometer (km, optional)",
+        "rep.lleno": "I filled the tank",
+        "rep.guardar": "Save fill-up",
+        "rep.privado": "Stored only in this browser: Pumpcast never sees it. If you switch phones or clear "
+                       "your browser data it is lost, so export a copy now and then.",
+        "rep.historial": "History",
+        "rep.vacio": "No fill-ups logged yet.",
+        "rep.exportar": "Export copy",
+        "rep.importar": "Import copy",
+        "rep.error": "Check the amount and the price (and the km, if you added them).",
+        "rep.borrar": "Delete",
+        "rep.borrar_seguro": "Delete this fill-up?",
+        "rep.importados": "Imported {n} fill-ups.",
+        "rep.importar_mal": "That file isn't a Pumpcast copy.",
+        "rep.lleno_corto": "full",
+        "rep.km_corto": "{km} km",
+        "voz.titulo": "With Siri or your assistant",
+        "voz.intro": "Ask for a station without touching your phone: say <b>“Hey Siri, cheap fuel”</b> and "
+                     "your maps app opens with directions to the cheapest one nearby that's open now. Made "
+                     "for the car.",
+        "voz.ajustes": "It searches within your Settings radius ({radio} km) for your fuel ({comb}).",
+        "voz.iphone": "iPhone and CarPlay: with Siri",
+        "voz.instalar": "Install the shortcut",
+        "voz.atajo_viene": "It comes set up for {comb} and {app}.",
+        "voz.atajo_cambiar": "For your settings, after installing it edit the shortcut's address and change "
+                             "<code>{de}</code> to <code>{a}</code>.",
+        "voz.o_crealo": "Or make it yourself in a couple of minutes:",
+        "voz.paso1": "Open the <b>Shortcuts</b> app and tap <b>+</b> to make a new one.",
+        "voz.paso2": "Add <b>Get Current Location</b>.",
+        "voz.b2": "Add <b>Get Contents of URL</b> and paste this address (tap it to copy):",
+        "voz.b2_nota": "Replace LAT with your position: delete it, tap “Current Location” above the keyboard, "
+                       "tap that variable and pick <b>Latitude</b>. Same for LON and <b>Longitude</b>.",
+        "voz.b3": "Add <b>Open URLs</b>: it opens what the previous step returned, which is the route in your "
+                  "maps app.",
+        "voz.permiso": "Apple Maps shows the route and you tap “Go”; Google Maps and Waze start on their own. "
+                       "With the phone locked, iOS may ask you to unlock it.",
+        "voz.simple_titulo": "One-action version",
+        "voz.simple": "Easier to make: just <b>Open URLs</b> with this address. But it opens Safari, which "
+                      "asks for your location (Settings › Apps › Safari › Location › Allow, so it stops "
+                      "asking) and, before opening the map, iOS asks “Open this page in…?”: you have to tap "
+                      "“Open”.",
+        "voz.paso3": "Name it <b>Cheap fuel</b> (or whatever you want to say) and save it. Done: “Hey Siri, "
+                     "cheap fuel”.",
+        "voz.otros": "For another maps app, add <code>&amp;mapa=google</code>, <code>&amp;mapa=waze</code> or "
+                     "<code>&amp;mapa=apple</code> at the end. For the nearest instead of the cheapest, "
+                     "<code>&amp;orden=distancia</code>; for the best value counting the trip, "
+                     "<code>&amp;orden=compensa</code>.",
+        "voz.avanzado_titulo": "Have Siri read out the price",
+        "voz.avanzado": "With a few more actions, Siri answers (“The cheapest within 10 km is Ballenoil, 1.4 "
+                        "km away: 1.729 euros a litre”) and then opens the map. This way Safari's permission "
+                        "isn't needed either:",
+        "voz.a1": "Add <b>Get Current Location</b>.",
+        "voz.a2": "Add <b>Get Contents of URL</b> with this address, replacing LAT and LON with the "
+                  "location's <b>Latitude</b> and <b>Longitude</b> variables:",
+        "voz.a3": "Add <b>Get Dictionary Value</b> with the key <b>frase</b>, then the Speak Text action.",
+        "voz.a4": "Add <b>Get Dictionary Value</b> again, with the key <b>apple</b> (or <b>google</b>, "
+                  "<b>waze</b>) and <b>Contents of URL</b> as the dictionary. Finish with <b>Open URLs</b>.",
+        "voz.android": "Android: one tap away",
+        "voz.android_texto": "Google doesn't let websites add voice commands to its assistant. The handiest "
+                             "option: install Pumpcast on your home screen, long-press its icon and pick "
+                             "<b>Cheapest nearby</b>; you can drag that shortcut onto the screen to have it "
+                             "one tap away. It opens Google Maps already navigating there.",
+        "voz.probar": "Try it now",
+        "voz.atajo": "Cheapest nearby",
+        "voz.buscando": "Finding where you are…",
+        "voz.abrir_app": "Open Pumpcast",
+        "pasar.titulo": "Move to another phone",
+        "pasar.intro": "Take your settings, favourites and fill-ups to another phone or browser, no account "
+                       "needed: scan the code with the other phone's camera or send yourself the link.",
+        "pasar.lleva": "It carries {que}.",
+        "pasar.ajustes": "your settings and location",
+        "pasar.favoritas": "{n} favourites",
+        "pasar.repostajes": "{n} fill-ups",
+        "pasar.y": "and ",
+        "pasar.nada": "Nothing to move yet: choose your location in Settings.",
+        "pasar.qr_aria": "QR code with the link to move your data",
+        "pasar.grande": "Too much data for a QR code: use the link.",
+        "pasar.compartir": "Share the link",
+        "pasar.copiar": "Copy the link",
+        "pasar.privado": "Everything travels inside the link, after the “#”: that part never reaches the "
+                         "server. Anyone with the link can see your location, so only send it to yourself.",
+        "pasar.importar_titulo": "Bring from another phone",
+        "pasar.importar_intro": "This link brings",
+        "pasar.importar_aviso": "It replaces this phone's settings and favourites; fill-ups are added to any "
+                                "already here.",
+        "pasar.importar_boton": "Import on this phone",
+        "pasar.importado": "Done: everything is on this phone now.",
+        "pasar.importar_mal": "This link is incomplete or isn't from Pumpcast.",
+        "pasar.ir_inicio": "Go to Pumpcast",
+        "voz.precio": "The cheapest within {radio} km is {nombre}, in {municipio}, {distancia} away: {precio} "
+                      "euros a {unidad}.",
+        "voz.distancia": "The nearest is {nombre}, in {municipio}, {distancia} away: {precio} euros a "
+                         "{unidad}.",
+        "voz.compensa": "The best value within {radio} km is {nombre}, in {municipio}, {distancia} away: "
+                        "{precio} euros a {unidad}.",
+        "voz.nada": "I can't find any stations with prices within {radio} km.",
+        "voz.fuera": "That location is outside Spain, and Pumpcast only has stations in Spain.",
+        "voz.unidad_l": "litre",
+        "voz.unidad_kg": "kilo",
+        "voz.hor_24h": "It's open 24 hours.",
+        "voz.hor_cierra": "It closes at {hora}.",
+        "voz.hor_abre": "It's closed now; it opens at {hora}.",
+        "voz.hor_cerrada": "It's closed now.",
 
         "prev.titulo": "Fill up today or wait?",
-        "prev.brent": "The latest published Brent, from {fecha}, is {precio} a barrel{cambio}.",
-        "prev.brent_cambio": " ({cambio}% in a week)",
         "prev.provincia": "Based on prices across the province of {provincia}.",
-        "prev.como": "The forecast looks at how much Brent and prices in your province moved over the last "
-                     "week: pumps trail oil, and prices have momentum.",
+        "prev.nombre_gasoil": "Wholesale diesel", "prev.nombre_gasolina": "Wholesale gasoline",
+        "prev.semana_hasta": "week to {fecha}",
+        "prev.acierta": "Right {pct}% of the time; always saying “No rush”, {base}%.",
+        "prev.detalles": "How is it worked out?",
+        "prev.como": "The forecast looks at how much wholesale fuel (Brent, for gas fuels) went up or down in "
+                     "the latest published week and how much prices in your province moved: pumps follow the "
+                     "market, rise faster than they fall, and prices have momentum.",
         "prev.prueba": "Tested on the last 60 days without learning from them: it would have been right "
                        "<b>{aciertos} out of {total}</b> times ({pct}%), with an average error of {error} cents.",
         "prev.seguimiento": "Since tracking started: <b>{aciertos} out of {total}</b> right.",
@@ -399,6 +677,17 @@ TEXTOS: dict[str, dict[str, str]] = {
         "admin.brent_viejo": "Brent hasn't updated since {fecha}: the forecast may be off. Check the container log.",
         "aj.apariencia": "Language and look",
         "aj.tema": "Theme",
+        "aj.mapa": "Maps app for directions",
+        "aj.mapa_preguntar": "Ask every time",
+        "aj.mapa_google": "Google Maps",
+        "aj.mapa_apple": "Apple Maps",
+        "aj.mapa_waze": "Waze",
+        "voz.elegir_una_vez": "To skip this choice, set your app in <a href=\"/ajustes\">Settings</a> and copy "
+                              "the shortcut address again from <a href=\"/voz\">With Siri</a>.",
+        "voz.con_app": "The address already opens <b>{app}</b>, the maps app in your Settings. If you change "
+                       "it, copy it again.",
+        "voz.sin_app": "This way it asks which app to use every time. To go straight there, pick your maps "
+                       "app in <a href=\"/ajustes\">Settings</a> and come back to copy the address.",
         "tema.auto": "Device default",
         "tema.claro": "Light",
         "tema.oscuro": "Dark",

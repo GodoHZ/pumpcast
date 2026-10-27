@@ -20,8 +20,8 @@
       Demográfico, publicados como datos abiertos y reutilizados conforme a la Ley 37/2007. Se descargan cada
       30 minutos y se muestran sin modificarlos{% if ultima %}; última actualización: {{ ultima.momento|fecha_corta }}{% endif %}.
       Referencia oficial: <a href="https://geoportalgasolineras.es">geoportalgasolineras.es</a>.</li>
-    <li><b>Petróleo Brent:</b> FRED, Federal Reserve Bank of St. Louis, serie DCOILBRENTEU de la U.S. Energy
-      Information Administration.</li>
+    <li><b>Petróleo Brent, gasóleo y gasolina al por mayor:</b> FRED, Federal Reserve Bank of St. Louis,
+      series DCOILBRENTEU, DDFUELNYH y DGASNYH de la U.S. Energy Information Administration.</li>
     <li><b>Cambio euro/dólar:</b> Banco Central Europeo.</li>
     <li><b>Mapas:</b> <a href="https://openfreemap.org">OpenFreeMap</a>, © OpenMapTiles, con datos de los
       colaboradores de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (licencia ODbL).</li>
@@ -50,6 +50,9 @@
     <li><b>Tu posición en directo</b>, solo si activas «usar dónde estoy»: tu navegador la manda redondeada a
       unos 100 m solo para actualizar esa cookie. Base legal: tu consentimiento (art. 6.1.a), que retiras
       desactivando la casilla o el permiso de ubicación del navegador.</li>
+    <li><b>Con Siri o el atajo «Más barata cerca»</b> (<code>/ir</code> y <code>/api/cerca</code>): tu posición va
+      en la dirección de la petición, redondeada a unos 100 m, solo para buscar la gasolinera y contestarte. No se
+      guarda ni se apunta en ningún registro. Base legal: es lo que pides (art. 6.1.b).</li>
     <li><b>No hay registro de visitas.</b> Para frenar abusos, el servidor recuerda en memoria tu dirección IP
       durante un minuto y luego la olvida. Base legal: interés legítimo en proteger la web (art. 6.1.f).</li>
     <li><b>Terceros:</b> la web llega a ti a través de Cloudflare, que trata tu IP para servirla y protegerla.
@@ -78,7 +81,10 @@
   </ul>
   <p>Para que funcione sin conexión, la app guarda una copia de las páginas en tu dispositivo, nunca en el
     servidor. También apunta en el almacenamiento de tu navegador si ya cerraste el aviso de instalarla y
-    cuándo recargó la página por última vez al usar dónde estás. Nada de eso sale de tu dispositivo.</p>
+    cuándo recargó la página por última vez al usar dónde estás. «Mis repostajes» también se guardan solo
+    ahí (<code>pumpcast_repostajes</code>). Nada de eso sale de tu dispositivo. «Pasar a otro móvil» mete tus
+    ajustes, favoritas y repostajes en el propio enlace, detrás de «#», una parte que el navegador nunca manda
+    al servidor; el otro móvil guarda los ajustes y las favoritas en sus cookies, como siempre.</p>
 </section>
 
 <section class="tarjeta legal">
@@ -102,8 +108,8 @@
       Demographic Challenge, published as open data and reused under Spanish Law 37/2007. Downloaded every
       30 minutes and shown unmodified{% if ultima %}; last update: {{ ultima.momento|fecha_corta }}{% endif %}.
       Official reference: <a href="https://geoportalgasolineras.es">geoportalgasolineras.es</a>.</li>
-    <li><b>Brent crude:</b> FRED, Federal Reserve Bank of St. Louis, series DCOILBRENTEU from the U.S. Energy
-      Information Administration.</li>
+    <li><b>Brent crude, wholesale diesel and gasoline:</b> FRED, Federal Reserve Bank of St. Louis, series
+      DCOILBRENTEU, DDFUELNYH and DGASNYH from the U.S. Energy Information Administration.</li>
     <li><b>EUR/USD:</b> European Central Bank.</li>
     <li><b>Maps:</b> <a href="https://openfreemap.org">OpenFreeMap</a>, © OpenMapTiles, with data from
       <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors (ODbL licence).</li>
@@ -132,6 +138,9 @@
     <li><b>Your live position</b>, only if you turn on "use where I am": your browser sends it rounded to about
       100 m, only to update that cookie. Legal basis: your consent (Art. 6(1)(a)), which you withdraw by
       unticking the box or revoking the browser's location permission.</li>
+    <li><b>With Siri or the "Cheapest nearby" shortcut</b> (<code>/ir</code> and <code>/api/cerca</code>): your
+      position travels in the request address, rounded to about 100 m, only to find the station and answer you.
+      It isn't stored or written to any log. Legal basis: it's what you ask for (Art. 6(1)(b)).</li>
     <li><b>No visit logs.</b> To stop abuse, the server keeps your IP address in memory for one minute and
       then forgets it. Legal basis: legitimate interest in protecting the site (Art. 6(1)(f)).</li>
     <li><b>Third parties:</b> the site reaches you through Cloudflare, which processes your IP to deliver and
@@ -159,7 +168,10 @@
   </ul>
   <p>To work offline, the app keeps a copy of pages on your device, never on the server. It also notes in
     your browser's storage whether you closed the install prompt and when it last reloaded the page using
-    where you are. None of that leaves your device.</p>
+    where you are. "My fill-ups" are also kept only there (<code>pumpcast_repostajes</code>). None of that
+    leaves your device. "Move to another phone" puts your settings, favourites and fill-ups in the link itself,
+    after the "#", a part browsers never send to the server; the other phone stores the settings and favourites
+    in its cookies, as usual.</p>
 </section>
 
 <section class="tarjeta legal">

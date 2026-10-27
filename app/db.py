@@ -62,11 +62,14 @@ CREATE TABLE IF NOT EXISTS historico (
     provincia TEXT NOT NULL,
     PRIMARY KEY (fecha, provincia)
 );
--- Brent en dólares por barril y dólares por euro, por día de mercado.
+-- Brent en dólares por barril, gasóleo y gasolina de Nueva York en dólares por galón y dólares
+-- por euro, por día de mercado.
 CREATE TABLE IF NOT EXISTS mercado (
-    fecha     TEXT PRIMARY KEY,
-    brent_usd REAL,
-    eurusd    REAL
+    fecha        TEXT PRIMARY KEY,
+    brent_usd    REAL,
+    eurusd       REAL,
+    gasoil_usd   REAL,
+    gasolina_usd REAL
 );
 -- Lo que la previsión dijo cada día en cada provincia, para comprobar luego si acertó.
 CREATE TABLE IF NOT EXISTS previsiones (
@@ -84,9 +87,11 @@ CREATE TABLE IF NOT EXISTS secretos (
 );
 """
 
-# Bases de datos de antes de la 2.0, cuando se leían solo unas provincias.
+# Columnas que no tenían las bases de datos de versiones anteriores.
 MIGRACIONES = [
-    ("estaciones", "provincia_id", "ALTER TABLE estaciones ADD COLUMN provincia_id TEXT"),
+    ("estaciones", "provincia_id", "ALTER TABLE estaciones ADD COLUMN provincia_id TEXT"),     # 2.0
+    ("mercado", "gasoil_usd", "ALTER TABLE mercado ADD COLUMN gasoil_usd REAL"),               # 2.10
+    ("mercado", "gasolina_usd", "ALTER TABLE mercado ADD COLUMN gasolina_usd REAL"),
 ]
 
 

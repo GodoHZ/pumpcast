@@ -67,7 +67,9 @@ self.addEventListener("fetch", (event) => {
 
   if (peticion.mode === "navigate") {
     event.respondWith(fetch(peticion).then((res) => {
-      if (res.ok && (res.headers.get("Content-Type") || "").includes("text/html")) {
+      // Lo marcado «no-store» (/pasar lleva tus datos; /ir, tu posición) no se guarda en el móvil.
+      if (res.ok && (res.headers.get("Content-Type") || "").includes("text/html")
+          && !(res.headers.get("Cache-Control") || "").includes("no-store")) {
         const copia = res.clone();
         caches.open(PANTALLAS).then((c) => c.put(peticion, copia));
       }

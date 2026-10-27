@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "_iconos.html" import icono %}
+{% block titulo %}{{ t("rep.titulo") }} · Pumpcast{% endblock %}
+{% block h1 %}{{ t("rep.titulo") }}{% endblock %}
+{% block contenido %}
+{#- Todo se guarda en el navegador (localStorage): el servidor no ve ningún repostaje. -#}
+<section class="cifras" id="rep-cifras" hidden>
+  <div class="cifra"><span class="etiqueta">{{ t("rep.este_mes") }}</span><b id="rep-mes">–</b></div>
+  <div class="cifra"><span class="etiqueta">{{ t("rep.doce_meses") }}</span><b id="rep-anio">–</b></div>
+  <div class="cifra"><span class="etiqueta">{{ t("rep.consumo", unidad=unidad) }}</span><b id="rep-consumo">–</b></div>
+</section>
+<p class="nota" id="rep-consumo-nota" hidden>{{ t("rep.consumo_falta") }}</p>
+<a class="boton secundario ancho" id="rep-usar" href="/ajustes" hidden>{{ t("rep.usar_consumo") }}</a>
+
+<section class="tarjeta">
+  <h2>{{ t("rep.apuntar") }}</h2>
+  <form id="rep-form" class="formulario" novalidate>
+    {% if nombre %}<p class="nota">{{ nombre }}</p>{% endif %}
+    <input type="hidden" name="estacion" value="{{ nombre }}">
+    <label>{{ t("rep.fecha") }}<input type="date" name="fecha" required></label>
+    <div class="fila">
+      <label>{{ t("rep.litros", unidad=unidad) }}<input name="litros" inputmode="decimal" autocomplete="off" required></label>
+      <label>{{ t("rep.precio", unidad=unidad) }}<input name="precio" inputmode="decimal" autocomplete="off" value="{{ precio|euros if precio else '' }}" required></label>
+    </div>
+    <label>{{ t("rep.km") }}<input name="km" inputmode="numeric" autocomplete="off"></label>
+    <label class="interruptor"><input type="checkbox" name="lleno" value="1" checked> {{ t("rep.lleno") }}</label>
+    <p class="mensaje error" id="rep-error" role="alert" hidden></p>
+    <button class="boton ancho">{{ t("rep.guardar") }}</button>
+  </form>
+  <p class="nota">{{ t("rep.privado") }}</p>
+</section>
+
+<section class="tarjeta">
+  <h2>{{ t("rep.historial") }}</h2>
+  <p class="nota" id="rep-vacio">{{ t("rep.vacio") }}</p>
+  <ul class="lista" id="rep-lista"></ul>
+  <div class="botones">
+    <button class="boton secundario" type="button" id="rep-exportar">{{ t("rep.exportar") }}</button>
+    <label class="boton secundario">{{ t("rep.importar") }}<input type="file" id="rep-importar" accept="application/json,.json" hidden></label>
+    <a class="boton secundario" href="/pasar">{{ t("pasar.titulo") }}</a>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script nonce="{{ nonce }}">
+  window.REPOSTAJES = {{ {
+    "unidad": unidad,
+    "error": t("rep.error"), "borrar": t("rep.borrar"), "borrar_seguro": t("rep.borrar_seguro"),
+    "importados": t("rep.importados", n="{n}"), "importar_mal": t("rep.importar_mal"),
+    "consumo_valor": t("rep.consumo_valor", consumo="{consumo}", unidad=unidad),
+    "lleno": t("rep.lleno_corto"), "km": t("rep.km_corto", km="{km}")
+  }|tojson }};
+</script>
+<script src="/static/repostajes.js?v={{ version }}"></script>
+{% endblock %}

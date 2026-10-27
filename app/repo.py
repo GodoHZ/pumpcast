@@ -278,6 +278,51 @@ def estacion(estacion_id: int) -> dict | None:
     return dict(fila) if fila else None
 
 
+SIN_MARCA = ("(SIN RÓTULO)", "SIN ROTULO", "SIN RÓTULO", "")
+MIN_GASOLINERAS_MARCA = 2           # una sola gasolinera dice de ella, no de su marca
+
+
+def marcas(aj: dict, comb: str, dias: int = 30) -> list[dict]:
+    """Cuánto más cara o más barata que la media de la zona sale cada marca, de media en los
+    últimos `dias` días: [{"marca", "diferencia" (€/l), "gasolineras"}], de la más barata a la más cara."""
+    lat, lon, radio = _casa(aj)
+    clave = ("marcas", round(lat, 4), round(lon, 4), radio, comb, dias)
+    return [dict(f) for f in cache.recordar(clave, lambda: _marcas(aj, comb, dias))]
+
+
+def _marcas(aj: dict, comb: str, dias: int) -> list[dict]:
+    lat, lon, radio = _casa(aj)
+    with db.sesion() as con:
+        hoy = _dia_referencia(con, comb)
+        if not hoy:
+            return []
+        marca_de = {e["id"]: (e["rotulo"] or "").strip().upper() for e, _ in _alrededor(con, lat, lon, radio)}
+        if not marca_de:
+            return []
+        huecos = ",".join("?" * len(marca_de))
+        filas = con.execute(                          # el «+»: ver _serie_zona
+            f"SELECT fecha, estacion_id, precio FROM precios WHERE +combustible = ? AND fecha > ? "
+            f"AND estacion_id IN ({huecos})", (comb, _hace(hoy, dias), *marca_de)).fetchall()
+    por_dia: dict[str, list] = {}
+    for f in filas:
+        por_dia.setdefault(f["fecha"], []).append((f["estacion_id"], f["precio"]))
+    diferencias: dict[str, list[float]] = {}
+    estaciones: dict[str, set] = {}
+    for precios in por_dia.values():
+        if len(precios) < 3:                          # sin zona con la que comparar ese día
+            continue
+        media = sum(p for _, p in precios) / len(precios)
+        for estacion, precio in precios:
+            marca = marca_de[estacion]
+            if marca in SIN_MARCA:
+                continue
+            diferencias.setdefault(marca, []).append(precio - media)
+            estaciones.setdefault(marca, set()).add(estacion)
+    lista = [{"marca": m, "diferencia": sum(d) / len(d), "gasolineras": len(estaciones[m])}
+             for m, d in diferencias.items() if len(estaciones[m]) >= MIN_GASOLINERAS_MARCA]
+    return sorted(lista, key=lambda x: x["diferencia"])
+
+
 def favoritas(aj: dict, comb: str, ids: list[int]) -> list[dict]:
     """Las favoritas del visitante con su precio de hoy, estén donde estén."""
     if not ids:

@@ -1,5 +1,5 @@
 import re
-from datetime import timedelta
+from datetime import date, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -309,7 +309,7 @@ def test_ordenar_por_cercania_se_recuerda(cliente, cargada):
     r = cliente.get("/?orden=distancia")
     assert preferencias.leer_texto(r.cookies.get(preferencias.COOKIE).strip('"'))["orden"] == "distancia"
     lista = r.text.split('class="lista"')[1]
-    distancias = [float(x.replace(",", ".")) for x in re.findall(r"· ([\d,]+) km ·", lista)]
+    distancias = [float(x.replace(",", ".")) for x in re.findall(r"([\d,]+) km ·", lista)]
     assert len(distancias) > 2 and distancias == sorted(distancias)
 
 
@@ -371,6 +371,15 @@ def test_salud_avisa_si_el_brent_no_llega(cliente, cargada, monkeypatch):
     assert cliente.get("/salud").json()["estado"] == "ok"
 
 
+def test_salud_avisa_si_el_gasoleo_o_la_gasolina_no_llegan(cliente, cargada, monkeypatch):
+    from app import main
+    hoy = date.today().isoformat()
+    monkeypatch.setattr(main.mercado, "ultimos_productos", lambda: {"gasoil": hoy, "gasolina": "2020-01-01"})
+    assert cliente.get("/salud").json()["estado"] == "productos-viejos"
+    monkeypatch.setattr(main.mercado, "ultimos_productos", lambda: {"gasoil": hoy, "gasolina": None})
+    assert cliente.get("/salud").json()["estado"] == "ok"
+
+
 def test_el_aviso_legal_cuenta_lo_que_hace_falta(cliente):
     texto = cliente.get("/legal").text
     for frase in ("6.1.b", "6.1.a", "6.1.f", "Marco de", "OpenFreeMap", "pumpcast_fav", "MapLibre"):
@@ -392,7 +401,7 @@ def test_favorita_y_horario_desde_cerca_y_el_mapa(cliente, cargada):
     _ubicar(cliente)
     assert 'action="/favorita/' in cliente.get("/").text
     mapa = cliente.get("/mapa").text
-    assert "const favoritas = new Set([])" in mapa and '"horario":' in mapa
+    assert '"favoritas": []' in mapa and '"horario":' in mapa
 
 
 def test_ajustes_se_guardan_solos(cliente, cargada):
@@ -428,3 +437,120 @@ def test_las_paginas_van_comprimidas(cliente, cargada):
     _ubicar(cliente)
     r = cliente.get("/", headers={"Accept-Encoding": "gzip"})
     assert r.headers.get("content-encoding") == "gzip" and "content-security-policy" in r.headers
+
+
+def test_marcas_de_la_zona(cliente, cargada):
+    aj = {**PREFERENCIAS_BUENAS, **SOL, "radio_km": "10"}
+    lista = repo.marcas(aj, "g95")
+    assert len(lista) >= 2 and all(m["gasolineras"] >= 2 for m in lista)
+    assert [m["diferencia"] for m in lista] == sorted(m["diferencia"] for m in lista)
+    assert lista[0]["diferencia"] < 0 < lista[-1]["diferencia"]
+    texto = _ubicar(cliente).get("/tendencia").text
+    assert "Marcas en tu zona" in texto and lista[0]["marca"].title()[:4] in texto
+
+
+def test_siri_pregunta_por_la_mas_barata(cliente, cargada):
+    r = cliente.get("/api/cerca?lat=40.4168&lon=-3.7038&c=g95", headers={"Accept-Language": "es-ES"})
+    datos = r.json()
+    assert datos["ok"] and datos["frase"].startswith("La más barata a menos de 10 km es ")
+    assert "euros el litro" in datos["frase"] and "€" not in datos["frase"]
+    assert "dir_action=navigate" in datos["google"] and "navigate=yes" in datos["waze"]
+    assert r.headers["cache-control"] == "no-store"
+    lejos = cliente.get("/api/cerca?lat=48.85&lon=2.35").json()      # París
+    assert not lejos["ok"] and "fuera de España" in lejos["frase"]
+    nada = cliente.get("/api/cerca?lat=28.1&lon=-15.4&radio=1").json()  # sin gasolineras cargadas allí
+    assert not nada["ok"] and "1 km" in nada["frase"]
+
+
+def test_ir_abre_el_mapa_camino_de_la_mejor(cliente, cargada):
+    # Sin app elegida (un atajo no lleva cookies): pregunta con cuál ir, con los tres enlaces ya hechos.
+    r = cliente.get("/ir?lat=40.4168&lon=-3.7038&c=g95", follow_redirects=False)
+    assert r.status_code == 200 and "¿Con qué app quieres ir?" in r.text
+    assert "https://maps.apple.com/?daddr=" in r.text and "dir_action=navigate" in r.text and "waze.com" in r.text
+    r = cliente.get("/ir?lat=40.4168&lon=-3.7038&mapa=waze", follow_redirects=False)
+    assert r.status_code == 302 and r.headers["location"].startswith("https://waze.com/")
+    _ubicar(cliente, mapa="google")                                   # la de Ajustes
+    r = cliente.get("/ir?lat=40.4168&lon=-3.7038", follow_redirects=False)
+    assert r.status_code == 302 and r.headers["location"].startswith("https://www.google.com/maps/dir/")
+    r = cliente.get("/ir?lat=40.4168&lon=-3.7038&mapa=apple", follow_redirects=False)   # la dirección manda
+    assert r.headers["location"].startswith("https://maps.apple.com/?daddr=")
+    sin_posicion = cliente.get("/ir?c=diesel")
+    assert sin_posicion.status_code == 200 and "/static/ir.js" in sin_posicion.text
+    fuera = cliente.get("/ir?lat=48.85&lon=2.35")
+    assert fuera.status_code == 200 and "fuera de España" in fuera.text and "/static/ir.js" not in fuera.text
+
+
+def test_pagina_de_siri_y_atajo_del_icono(cliente, cargada):
+    texto = _ubicar(cliente).get("/voz").text
+    assert "http://testserver/ir?c=g95" in texto and "api/cerca?c=g95&amp;lat=LAT&amp;lon=LON" in texto
+    atajos = cliente.get("/manifest.webmanifest").json()["shortcuts"]
+    assert atajos[0]["url"] == "/ir?c=g95"
+    con_waze = _ubicar(cliente, mapa="waze").get("/voz").text         # con app en Ajustes, va en la dirección
+    assert "http://testserver/ir?c=g95&amp;mapa=waze" in con_waze and "<b>Waze</b>" in con_waze
+
+
+def test_mis_repostajes(cliente, cargada):
+    _, estaciones = cargada
+    e = next(e for e in estaciones if "g95" in e["precios"])
+    texto = _ubicar(cliente).get(f"/repostajes?estacion={e['id']}&c=g95").text
+    assert "Mis repostajes" in texto and "/static/repostajes.js" in texto
+    assert f'value="{e["precios"]["g95"]:.3f}"'.replace(".", ",") in texto
+    assert cliente.get("/repostajes").status_code == 200
+
+
+def test_la_app_de_mapas_se_guarda_en_ajustes(cliente, cargada):
+    _ubicar(cliente)
+    assert 'data-app="preguntar"' in cliente.get("/").text
+    r = cliente.post("/ajustes", data={**PREFERENCIAS_BUENAS, "mapa": "waze"}, headers={"Accept": "application/json"})
+    assert r.json()["ok"]
+    assert preferencias.leer_texto(r.cookies.get(preferencias.COOKIE).strip('"'))["mapa"] == "waze"
+    cliente.cookies.set(preferencias.COOKIE, r.cookies.get(preferencias.COOKIE))
+    assert 'data-app="waze"' in cliente.get("/").text
+    r = cliente.post("/ajustes", data={**PREFERENCIAS_BUENAS, "mapa": "otra"}, headers={"Accept": "application/json"})
+    assert preferencias.leer_texto(r.cookies.get(preferencias.COOKIE).strip('"'))["mapa"] == "preguntar"
+
+
+def test_ir_da_el_enlace_para_que_lo_abra_el_atajo(cliente, cargada):
+    """Abierto por el atajo, iOS va directo a la app de mapas; desde Safari, preguntaría."""
+    r = cliente.get("/ir?c=g95&mapa=waze&enlace=1&lat=40.4168&lon=-3.7038")
+    assert r.status_code == 200 and r.text.startswith("https://waze.com/ul?ll=") and "\n" not in r.text
+    sin_app = cliente.get("/ir?c=g95&enlace=1&lat=40.4168&lon=-3.7038").text      # a la página para elegir
+    assert sin_app.startswith("http://testserver/ir?") and "enlace" not in sin_app and "lat=40.4168" in sin_app
+    lejos = cliente.get("/ir?mapa=google&enlace=1&lat=48.85&lon=2.35").text      # la página lo explica
+    assert lejos.startswith("http://testserver/ir?")
+    texto = _ubicar(cliente, mapa="waze").get("/voz").text
+    assert "ir?c=g95&amp;mapa=waze&amp;enlace=1&amp;lat=LAT&amp;lon=LON" in texto
+
+
+def test_atajo_ya_hecho_desde_icloud(cliente, cargada, monkeypatch):
+    assert "icloud.com" not in _ubicar(cliente).get("/voz").text          # sin configurar, no sale
+    monkeypatch.setattr(config, "ATAJO_ICLOUD", "https://www.icloud.com/shortcuts/abc")
+    texto = _ubicar(cliente).get("/voz").text                           # g95 y sin app: como el atajo
+    assert 'href="https://www.icloud.com/shortcuts/abc"' in texto and "Gasolina 95 y Waze" in texto
+    assert "edita la dirección" not in texto
+    otro = _ubicar(cliente, combustible="diesel", mapa="google").get("/voz").text
+    assert "<code>c=g95&amp;mapa=waze</code> por <code>c=diesel&amp;mapa=google</code>" in otro
+
+
+def test_mapa_con_distintivos_y_filtros(cliente, cargada):
+    texto = _ubicar(cliente).get("/mapa").text
+    assert '"insignia": {' in texto and '"media":' in texto and "/static/mapa.js" in texto
+    assert 'data-filtro="abiertas"' in texto and 'id="elegir-marcas"' in texto
+
+
+def test_pasar_a_otro_movil(cliente, cargada):
+    _ubicar(cliente)
+    cliente.cookies.set(preferencias.COOKIE_FAVORITAS, "11137.4352")
+    r = cliente.get("/pasar")
+    assert r.headers["cache-control"] == "no-store" and '"f": [11137, 4352]' in r.text and "lat=40.4168" in r.text
+    # El otro móvil, sin nada: importa ajustes y favoritas (los repostajes no pasan por el servidor).
+    from fastapi.testclient import TestClient
+    otro = TestClient(app, base_url="https://testserver")
+    p = preferencias.para_cookie({**PREFERENCIAS_BUENAS, **SOL, "combustible": "gnc"})
+    r = otro.post("/pasar", json={"p": p, "f": [4352, "x", 11137]}, headers={"Origin": "https://testserver"})
+    assert r.json() == {"ok": True, "ajustes": True, "favoritas": 2}
+    assert preferencias.leer_texto(r.cookies.get(preferencias.COOKIE).strip('"'))["combustible"] == "gnc"
+    assert r.cookies.get(preferencias.COOKIE_FAVORITAS).strip('"') == "4352.11137"
+    mal = otro.post("/pasar", json={"p": "lat=999", "f": []}, headers={"Origin": "https://testserver"})
+    assert mal.json()["ajustes"] is False and preferencias.COOKIE not in mal.cookies
+    assert otro.post("/pasar", json={"p": p}, headers={"Origin": "https://malo.example"}).status_code == 403

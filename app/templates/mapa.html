@@ -9,8 +9,22 @@
 {% if sin_ubicacion %}
 {% include "_sin_ubicacion.html" %}
 {% else %}
+<div class="filtros-mapa" role="group" aria-label="{{ t('filtro.aria') }}">
+  <button type="button" class="chip" data-filtro="abiertas" aria-pressed="false">{{ t("filtro.abiertas") }}</button>
+  <button type="button" class="chip" data-filtro="baratas" aria-pressed="false" title="{{ t('filtro.baratas_ayuda') }}">{{ t("filtro.baratas") }}</button>
+  <button type="button" class="chip" id="filtro-marcas" aria-haspopup="dialog" aria-pressed="false">{{ t("filtro.marcas") }}<span id="filtro-marcas-n"></span></button>
+</div>
 <div id="mapa" class="mapa" role="region" aria-label="{{ t('mapa.aria') }}"></div>
-<p class="nota leyenda">{{ t("mapa.leyenda")|safe }}</p>
+<p class="nota leyenda"><b id="filtro-cuenta"></b> {{ t("mapa.leyenda")|safe }}</p>
+<dialog id="elegir-marcas" class="hoja" aria-labelledby="elegir-marcas-titulo">
+  <h2 id="elegir-marcas-titulo">{{ t("filtro.marcas_titulo") }}</h2>
+  <div class="botones centrados">
+    <button type="button" class="boton secundario" id="marcas-todas">{{ t("filtro.todas") }}</button>
+    <button type="button" class="boton secundario" id="marcas-ninguna">{{ t("filtro.ninguna") }}</button>
+  </div>
+  <div class="lista-marcas" id="lista-marcas"></div>
+  <form method="dialog"><button class="boton ancho">{{ t("filtro.listo") }}</button></form>
+</dialog>
 {% endif %}
 {% endblock %}
 {% block scripts %}
@@ -20,60 +34,10 @@
 <script src="/static/vendor/maplibre/leaflet-maplibre-gl.js?v={{ version }}"></script>
 <script src="/static/mapa-base.js?v={{ version }}"></script>
 <script nonce="{{ nonce }}">
-  const estaciones = {{ estaciones|tojson }};
-  const escala = {{ escala|tojson }};
-  const casa = [{{ aj.lat|float }}, {{ aj.lon|float }}];
-  const comb = {{ comb|tojson }};
-  const favoritas = new Set({{ favoritas|tojson }});
-  const textoFavorita = {{ [t("fav.poner"), t("fav.quitar")]|tojson }};
-  const estrella = {{ icono("estrella")|tojson }};
-  const { t, decimal } = window.I18N;
-
-  const mapa = L.map("mapa", { zoomControl: false }).setView(casa, 12);
-  fondoMapa(mapa);
-  L.circle(casa, { radius: {{ aj.radio_km|float }} * 1000, color: "#0f766e", weight: 1, fillOpacity: 0.04 }).addTo(mapa);
-  L.circleMarker(casa, { radius: 7, color: "#fff", weight: 2, fillColor: "#2563eb", fillOpacity: 1 })
-    .addTo(mapa).bindPopup(t.casa);
-
-  const cifra = (v, d) => v.toFixed(d).replace(".", decimal);
-  const precio = (p) => window.I18N.europeo ? `${cifra(p, 3)} €` : `€${cifra(p, 3)}`;
-  const km = (d) => d < 1 ? Math.round(d * 1000) + " m" : cifra(d, 1) + " km";
-  const color = (p) => {
-    const x = escala.max > escala.min ? Math.min(1, Math.max(0, (p - escala.min) / (escala.max - escala.min))) : 0;
-    return `hsl(${Math.round(130 * (1 - x))} 70% 40%)`;
-  };
-  const nombre = (s) => s.toLowerCase().replace(/(^|\s)\S/g, (l) => l.toUpperCase());
-
-  for (const e of estaciones) {
-    const popup = document.createElement("div");
-    popup.className = "ventanita";
-    popup.innerHTML = '<b></b><br><span></span><br><span class="estado"></span>'
-      + '<div class="botones"><a class="boton"></a><a class="boton secundario"></a>'
-      + '<form method="post"><button class="boton secundario solo-icono"></button></form></div>';
-    popup.querySelector("b").textContent = `${precio(e.precio)} · ${nombre(e.rotulo)}`;
-    popup.querySelector("span").textContent = `${e.municipio} · ${km(e.distancia)}`;
-    const horario = popup.querySelector(".estado");
-    horario.textContent = e.horario;
-    horario.classList.add(e.abierta === false ? "cerrada" : "abierta");
-    const marcada = favoritas.has(e.id);
-    const form = popup.querySelector("form");
-    form.action = `/favorita/${e.id}`;
-    const fav = form.querySelector("button");
-    fav.innerHTML = estrella;
-    fav.title = fav.ariaLabel = textoFavorita[marcada ? 1 : 0];
-    fav.setAttribute("aria-pressed", marcada);
-    fav.classList.toggle("marcada", marcada);
-    const [ir, historial] = popup.querySelectorAll("a");
-    ir.textContent = t.como_llegar;
-    ir.dataset.ir = `${e.lat},${e.lon}`;
-    ir.href = `https://www.google.com/maps/dir/?api=1&destination=${e.lat},${e.lon}`;
-    ir.target = "_blank";
-    ir.rel = "noopener";
-    historial.textContent = t.ver_historial;
-    historial.href = `/estacion/${e.id}?c=${comb}`;
-    L.circleMarker([e.lat, e.lon], { radius: 8, color: "#fff", weight: 1.5, fillColor: color(e.precio), fillOpacity: 0.95 })
-      .addTo(mapa).bindPopup(popup);
-  }
+  window.MAPA = {{ {"estaciones": estaciones, "escala": escala, "casa": [aj.lat|float, aj.lon|float],
+                    "radio": aj.radio_km|float, "comb": comb, "favoritas": favoritas,
+                    "textoFavorita": [t("fav.poner"), t("fav.quitar")], "estrella": icono("estrella")|string}|tojson }};
 </script>
+<script src="/static/mapa.js?v={{ version }}"></script>
 {% endif %}
 {% endblock %}

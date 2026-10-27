@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block titulo %}{{ t("voz.atajo") }} · Pumpcast{% endblock %}
+{% block cabeza %}<meta name="robots" content="noindex">{% endblock %}
+{% block h1 %}{{ t("voz.atajo") }}{% endblock %}
+{% block contenido %}
+{#- Sin posición en la dirección: se la pide al navegador (ir.js) y vuelve a /ir con ella, que ya
+    manda a la app de mapas. Con mensaje: no había ninguna o la posición no valía. -#}
+<section class="tarjeta">
+  <p id="ir-estado" role="status" data-sin-gps="{{ t('js.sin_gps') }}" data-error="{{ t('js.no_se_pudo') }}">
+    {{ mensaje or t("voz.buscando") }}</p>
+  {% if destinos %}
+  <h2>{{ t("mapas.titulo") }}</h2>
+  {% for clave, nombre in (("google", "Google Maps"), ("apple", "Apple Maps"), ("waze", "Waze")) %}
+  <a class="boton ancho" href="{{ destinos[clave] }}">{{ nombre }}</a>
+  {% endfor %}
+  <p class="nota">{{ t("voz.elegir_una_vez")|safe }}</p>
+  {% endif %}
+  <a class="boton secundario ancho" href="/?c={{ comb }}">{{ t("voz.abrir_app") }}</a>
+</section>
+{% endblock %}
+{% block scripts %}
+{% if not mensaje %}<script src="/static/ir.js?v={{ version }}"></script>{% endif %}
+{% endblock %}

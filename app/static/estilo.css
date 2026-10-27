@@ -150,6 +150,10 @@ details.avanzado summary { color: var(--suave); font-size: .9rem; cursor: pointe
 .lista .info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .lista .info b, .lista .info small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lista .info small { color: var(--suave); }
+.lista .fila-rep { display: flex; align-items: center; gap: 12px; padding: 11px 14px; }
+.lista .fila-rep .info b { white-space: normal; font-weight: 600; }
+.boton-icono { background: none; border: 0; color: var(--suave); font-size: 1rem; padding: 6px 8px; cursor: pointer; border-radius: 8px; }
+.boton-icono:hover, .boton-icono:focus-visible { color: var(--sube); background: var(--borde); }
 .dif { font-variant-numeric: tabular-nums; font-size: .9rem; font-weight: 600; }
 .sube { color: var(--sube); }
 .baja { color: var(--baja); }
@@ -165,11 +169,45 @@ details.avanzado summary { color: var(--suave); font-size: .9rem; cursor: pointe
 .precios td { text-align: right; font-variant-numeric: tabular-nums; }
 .precios tr + tr { border-top: 1px solid var(--borde); }
 .precios tr.activa { color: var(--marca); font-weight: 700; }
+.marcas th small { color: var(--suave); font-weight: 400; }
+.pasos { padding-left: 1.3em; margin: 8px 0; }
+.pasos li { margin: 8px 0; }
+.copiable { display: block; position: relative; margin: 6px 0; padding: 9px 11px; border-radius: 10px; background: var(--fondo);
+  border: 1px solid var(--borde); font-size: .82rem; overflow-wrap: anywhere; cursor: pointer; }
+.copiable[data-copiado]::after { content: attr(data-copiado); position: absolute; right: 8px; top: -12px; font-size: .72rem;
+  background: var(--marca); color: #fff; padding: 2px 8px; border-radius: 999px; font-family: system-ui, sans-serif; }
+.marcas tr.hueco th { text-align: center; color: var(--suave); padding: 2px 0; }
 
-.mapa { height: calc(100dvh - 230px - env(safe-area-inset-bottom)); min-height: 320px; border-radius: 16px; overflow: hidden; border: 1px solid var(--borde); }
+.mapa { height: calc(100dvh - 276px - env(safe-area-inset-bottom)); min-height: 320px; border-radius: 16px; overflow: hidden; border: 1px solid var(--borde); }
+
+/* Filtros del mapa */
+.filtros-mapa { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 10px; padding-bottom: 2px; scrollbar-width: none; }
+.chip { border: 1px solid var(--borde); background: var(--tarjeta); color: var(--texto); border-radius: 999px; padding: 7px 13px;
+  font: inherit; font-size: .88rem; white-space: nowrap; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--marca); border-color: var(--marca); color: #fff; }
+.lista-marcas { max-height: 55dvh; overflow-y: auto; margin: 6px 0 12px; }
+.fila-marca { display: flex; align-items: center; gap: 10px; padding: 8px 2px; border-bottom: 1px solid var(--borde); cursor: pointer; }
+.fila-marca span:nth-of-type(2) { flex: 1; }
+.fila-marca small { color: var(--suave); font-variant-numeric: tabular-nums; }
+.fila-marca input { width: 24px; height: 24px; accent-color: var(--marca); margin: 0; }
+.botones.centrados { justify-content: center; }
+
+/* Cada gasolinera: el distintivo de su marca (iniciales y color, no logos) y el precio al lado */
+.pin-icono { background: none; border: 0; }
+.pin { position: relative; width: 28px; height: 28px; }
+.pin-marca { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 28px; height: 28px; border-radius: 50%; background: var(--f); color: var(--t); border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 35%); font: 800 12px/1 system-ui, sans-serif; letter-spacing: -.5px; box-sizing: border-box; }
+.pin-precio { position: absolute; left: 20px; top: 5px; padding: 0 6px 0 10px; border-radius: 0 9px 9px 0; background: var(--p);
+  color: #fff; font: 700 11px/18px system-ui, sans-serif; white-space: nowrap; font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 30%); }
+.pin.cerrada { opacity: .45; filter: grayscale(.6); }
+.pin.fav .pin-marca { border-color: #f5b301; box-shadow: 0 0 0 2px #f5b301, 0 1px 4px rgb(0 0 0 / 35%); }
+.lejos .pin-precio { display: none; }
+.lejos .pin { transform: scale(.78); }
 .leyenda { margin-top: 8px; }
-.leyenda .barata { color: hsl(130 70% 40%); }
-.leyenda .cara { color: hsl(0 70% 40%); }
+.leyenda .barata { color: var(--baja); }                 /* los del tema: contraste de sobra en claro y en oscuro */
+.leyenda .cara { color: var(--sube); }
 
 .formulario label { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; font-size: .9rem; color: var(--suave); }
 .formulario input, .formulario select {
@@ -178,7 +216,7 @@ details.avanzado summary { color: var(--suave); font-size: .9rem; cursor: pointe
 }
 .formulario .fila { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .formulario .interruptor { flex-direction: row; align-items: center; gap: 10px; color: var(--texto); font-size: 1rem; }
-.formulario .interruptor input { width: 22px; height: 22px; accent-color: var(--marca); }
+.formulario .interruptor input { width: 24px; height: 24px; flex: none; accent-color: var(--marca); }
 .hoja {
   border: 1px solid var(--borde); border-radius: 18px; padding: 18px 16px; width: min(420px, calc(100% - 32px));
   background: var(--tarjeta); color: var(--texto); box-shadow: var(--sombra);
@@ -284,3 +322,4 @@ html .leaflet-container .leaflet-control-attribution a { color: var(--marca); }
 .pasos .icono { width: 1.15em; height: 1.15em; vertical-align: -.2em; color: #0a84ff; }
 .hoja-instalar .botones { margin-top: 10px; }
 .nota.centrada { text-align: center; margin: 12px 0; }
+.hoja .botones.centrados .boton { flex: 1; margin-bottom: 0; }

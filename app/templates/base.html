@@ -66,10 +66,10 @@
     <a href="/tendencia?c={{ comb }}" {% if pagina == "tendencia" %}aria-current="page"{% endif %}>{{ icono("tendencia") }}{{ t("nav.tendencia") }}</a>
     <a href="/ajustes" {% if pagina == "ajustes" %}aria-current="page"{% endif %}>{{ icono("ajustes") }}{{ t("nav.ajustes") }}</a>
   </nav>
-  <dialog id="elegir-mapa" class="hoja" aria-labelledby="elegir-mapa-titulo">
+  <dialog id="elegir-mapa" class="hoja" aria-labelledby="elegir-mapa-titulo" data-app="{{ aj.mapa or 'preguntar' }}">
     <h2 id="elegir-mapa-titulo">{{ t("mapas.titulo") }}</h2>
     {% for clave, nombre in (("google", "Google Maps"), ("apple", "Apple Maps"), ("waze", "Waze")) %}
-    <a class="boton ancho" data-plantilla="{{ mapas[clave] }}" href="#" target="_blank" rel="noopener">{{ nombre }}</a>
+    <a class="boton ancho" data-plantilla="{{ mapas[clave] }}" data-clave="{{ clave }}" href="#" target="_blank" rel="noopener">{{ nombre }}</a>
     {% endfor %}
     <form method="dialog"><button class="boton secundario ancho">{{ t("mapas.cancelar") }}</button></form>
   </dialog>

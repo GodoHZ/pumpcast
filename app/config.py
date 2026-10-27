@@ -25,6 +25,12 @@ ADMIN_PASSWORD_HASH = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
 # contacto, la página manda a las incidencias de GitHub.
 TITULAR = os.environ.get("TITULAR", "").strip()
 CONTACTO = os.environ.get("CONTACTO", "").strip()
+# Un atajo de Siri ya hecho, compartido desde iCloud (opcional): /voz lo ofrece para instalarlo de un
+# toque. Apunta a una web concreta, así que cada instalación pone el suyo. Se dice con qué combustible
+# y app de mapas viene para explicar qué cambiar a quien use otros.
+ATAJO_ICLOUD = os.environ.get("ATAJO_ICLOUD", "").strip()
+ATAJO_COMBUSTIBLE = os.environ.get("ATAJO_COMBUSTIBLE", "g95").strip()
+ATAJO_MAPA = os.environ.get("ATAJO_MAPA", "waze").strip()
 REPOSITORIO = "https://github.com/GodoHZ/pumpcast"
 
 MINUTOS_ENTRE_LECTURAS = 30                             # el Ministerio actualiza cada media hora
@@ -84,17 +90,26 @@ PREFERENCIAS_POR_DEFECTO = {
     "lat": "", "lon": "", "radio_km": "10", "combustible": "g95", "litros": "40", "idioma": "auto",
     "gps": "0",                    # "1": al abrir la app, buscar alrededor de donde estés en ese momento
     "orden": "precio",             # la lista de Cerca: "precio", "distancia" o "compensa"
-    "consumo": "6",
-    "tema": "auto",                # "auto" (el del móvil), "claro" u "oscuro"                # litros (o kilos) a los 100 km, para saber si compensa ir más lejos
+    "consumo": "6",                # litros (o kilos) a los 100 km, para saber si compensa ir más lejos
+    "tema": "auto",                # "auto" (el del móvil), "claro" u "oscuro"
+    "mapa": "preguntar",           # la app de «Cómo llegar» y del atajo de Siri, o preguntar cada vez
 }
 ORDENES = ("precio", "distancia", "compensa")
 TEMAS = ("auto", "claro", "oscuro")
+APPS_MAPAS = ("preguntar", "google", "apple", "waze")
 RODEO = 1.3                        # la carretera es más larga que la línea recta
 MAX_FAVORITAS = 20
 # Las apps entre las que se elige al pulsar «Cómo llegar».
 MAPAS = {
     "google": "https://www.google.com/maps/dir/?api=1&destination={lat},{lon}",
     "apple": "https://maps.apple.com/?daddr={lat},{lon}",
+    "waze": "https://waze.com/ul?ll={lat},{lon}&navigate=yes",
+}
+# Para Siri y los atajos (/ir): en coche, ya navegando. Apple Maps no tiene forma de arrancar la
+# navegación desde un enlace: enseña la ruta en coche y hay que tocar «Ir».
+MAPAS_NAVEGAR = {
+    "google": "https://www.google.com/maps/dir/?api=1&destination={lat},{lon}&travelmode=driving&dir_action=navigate",
+    "apple": "https://maps.apple.com/?daddr={lat},{lon}&dirflg=d",
     "waze": "https://waze.com/ul?ll={lat},{lon}&navigate=yes",
 }
 
