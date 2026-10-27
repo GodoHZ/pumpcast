@@ -1,0 +1,33 @@
+# Dependabot propone cada mes las versiones nuevas de las librerías como pull requests; el
+# workflow de tests las prueba solas. Aceptar una no despliega nada: luego hay que construir la
+# imagen y desplegarla como siempre.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      librerias:                  # todas en un solo pull request
+        patterns: ["*"]
+    commit-message:
+      prefix: "Librerías"
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly
+    ignore:
+      # Cambiar de Python (3.12 -> 3.13) se hace a mano y probándolo. Los parches de seguridad de
+      # la 3.12 llegan solos al reconstruir: la etiqueta python:3.12-alpine se renueva.
+      - dependency-name: python
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+    commit-message:
+      prefix: "Imagen base"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "CI"
