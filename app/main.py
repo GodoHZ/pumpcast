@@ -128,6 +128,7 @@ def inicio(request: Request, c: str | None = None, orden: str | None = None):
     ids_favoritas = preferencias.favoritas(request)
     favoritas = _con_horario(repo.favoritas(aj, comb, ids_favoritas))
     respuesta = _pagina(request, "inicio.html", "inicio", pref, aj, comb, lista=lista, mejor=mejor,
+                        novedades=_novedades(favoritas),
                         resto=[e for e in lista if e is not mejor][:20], total=len(lista), media=media, ahorro=ahorro,
                         favoritas=favoritas, ids_favoritas=ids_favoritas, otro=otro,
                         secundaria=secundaria if secundaria is not mejor else None,
@@ -135,6 +136,17 @@ def inicio(request: Request, c: str | None = None, orden: str | None = None):
     if orden == aj["orden"]:
         preferencias.guardar(respuesta, request, aj)
     return respuesta
+
+
+CAMBIO_MINIMO = 0.0005       # medio céntimo: por menos no se cuenta como «ha cambiado»
+NOVEDADES = 3
+
+
+def _novedades(favoritas: list[dict]) -> list[dict]:
+    """Las favoritas que han cambiado de precio desde su último día con precio, lo que más primero."""
+    cambios = [{**e, "cambio": e["precio"] - e["antes"]} for e in favoritas
+               if e["precio"] and e["antes"] and abs(e["precio"] - e["antes"]) >= CAMBIO_MINIMO]
+    return sorted(cambios, key=lambda e: -abs(e["cambio"]))[:NOVEDADES]
 
 
 def _con_horario(lista: list[dict]) -> list[dict]:
@@ -245,7 +257,30 @@ def repostajes(request: Request, c: str | None = None, estacion: int | None = No
     e = repo.estacion(estacion) if estacion else None
     precio = repo.precios_actuales(e["id"]).get(comb) if e else None
     nombre = f'{formato.titulo(e["rotulo"])} · {e["municipio"]}' if e else ""
-    return _pagina(request, "repostajes.html", "repostajes", pref, aj, comb, precio=precio, nombre=nombre)
+    medias = repo.medias_de_referencia(aj, comb) if pref else {}
+    return _pagina(request, "repostajes.html", "repostajes", pref, aj, comb, precio=precio, nombre=nombre,
+                   medias=medias)
+
+
+@app.get("/coche")
+def coche(request: Request, lat: float | None = None, lon: float | None = None, c: str | None = None):
+    """Modo coche: solo la mejor de alrededor, en grande, para tocar «Ir» con el móvil en el soporte.
+    La página pide la posición al navegador y vuelve aquí con ella (redondeada, como /ir); sin ella,
+    busca desde la ubicación de Ajustes."""
+    pref, aj, comb = _elegir(request, c)
+    error = None
+    if lat is not None and lon is not None:
+        aj_aqui, comb, error = _desde_aqui(request, lat, lon, c, None, None)
+        if not error:
+            aj = aj_aqui
+    elif not pref:
+        return RedirectResponse("/", status_code=303)
+    lista, abiertas = _ordenadas(aj, comb) if not error else ([], [])
+    mejor = abiertas[0] if abiertas else None
+    otras = [e for e in abiertas if e is not mejor][:2]
+    media = mean(e["precio"] for e in lista) if lista else None
+    return _sin_guardar(_pagina(request, "coche.html", "coche", pref, aj, comb, mejor=mejor, otras=otras,
+                                media=media, aqui=lat is not None, error=error))
 
 
 def _sin_guardar(respuesta):
@@ -609,8 +644,10 @@ def manifest(request: Request):
         "start_url": "/", "scope": "/", "display": "standalone",
         # Manteniendo pulsado el icono (Android): a un toque de ir a la mejor de alrededor.
         "shortcuts": [{"name": i18n.t(lang, "voz.atajo"), "url": f"/ir?c={_elegir(request, None)[2]}",
+                       "icons": [{"src": "/static/iconos/icono-192.png", "sizes": "192x192"}]},
+                      {"name": i18n.t(lang, "coche.titulo"), "url": "/coche",
                        "icons": [{"src": "/static/iconos/icono-192.png", "sizes": "192x192"}]}],
-        "background_color": "#f4f5f4", "theme_color": "#0f766e",
+        "background_color": "#eef4f8", "theme_color": "#0276b5",
         "icons": [
             {"src": "/static/iconos/icono-192.png", "sizes": "192x192", "type": "image/png"},
             {"src": "/static/iconos/icono-512.png", "sizes": "512x512", "type": "image/png"},

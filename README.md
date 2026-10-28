@@ -28,8 +28,8 @@ every 30 minutes.
   rest sorted by price, distance or **worth the trip** (counting the fuel to get there and back). Only
   stations *open now* are recommended, from the hours each one publishes. *Directions* lets you pick
   Google Maps, Apple Maps or Waze.
-- **Favourites**: star your usual stations and they show up first with today's price. Stored in your
-  browser.
+- **Favourites**: star your usual stations and they show up first with today's price, plus a note
+  when one has moved ("Ballenoil is down 2.0¢ in 2 days"). Stored in your browser.
 - **Fill up today or wait?** A 7-day traffic light (🟢 fill up now · 🟡 no rush · 🔴 wait if
   you can), learnt from a year of prices in *your* province: pumps trail wholesale diesel and
   gasoline, rise faster than they fall, and prices have momentum. It is **tested on the last 60 days without learning from them** and logs
@@ -37,11 +37,14 @@ every 30 minutes.
 - **Trends**: local average and cheapest price per day with Brent on top, change over
   7 and 30 days, which day of the week tends to be cheapest and **which brands are cheaper or dearer**
   near you.
-- **Map** of the stations around you on [OpenFreeMap](https://openfreemap.org): each with its brand
-  badge (initials and colour, no logos) and its price from green (cheap) to red (expensive). Filter by
+- **Map** of the stations around you on [OpenFreeMap](https://openfreemap.org): each with its
+  brand initial (no logos) and its price, coloured from green (cheap) to red (expensive). Filter by
   *open now*, *cheaper than average* and brand, with *Directions* from each one.
-- **My fill-ups**: log what you put in and see your monthly and yearly spend and your real fuel use,
-  which you can copy into Settings. Stored only in your browser.
+- **My fill-ups**: log what you put in and see your monthly and yearly spend, your real fuel use
+  (which you can copy into Settings) and **what you've saved** against your area's average on each
+  day. Stored only in your browser.
+- **Car mode**: just the best one around in big type and a huge *Go* button, for the phone on its
+  mount. It follows you as you drive and keeps the screen on.
 - **With Siri**: "Hey Siri, cheap fuel" opens your maps app heading to the cheapest open station. The
   *With Siri* page explains the shortcut (or offers a ready-made one) and, on Android, puts the search
   one tap away from the icon.
@@ -166,8 +169,9 @@ links to a legal notice and privacy page (`/legal`). The Ministry's server only 
 
 ## How it's built
 
-Python 3.12, FastAPI and SQLite, Jinja2 templates, Chart.js and Leaflet (bundled, so it works
-offline). Nothing to compile: no npm, no bundler.
+Python 3.12, FastAPI and SQLite, Jinja2 templates, Chart.js, Leaflet and the Nunito typeface
+(bundled, so it works offline and asks no third party). Liquid-glass look in plain CSS, with a solid
+fallback for *Reduce transparency*. Nothing to compile: no npm, no bundler.
 
 ```
 app/

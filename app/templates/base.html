@@ -5,9 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  {#- La barra de la hora y la batería, del tema elegido en Ajustes (no del móvil, si se ha elegido uno):
+      en oscuro, la página se pinta también debajo de ella, con letra blanca. -#}
+  <meta name="apple-mobile-web-app-status-bar-style" content="{{ 'black-translucent' if tema == 'oscuro' else 'default' }}">
   <meta name="apple-mobile-web-app-title" content="Pumpcast">
-  <meta name="theme-color" content="#0f766e">
+  {% if tema == "oscuro" %}<meta name="theme-color" content="#070c11">
+  {% elif tema == "claro" %}<meta name="theme-color" content="#eef4f8">
+  {% else %}<meta name="theme-color" content="#eef4f8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#070c11" media="(prefers-color-scheme: dark)">{% endif %}
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/static/iconos/icono.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/static/iconos/apple-touch-icon.png">
@@ -34,19 +39,32 @@
   <meta name="twitter:title" content="{{ self.titulo() }}">
   <meta name="twitter:description" content="{{ t('manifest.descripcion') }}">
   <meta name="twitter:image" content="{{ url_imagen }}">
+  <link rel="preload" href="/static/fuentes/nunito.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/static/estilo.css?v={{ version }}">
   {% block cabeza %}{% endblock %}
   <script nonce="{{ nonce }}">window.I18N = {{ js|tojson }};</script>
 </head>
-<body class="pagina-{{ pagina }}">
+{% set con_coche = pagina == "inicio" and not sin_ubicacion %}
+<body class="pagina-{{ pagina }}{% if con_coche %} con-coche{% endif %}{% block clase_body %}{% endblock %}">
   <header class="cabecera">
-    <h1>{% block h1 %}Pumpcast{% endblock %}</h1>
+    <div class="cabecera-fila">
+      <h1>{% if pagina == "inicio" %}<span class="sello" aria-hidden="true">{{ icono("surtidor") }}</span>{% endif %}{% block h1 %}Pumpcast{% endblock %}</h1>
+      {% if pagina in ("inicio", "mapa", "tendencia") %}
+      <button type="button" class="selector-comb" popovertarget="combustibles" aria-label="{{ t('aria.combustible') }}: {{ t('comb.' + comb) }}">
+        {{ t("comb." + comb) }}<svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      {% endif %}
+    </div>
     {% if pagina in ("inicio", "mapa", "tendencia") %}
-    <nav class="pastillas" aria-label="{{ t('aria.combustible') }}">
-      {% for clave in combustibles %}
-      <a href="?c={{ clave }}" {% if clave == comb %}class="activa" aria-current="true"{% endif %}>{{ t("comb." + clave) }}</a>
-      {% endfor %}
-    </nav>
+    {#- Una hoja que sube desde abajo (popover: sin JavaScript). Donde no hay popover, se ve la fila de siempre. -#}
+    <div id="combustibles" class="hoja-comb" popover>
+      <p class="etiqueta">{{ t('aria.combustible') }}</p>
+      <nav class="pastillas" aria-label="{{ t('aria.combustible') }}">
+        {% for clave in combustibles %}
+        <a href="?c={{ clave }}" {% if clave == comb %}class="activa" aria-current="true"{% endif %}>{{ t("comb." + clave) }}</a>
+        {% endfor %}
+      </nav>
+    </div>
     {% endif %}
   </header>
 
@@ -66,6 +84,8 @@
     <a href="/tendencia?c={{ comb }}" {% if pagina == "tendencia" %}aria-current="page"{% endif %}>{{ icono("tendencia") }}{{ t("nav.tendencia") }}</a>
     <a href="/ajustes" {% if pagina == "ajustes" %}aria-current="page"{% endif %}>{{ icono("ajustes") }}{{ t("nav.ajustes") }}</a>
   </nav>
+  {#- Junto a la barra, como el botón de buscar de las apps de iOS 26: el modo coche -#}
+  {% if con_coche %}<a class="boton-coche vidrio" href="/coche?c={{ comb }}" aria-label="{{ t('coche.titulo') }}" title="{{ t('coche.titulo') }}">{{ icono("coche") }}</a>{% endif %}
   <dialog id="elegir-mapa" class="hoja" aria-labelledby="elegir-mapa-titulo" data-app="{{ aj.mapa or 'preguntar' }}">
     <h2 id="elegir-mapa-titulo">{{ t("mapas.titulo") }}</h2>
     {% for clave, nombre in (("google", "Google Maps"), ("apple", "Apple Maps"), ("waze", "Waze")) %}

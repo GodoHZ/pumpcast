@@ -2,7 +2,7 @@
 """Dibuja los iconos de la app (PNG) sin librerías externas.
 
 El mismo surtidor que app/static/iconos/icono.svg, en una rejilla de 64x64, sobre el
-verde de la app. Se ejecuta a mano y los PNG van en el repositorio:
+degradado de la paleta Glaciar (de --gds-cielo arriba a la izquierda a --gds-glaciar abajo a la derecha). Se ejecuta a mano y los PNG van en el repositorio:
     python3 scripts/make_icons.py
 """
 from __future__ import annotations
@@ -13,7 +13,8 @@ import zlib
 from pathlib import Path
 
 ICONOS = Path(__file__).resolve().parent.parent / "app" / "static" / "iconos"
-VERDE = (15, 118, 110)         # --marca del CSS
+CIELO = (56, 189, 248)         # --gds-cielo del CSS
+GLACIAR = (2, 118, 181)        # --gds-glaciar
 BLANCO = (255, 255, 255)
 MUESTRAS = 4                   # muestras por lado y píxel (suavizado)
 
@@ -95,7 +96,9 @@ def dibujar(lado: int, escala: float = 1.0, redondeado: bool = True) -> list[lis
                 fila.append((0, 0, 0, 0))
                 continue
             mezcla = blanco / fondo
-            color = tuple(round(v + (b - v) * mezcla) for v, b in zip(VERDE, BLANCO))
+            t = (px + py) / (2 * lado)                    # el degradado, en diagonal
+            base = tuple(c + (g - c) * t for c, g in zip(CIELO, GLACIAR))
+            color = tuple(round(v + (b - v) * mezcla) for v, b in zip(base, BLANCO))
             fila.append((*color, round(255 * fondo / total)))
         filas.append(fila)
     return filas

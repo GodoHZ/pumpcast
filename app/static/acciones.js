@@ -2,7 +2,7 @@
 (() => {
   // «Cómo llegar»: pregunta con qué app abrir la ruta, o usa la de Ajustes si hay una elegida.
   // Sin JavaScript, el enlace va a Google Maps.
-  // Escucha en captura porque Leaflet corta los clics de sus ventanitas antes de que suban.
+  // Escucha en captura porque Leaflet corta algunos clics antes de que suban.
   const dialogo = document.getElementById("elegir-mapa");
   if (dialogo && dialogo.showModal) {
     document.addEventListener("click", (evento) => {

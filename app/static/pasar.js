@@ -26,7 +26,7 @@
     if (d.p) partes.push(t.ajustes);
     if (d.f && d.f.length) partes.push(t.favoritas.replace("{n}", d.f.length));
     if (d.r && d.r.length) partes.push(t.repostajes.replace("{n}", d.r.length));
-    return partes.length > 1 ? partes.slice(0, -1).join(", ") + t.y + partes.at(-1) : partes[0] || "";
+    return partes.length > 1 ? partes.slice(0, -1).join(", ") + " " + t.y + partes.at(-1) : partes[0] || "";
   }
 
   // --- Llega de otro móvil -------------------------------------------------------------------

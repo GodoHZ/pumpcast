@@ -28,8 +28,8 @@ actualizados cada 30 minutos.
   más cercana por si no compensa ir más lejos. El resto, ordenadas por precio, por distancia o por **lo que
   compensa** (contando el combustible de ir y volver). *Cómo llegar* te deja elegir Google Maps, Apple
   Maps o Waze.
-- **Favoritas**: marca tus gasolineras de siempre y salen arriba, con su precio de hoy. Se guardan en tu
-  navegador.
+- **Favoritas**: marca tus gasolineras de siempre y salen arriba, con su precio de hoy y un aviso
+  cuando alguna se mueve («Ballenoil ha bajado 2,0 cts en 2 días»). Se guardan en tu navegador.
 - **¿Lleno hoy o espero?** Un semáforo a 7 días (🟢 llena ya · 🟡 da igual · 🔴 espera si
   puedes), aprendido con un año de precios de *tu* provincia: el surtidor va detrás del gasóleo
   y la gasolina al por mayor, sube antes de lo que baja y los precios tienen inercia. Se **prueba con los últimos 60 días sin usarlos para aprender**
@@ -38,10 +38,13 @@ actualizados cada 30 minutos.
   días, qué día de la semana suele salir más barato y **qué marcas salen más baratas o más caras**
   en tu zona.
 - **Mapa** de las gasolineras de alrededor sobre [OpenFreeMap](https://openfreemap.org): cada una con
-  el distintivo de su marca (iniciales y color, sin logos) y su precio de verde (barata) a rojo (cara).
+  la inicial de su marca (sin logos) y su precio, del color de lo barata o cara que es: de verde a rojo.
   Se filtra por *abiertas ahora*, *más baratas que la media* y marcas, y tiene *Cómo llegar* desde cada una.
-- **Mis repostajes**: apunta lo que echas y te dice lo que gastas al mes y al año y tu consumo real,
-  que puedes pasar a Ajustes. Se guarda solo en tu navegador.
+- **Mis repostajes**: apunta lo que echas y te dice lo que gastas al mes y al año, tu consumo real
+  (que puedes pasar a Ajustes) y **lo que llevas ahorrado** frente a la media de tu zona de cada día.
+  Se guarda solo en tu navegador.
+- **Modo coche**: solo la mejor de alrededor en grande y un botón *Ir* enorme, para el móvil en el
+  soporte. Te sigue mientras conduces y no deja que se apague la pantalla.
 - **Con Siri**: «Oye Siri, gasolinera barata» abre tu app de mapas camino de la más barata abierta.
   La página *Con Siri* explica el atajo (o da uno ya hecho) y, en Android, deja la búsqueda a un toque
   desde el icono.
@@ -168,8 +171,9 @@ y enlazan a un aviso legal y de privacidad (`/legal`). El servidor del Ministeri
 
 ## Cómo está hecha
 
-Python 3.12, FastAPI y SQLite, plantillas Jinja2, Chart.js y Leaflet (incluidos, para que
-funcione sin conexión). Sin compilar nada: no hay npm ni bundler.
+Python 3.12, FastAPI y SQLite, plantillas Jinja2, Chart.js, Leaflet y la letra Nunito
+(incluidos, para que funcione sin conexión y no pregunte a terceros). Aspecto de cristal líquido con
+CSS a secas, que se vuelve sólido con *Reducir transparencia*. Sin compilar nada: no hay npm ni bundler.
 
 ```
 app/

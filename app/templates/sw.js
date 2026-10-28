@@ -17,6 +17,7 @@ const PRECARGA = [
   "/static/vendor/chart.umd.min.js?v=" + VERSION,
   "/static/vendor/leaflet/leaflet.js?v=" + VERSION,
   "/static/vendor/leaflet/leaflet.css?v=" + VERSION,
+  "/static/fuentes/nunito.woff2",
   "/static/iconos/icono-192.png",
   "/sin-conexion",
 ];

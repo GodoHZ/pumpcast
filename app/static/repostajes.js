@@ -43,6 +43,34 @@
     return (litros / km) * 100;
   }
 
+  // La media de la zona del día del repostaje (o de los días de antes, por si ese no hubo lectura).
+  const DIAS_HACIA_ATRAS = 3;
+  function mediaDe(fecha) {
+    const d = new Date(fecha + "T12:00");
+    for (let i = 0; i <= DIAS_HACIA_ATRAS; i++) {
+      const media = T.medias[new Date(d - i * 864e5).toISOString().slice(0, 10)];
+      if (media) return media;
+    }
+    return null;
+  }
+
+  // Lo ahorrado en los últimos 12 meses: litros × (media de ese día − lo que pagaste).
+  function pintarAhorro(lista, hace12) {
+    const cuentan = lista.filter((r) => r.fecha > hace12 && mediaDe(r.fecha));
+    const cifra = $("rep-ahorro-cifra");
+    if (!cuentan.length) {
+      cifra.hidden = $("rep-ahorro-nota").hidden = true;
+      return;
+    }
+    const ahorro = cuentan.reduce((s, r) => s + r.litros * (mediaDe(r.fecha) - r.precio), 0);
+    cifra.hidden = $("rep-ahorro-nota").hidden = false;
+    cifra.textContent = euros.format(Math.abs(ahorro));
+    cifra.classList.toggle("baja", ahorro >= 0);
+    cifra.classList.toggle("sube", ahorro < 0);
+    $("rep-ahorro-texto").textContent = ahorro >= 0 ? T.ahorro_bien : T.ahorro_mal;
+    $("rep-ahorro-nota").textContent = T.ahorro_nota.replace("{n}", cuentan.length);
+  }
+
   function pintar() {
     const lista = leer();
     const orden = ordenados(lista).reverse();
@@ -53,6 +81,7 @@
     const gasto = (filtro) => lista.filter(filtro).reduce((s, r) => s + r.litros * r.precio, 0);
     $("rep-mes").textContent = euros.format(gasto((r) => r.fecha.slice(0, 7) === hoy.slice(0, 7)));
     $("rep-anio").textContent = euros.format(gasto((r) => r.fecha > hace12));
+    pintarAhorro(lista, hace12);
     const c = consumo(lista);
     $("rep-consumo").textContent = c ? decimal(c, 1) : "–";
     $("rep-consumo-nota").hidden = c !== null || lista.length === 0;
@@ -77,7 +106,10 @@
       const titulo = document.createElement("b");
       titulo.textContent = `${fechaCorta(r.fecha)} · ${decimal(r.litros, 2)} ${T.unidad} × ${decimal(r.precio, 3)}`;
       const detalle = document.createElement("small");
-      detalle.textContent = [r.estacion, r.km != null ? T.km.replace("{km}", decimal(r.km, 0)) : "", r.lleno ? T.lleno : ""]
+      const media = mediaDe(r.fecha);
+      const dif = media ? (r.precio - media) * 100 : null;
+      const frente = dif === null ? "" : T.frente_media.replace("{dif}", (dif > 0 ? "+" : dif < 0 ? "−" : "") + decimal(Math.abs(dif), 1));
+      detalle.textContent = [r.estacion, r.km != null ? T.km.replace("{km}", decimal(r.km, 0)) : "", r.lleno ? T.lleno : "", frente]
         .filter(Boolean).join(" · ");
       info.append(titulo, detalle);
       const borrar = document.createElement("button");

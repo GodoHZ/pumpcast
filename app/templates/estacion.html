@@ -4,7 +4,7 @@
 {% block titulo %}{{ e.rotulo|titulo }} · Pumpcast{% endblock %}
 {% block h1 %}{{ e.rotulo|titulo }}{% endblock %}
 {% block contenido %}
-<section class="tarjeta">
+<section class="tarjeta" style="view-transition-name: e{{ e.id }}">
   <p class="donde">{{ e.direccion|titulo }}, {{ e.municipio }}{% if e.distancia is not none %} · {{ t("estacion.de_casa", distancia=e.distancia|km) }}{% endif %}</p>
   {% if e.estado %}<p>{{ estado(e) }}</p>{% endif %}
   {% if e.horario %}<p class="nota">{{ t("hor.publicado", horario=e.horario) }}</p>{% endif %}

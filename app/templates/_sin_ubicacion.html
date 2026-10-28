@@ -1,5 +1,53 @@
-<section class="tarjeta destacada">
-  <p>{{ t("inicio.primera_vez") }}</p>
+{% from "_iconos.html" import icono %}
+{#- La primera vez: tres pasos (dónde, qué combustible, hasta dónde) y a buscar. Se guarda como desde
+    Ajustes (POST /ajustes), con los valores por defecto para lo demás. Sin JavaScript se ven los tres
+    pasos a la vez, pero dónde buscar hay que elegirlo en Ajustes. -#}
+<form class="tarjeta bienvenida" id="bienvenida" method="post" action="/ajustes">
+  <p class="etiqueta" id="bien-paso" hidden></p>
+  <h2>{{ t("bien.titulo") }}</h2>
+  <p class="nota">{{ t("bien.texto") }}</p>
+  {% for clave, valor in aj.items() if clave not in ("lat", "lon", "combustible", "radio_km") %}
+  <input type="hidden" name="{{ clave }}" value="{{ valor }}">
+  {% endfor %}
+  <input type="hidden" name="lat" id="bien-lat">
+  <input type="hidden" name="lon" id="bien-lon">
+
+  <fieldset class="paso" data-paso="1">
+    <legend>{{ t("bien.donde") }}</legend>
+    <button type="button" class="boton ancho" id="bien-gps">{{ icono("ubicacion") }} {{ t("bien.gps") }}</button>
+    <p class="nota centrada">{{ t("bien.o") }}</p>
+    <div class="buscador">
+      <input id="bien-buscar" type="search" placeholder="{{ t('aj.buscar_ph') }}" autocomplete="street-address" aria-label="{{ t('aj.buscar_aria') }}">
+      <button type="button" class="boton secundario" id="bien-buscar-boton">{{ t("aj.buscar") }}</button>
+    </div>
+    <ul class="resultados" id="bien-resultados"></ul>
+    <p class="nota" id="bien-estado" role="status"></p>
+    <noscript><p>{{ t("bien.sin_js") }}</p><a class="boton" href="/ajustes">{{ t("inicio.ir_ajustes") }}</a></noscript>
+  </fieldset>
+
+  <fieldset class="paso" data-paso="2">
+    <legend>{{ t("bien.que") }}</legend>
+    <div class="opciones">
+      {% for clave in combustibles %}
+      <label class="opcion"><input type="radio" name="combustible" value="{{ clave }}" {% if clave == comb %}checked{% endif %}><span>{{ t("comb." + clave) }}</span></label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset class="paso" data-paso="3">
+    <legend>{{ t("bien.radio") }}</legend>
+    <div class="opciones">
+      {% for km in (5, 10, 20, 30) %}
+      <label class="opcion"><input type="radio" name="radio_km" value="{{ km }}" {% if km|string == aj.radio_km %}checked{% endif %}><span>{{ t("bien.km", n=km) }}</span></label>
+      {% endfor %}
+    </div>
+    <button class="boton ancho">{{ t("bien.empezar") }}</button>
+  </fieldset>
+
+  <button type="button" class="enlace" id="bien-atras" hidden>{{ t("bien.atras") }}</button>
   <p class="nota">{{ t("aj.privacidad") }}</p>
-  <a class="boton" href="/ajustes">{{ t("inicio.ir_ajustes") }}</a>
-</section>
+</form>
+<script nonce="{{ nonce }}">
+  window.BIENVENIDA = {{ {"paso": t("bien.paso", n="{n}"), "lista": t("bien.lista")}|tojson }};
+</script>
+<script src="/static/bienvenida.js?v={{ version }}"></script>

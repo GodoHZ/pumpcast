@@ -1,8 +1,8 @@
-// El mapa de gasolineras: cada una con el distintivo de su marca (iniciales y color, no logos) y su
-// precio al lado, de verde (barata) a rojo (cara). Se filtra por abiertas, más baratas que la media
+// El mapa de gasolineras: cada una con la inicial de su marca (no logos) y su precio al lado, del
+// color de lo barata o cara que es: de verde a rojo. Se filtra por abiertas, más baratas que la media
 // y marcas; los filtros se recuerdan en este navegador. Necesita Leaflet, mapa-base.js y window.MAPA.
 (() => {
-  const { estaciones, escala, casa, radio, comb, favoritas: favs, textoFavorita, estrella } = window.MAPA;
+  const { estaciones, escala, casa, radio, comb, favoritas: favs, textoFavorita, estrella, cts, cerrar, unidad, fuente } = window.MAPA;
   const { t, decimal, europeo } = window.I18N;
   const favoritas = new Set(favs);
   const ZOOM_CON_PRECIO = 13;                 // más lejos, solo el distintivo: si no, no se ve nada
@@ -10,7 +10,8 @@
 
   const mapa = L.map("mapa", { zoomControl: false }).setView(casa, 12);
   fondoMapa(mapa);
-  L.circle(casa, { radius: radio * 1000, color: "#0f766e", weight: 1, fillOpacity: 0.04 }).addTo(mapa);
+  mapa.attributionControl.setPrefix(false).addAttribution(fuente);      // el pie de la página, aquí
+  L.circle(casa, { radius: radio * 1000, color: getComputedStyle(document.documentElement).getPropertyValue("--tinta-marca").trim() || "#0f766e", weight: 1.5, dashArray: "4 6", fillOpacity: 0.05 }).addTo(mapa);
   L.circleMarker(casa, { radius: 7, color: "#fff", weight: 2, fillColor: "#2563eb", fillOpacity: 1 })
     .addTo(mapa).bindPopup(t.casa);
 
@@ -23,26 +24,44 @@
   };
   const nombre = (s) => s.toLowerCase().replace(/(^|\s)\S/g, (l) => l.toUpperCase());
 
-  function ventanita(e) {
-    const popup = document.createElement("div");
-    popup.className = "ventanita";
-    popup.innerHTML = '<b></b><br><span></span><br><span class="estado"></span>'
+  // La ficha de la gasolinera elegida: una hoja que sube desde abajo, como en Mapas del iPhone.
+  const hoja = document.getElementById("ficha");
+  let elegida = null;
+  function ficha(e) {
+    hoja.innerHTML = '<span class="asa" aria-hidden="true"></span>'
+      + '<div class="ficha-cabeza"><span class="pin-marca"></span><div><b></b><small></small></div>'
+      + '<button type="button" class="cerrar-ficha">×</button></div>'
+      + '<p class="ficha-precio"><b></b><span class="nota"></span><span class="dif"></span></p>'
+      + '<span class="estado"></span>'
       + '<div class="botones"><a class="boton"></a><a class="boton secundario"></a>'
       + '<form method="post"><button class="boton secundario solo-icono"></button></form></div>';
-    popup.querySelector("b").textContent = `${precio(e.precio)} · ${nombre(e.rotulo)}`;
-    popup.querySelector("span").textContent = `${e.municipio} · ${km(e.distancia)}`;
-    const horario = popup.querySelector(".estado");
+    const distintivo = hoja.querySelector(".pin-marca");
+    distintivo.style.setProperty("--f", e.insignia.fondo);
+    distintivo.style.setProperty("--t", e.insignia.tinta);
+    distintivo.textContent = e.insignia.texto;
+    hoja.querySelector(".ficha-cabeza b").textContent = nombre(e.rotulo);
+    hoja.querySelector(".ficha-cabeza small").textContent = `${e.municipio} · ${km(e.distancia)}`;
+    const x = hoja.querySelector(".cerrar-ficha");
+    x.ariaLabel = x.title = cerrar;
+    x.addEventListener("click", cerrarFicha);
+    hoja.querySelector(".ficha-precio b").textContent = europeo ? cifra(e.precio, 3) : `€${cifra(e.precio, 3)}`;
+    hoja.querySelector(".ficha-precio .nota").textContent = europeo ? `€/${unidad}` : `/${unidad}`;
+    const dif = (e.precio - escala.media) * 100;
+    const marcaDif = hoja.querySelector(".ficha-precio .dif");
+    marcaDif.textContent = `${dif > 0 ? "+" : "−"}${cifra(Math.abs(dif), 1)} ${cts}`;
+    marcaDif.classList.add(dif > 0 ? "sube" : "baja");
+    const horario = hoja.querySelector(".estado");
     horario.textContent = e.horario;
     horario.classList.add(e.abierta === false ? "cerrada" : "abierta");
     const marcada = favoritas.has(e.id);
-    const form = popup.querySelector("form");
+    const form = hoja.querySelector("form");
     form.action = `/favorita/${e.id}`;
     const fav = form.querySelector("button");
     fav.innerHTML = estrella;
     fav.title = fav.ariaLabel = textoFavorita[marcada ? 1 : 0];
     fav.setAttribute("aria-pressed", marcada);
     fav.classList.toggle("marcada", marcada);
-    const [ir, historial] = popup.querySelectorAll("a");
+    const [ir, historial] = hoja.querySelectorAll(".botones a");
     ir.textContent = t.como_llegar;
     ir.dataset.ir = `${e.lat},${e.lon}`;
     ir.href = `https://www.google.com/maps/dir/?api=1&destination=${e.lat},${e.lon}`;
@@ -50,8 +69,42 @@
     ir.rel = "noopener";
     historial.textContent = t.ver_historial;
     historial.href = `/estacion/${e.id}?c=${comb}`;
-    return popup;
   }
+  function abrirFicha(p) {
+    if (elegida) elegida.marcador.getElement()?.querySelector(".pin")?.classList.remove("elegida");
+    elegida = p;
+    p.marcador.getElement()?.querySelector(".pin")?.classList.add("elegida");
+    ficha(p.e);
+    hoja.setAttribute("aria-hidden", "false");
+    // Que la gasolinera quede a la vista, por encima de la hoja.
+    const alto = hoja.offsetHeight + 90;
+    const punto = mapa.latLngToContainerPoint([p.e.lat, p.e.lon]);
+    const libre = mapa.getSize().y - alto;
+    if (punto.y > libre - 40 || punto.y < 140) mapa.panBy([0, punto.y - (140 + (libre - 140) / 2)]);
+  }
+  function cerrarFicha() {
+    if (elegida) elegida.marcador.getElement()?.querySelector(".pin")?.classList.remove("elegida");
+    elegida = null;
+    hoja.setAttribute("aria-hidden", "true");
+  }
+  mapa.on("click", cerrarFicha);
+  document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") cerrarFicha(); });
+  // Deslizar la hoja hacia abajo la cierra.
+  let desde = null;
+  hoja.addEventListener("pointerdown", (ev) => { if (!ev.target.closest("a, button")) desde = ev.clientY; });
+  hoja.addEventListener("pointermove", (ev) => {
+    if (desde === null) return;
+    hoja.style.transform = `translateY(${Math.max(0, ev.clientY - desde)}px)`;
+  });
+  const soltar = (ev) => {
+    if (desde === null) return;
+    const bajada = ev.clientY - desde;
+    desde = null;
+    hoja.style.transform = "";
+    if (bajada > 60) cerrarFicha();
+  };
+  hoja.addEventListener("pointerup", soltar);
+  hoja.addEventListener("pointercancel", soltar);
 
   function icono(e) {
     const pin = document.createElement("div");
@@ -76,9 +129,9 @@
     e,
     // Las baratas encima de las caras cuando se solapan.
     marcador: L.marker([e.lat, e.lon], { icon: icono(e), title: `${nombre(e.rotulo)} · ${precio(e.precio)}`,
-                                         zIndexOffset: Math.round((escala.max - e.precio) * 1000) })
-      .bindPopup(ventanita(e)),
+                                         zIndexOffset: Math.round((escala.max - e.precio) * 1000) }),
   }));
+  for (const p of puntos) p.marcador.on("click", () => abrirFicha(p));
 
   const cuerpo = document.getElementById("mapa");
   const zoom = () => cuerpo.classList.toggle("lejos", mapa.getZoom() < ZOOM_CON_PRECIO);

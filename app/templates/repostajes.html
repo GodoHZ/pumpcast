@@ -4,6 +4,14 @@
 {% block h1 %}{{ t("rep.titulo") }}{% endblock %}
 {% block contenido %}
 {#- Todo se guarda en el navegador (localStorage): el servidor no ve ningún repostaje. -#}
+{#- Lo ahorrado: lo pagado frente a la media de ese día en su zona (la página trae las medias; los
+    repostajes no salen del navegador). -#}
+<section class="tarjeta destacada ahorro-total" id="rep-ahorro" aria-labelledby="rep-ahorro-titulo">
+  <p class="etiqueta" id="rep-ahorro-titulo">{{ t("rep.ahorro_titulo") }}</p>
+  <p class="precio-grande" id="rep-ahorro-cifra" hidden></p>
+  <p id="rep-ahorro-texto">{{ t("rep.ahorro_sin") }}</p>
+  <p class="nota" id="rep-ahorro-nota" hidden></p>
+</section>
 <section class="cifras" id="rep-cifras" hidden>
   <div class="cifra"><span class="etiqueta">{{ t("rep.este_mes") }}</span><b id="rep-mes">–</b></div>
   <div class="cifra"><span class="etiqueta">{{ t("rep.doce_meses") }}</span><b id="rep-anio">–</b></div>
@@ -48,7 +56,10 @@
     "error": t("rep.error"), "borrar": t("rep.borrar"), "borrar_seguro": t("rep.borrar_seguro"),
     "importados": t("rep.importados", n="{n}"), "importar_mal": t("rep.importar_mal"),
     "consumo_valor": t("rep.consumo_valor", consumo="{consumo}", unidad=unidad),
-    "lleno": t("rep.lleno_corto"), "km": t("rep.km_corto", km="{km}")
+    "lleno": t("rep.lleno_corto"), "km": t("rep.km_corto", km="{km}"),
+    "medias": medias, "ahorro_bien": t("rep.ahorro_bien"), "ahorro_mal": t("rep.ahorro_mal"),
+    "ahorro_nota": t("rep.ahorro_nota", n="{n}", comb=nombre_comb),
+    "frente_media": t("rep.frente_media", dif="{dif}", unidad=unidad)
   }|tojson }};
 </script>
 <script src="/static/repostajes.js?v={{ version }}"></script>

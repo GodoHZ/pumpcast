@@ -1,241 +1,453 @@
-/* Pumpcast: pensada primero para el iPhone, con modo oscuro automático o elegido en Ajustes. */
+/* Pumpcast, con la paleta Glaciar y cristal líquido, como iOS 26/27: tarjetas y controles
+   translúcidos con un filo de luz, sobre un fondo de color suave que se ve a través.
+   El acento es un relleno (botones, lo activo) con su letra encima; para textos y líneas de color sobre
+   el fondo está --tinta-marca. Modo oscuro automático o elegido en Ajustes. */
+@font-face {
+  font-family: "Nunito";
+  src: url("/static/fuentes/nunito.woff2") format("woff2");
+  font-weight: 200 1000;
+  font-display: swap;
+}
 :root {
-  --fondo: #f4f5f4;
-  --tarjeta: #ffffff;
-  --texto: #18201e;
-  --suave: #5f6b68;
-  --borde: #dfe3e1;
-  --marca: #0f766e;
-  --marca-suave: #e3f2f0;
-  --baja: #15803d;
-  --sube: #b91c1c;
-  --sombra: 0 1px 2px rgb(0 0 0 / 6%), 0 4px 16px rgb(0 0 0 / 4%);
-  --petroleo: #a16207;
-  --semaforo-llena: #dcfce7;
-  --semaforo-igual: #fef9c3;
-  --semaforo-espera: #fee2e2;
+  /* Paleta Glaciar */
+  --gds-glaciar: #0276b5;           /* el acento en claro (con letra blanca: contraste 4,9) */
+  --gds-hielo: #8fd8ff;             /* el acento en oscuro */
+  --gds-tinta: #0369a1;             /* el acento como texto sobre fondo claro */
+  --gds-cielo: #38bdf8;
+  --gds-noche: #0a1015;
+  --gds-pizarra: #131b22;
+  --gds-grafito: #22303b;
+  --gds-niebla: #eef4f8;
+
+  --gds-acento: var(--gds-glaciar);
+  --gds-sobre-acento: #ffffff;
+  --fondo: var(--gds-niebla);
+  --tarjeta: #ffffff;                /* lo sólido: sin cristal o con «reducir transparencia» */
+  --texto: #14202b;
+  --suave: #5a6a77;
+  --separador: rgb(20 32 43 / 9%);
+  --relleno: rgb(20 32 43 / 6%);
+  --borde: rgb(20 32 43 / 10%);
+  --marca: var(--gds-acento);
+  --sobre-marca: var(--gds-sobre-acento);
+  --tinta-marca: var(--gds-tinta);
+  --marca-suave: #dff1fb;
+  --baja: #0f7a43;
+  --sube: #c42b1c;
+  --petroleo: #7c3aed;
   --luz-llena: #16a34a;
-  --luz-igual: #ca8a04;
+  --luz-igual: #d99a00;
   --luz-espera: #dc2626;
+  --semaforo-llena: #e3f6ea;
+  --semaforo-igual: #fff4bf;
+  --semaforo-espera: #fde4e1;
+  /* El fondo de color que se ve a través del cristal */
+  --aura-1: rgb(56 189 248 / 30%);
+  --aura-2: rgb(165 180 252 / 30%);
+  --aura-3: rgb(125 211 252 / 24%);
+  /* El cristal */
+  --cristal: rgb(255 255 255 / 50%);
+  --cristal-fuerte: rgb(255 255 255 / 72%);
+  --cristal-luz: rgb(255 255 255 / 45%);        /* el reflejo de arriba a la izquierda */
+  --cristal-borde: rgb(255 255 255 / 55%);
+  --cristal-filo: rgb(255 255 255 / 95%);
+  --cristal-filo-bajo: rgb(255 255 255 / 35%);
+  --cristal-sombra: 0 12px 32px -12px rgb(28 58 88 / 26%), 0 1px 2px rgb(28 58 88 / 8%);
+  --relleno-cristal: rgb(255 255 255 / 55%);    /* botones y campos dentro de una tarjeta de cristal */
+  --lente: rgb(255 255 255 / 88%);              /* lo elegido en un control segmentado */
+  --filo-a: rgb(255 255 255 / 95%);
+  --filo-b: rgb(255 255 255 / 55%);
+  --desenfoque: blur(18px) saturate(185%);
+  --titular: "Nunito", ui-rounded, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color-scheme: light dark;
 }
 /* Oscuro: el del móvil, salvo que se elija «claro» en Ajustes; o siempre, si se elige «oscuro». */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --fondo: #0d1211;
-    --tarjeta: #171e1c;
-    --texto: #e8eeec;
-    --suave: #96a39f;
-    --borde: #29332f;
-    --marca: #2dd4bf;
-    --marca-suave: #12302c;
+    --gds-acento: var(--gds-hielo);
+    --gds-sobre-acento: #04202f;
+    --fondo: #070c11;
+    --tarjeta: #121a22;
+    --texto: #eaf3f9;
+    --suave: #93a4b2;
+    --separador: rgb(255 255 255 / 8%);
+    --relleno: rgb(255 255 255 / 8%);
+    --borde: rgb(255 255 255 / 9%);
+    --tinta-marca: var(--gds-hielo);
+    --marca-suave: #0d2a3a;
     --baja: #4ade80;
-    --sube: #f87171;
-    --sombra: none;
-    --petroleo: #facc15;
-    --semaforo-llena: #12301d;
-    --semaforo-igual: #302b0c;
-    --semaforo-espera: #351616;
+    --sube: #ff6b5e;
+    --petroleo: #c4b5fd;
     --luz-llena: #4ade80;
     --luz-igual: #facc15;
-    --luz-espera: #f87171;
+    --luz-espera: #ff6b5e;
+    --semaforo-llena: #0f2618;
+    --semaforo-igual: #2b2504;
+    --semaforo-espera: #2e1210;
+    --aura-1: rgb(14 165 233 / 24%);
+    --aura-2: rgb(99 102 241 / 20%);
+    --aura-3: rgb(34 211 238 / 12%);
+    --cristal: rgb(30 44 58 / 46%);
+    --cristal-fuerte: rgb(20 30 40 / 74%);
+    --cristal-luz: rgb(255 255 255 / 6%);
+    --cristal-borde: rgb(255 255 255 / 9%);
+    --cristal-filo: rgb(255 255 255 / 20%);
+    --cristal-filo-bajo: rgb(255 255 255 / 5%);
+    --cristal-sombra: 0 14px 36px -12px rgb(0 0 0 / 65%);
+    --relleno-cristal: rgb(255 255 255 / 9%);
+    --lente: rgb(255 255 255 / 16%);
+    --filo-a: rgb(255 255 255 / 38%);
+    --filo-b: rgb(255 255 255 / 14%);
   }
 }
 :root[data-theme="dark"] {
-  --fondo: #0d1211;
-  --tarjeta: #171e1c;
-  --texto: #e8eeec;
-  --suave: #96a39f;
-  --borde: #29332f;
-  --marca: #2dd4bf;
-  --marca-suave: #12302c;
+  --gds-acento: var(--gds-hielo);
+  --gds-sobre-acento: #04202f;
+  --fondo: #070c11;
+  --tarjeta: #121a22;
+  --texto: #eaf3f9;
+  --suave: #93a4b2;
+  --separador: rgb(255 255 255 / 8%);
+  --relleno: rgb(255 255 255 / 8%);
+  --borde: rgb(255 255 255 / 9%);
+  --tinta-marca: var(--gds-hielo);
+  --marca-suave: #0d2a3a;
   --baja: #4ade80;
-  --sube: #f87171;
-  --sombra: none;
-  --petroleo: #facc15;
-  --semaforo-llena: #12301d;
-  --semaforo-igual: #302b0c;
-  --semaforo-espera: #351616;
+  --sube: #ff6b5e;
+  --petroleo: #c4b5fd;
   --luz-llena: #4ade80;
   --luz-igual: #facc15;
-  --luz-espera: #f87171;
+  --luz-espera: #ff6b5e;
+  --semaforo-llena: #0f2618;
+  --semaforo-igual: #2b2504;
+  --semaforo-espera: #2e1210;
+  --aura-1: rgb(14 165 233 / 24%);
+  --aura-2: rgb(99 102 241 / 20%);
+  --aura-3: rgb(34 211 238 / 12%);
+  --cristal: rgb(30 44 58 / 46%);
+  --cristal-fuerte: rgb(20 30 40 / 74%);
+  --cristal-luz: rgb(255 255 255 / 6%);
+  --cristal-borde: rgb(255 255 255 / 9%);
+  --cristal-filo: rgb(255 255 255 / 20%);
+  --cristal-filo-bajo: rgb(255 255 255 / 5%);
+  --cristal-sombra: 0 14px 36px -12px rgb(0 0 0 / 65%);
+  --relleno-cristal: rgb(255 255 255 / 9%);
+  --lente: rgb(255 255 255 / 16%);
+  --filo-a: rgb(255 255 255 / 38%);
+  --filo-b: rgb(255 255 255 / 14%);
   color-scheme: dark;
 }
 :root[data-theme="light"] { color-scheme: light; }
+/* «Reducir transparencia» del sistema, o un navegador sin desenfoque: el cristal se vuelve sólido. */
+@media (prefers-reduced-transparency: reduce) {
+  :root, .con-mapa { --cristal: var(--tarjeta) !important; --cristal-fuerte: var(--tarjeta) !important; --cristal-luz: transparent !important; --desenfoque: none; }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root, .con-mapa { --cristal: var(--tarjeta) !important; --cristal-fuerte: var(--tarjeta) !important; --cristal-luz: transparent !important; }
+}
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }             /* que ningún estilo (.boton...) lo vuelva a enseñar */
-html { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
+html { -webkit-text-size-adjust: 100%; touch-action: manipulation; background: var(--fondo); }
 /* Al cambiar de pantalla, un fundido en vez de un parpadeo en blanco (Safari 18.2+, Chrome). */
 @view-transition { navigation: auto; }
 @media (prefers-reduced-motion: reduce) { @view-transition { navigation: none; } }
 body {
   margin: 0;
+  min-height: 100dvh;
   background: var(--fondo);
   color: var(--texto);
-  font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  font: 17px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: calc(108px + env(safe-area-inset-bottom));
 }
-a { color: var(--marca); }
-h1 { font-size: 1.6rem; margin: 0 0 .6rem; letter-spacing: -.01em; }
-h2 { font-size: 1.05rem; margin: 0 0 .7rem; }
-.nota { color: var(--suave); font-size: .85rem; font-weight: normal; }
+/* El fondo de color, quieto detrás de todo (en un elemento fijo: Safari no hace «background-attachment: fixed») */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(60vmax 45vmax at 0% 0%, var(--aura-1), transparent 65%),
+    radial-gradient(55vmax 45vmax at 100% 30%, var(--aura-2), transparent 65%),
+    radial-gradient(60vmax 50vmax at 30% 100%, var(--aura-3), transparent 65%);
+}
+/* Arriba, el contenido se desenfoca al pasar por debajo de la hora y la batería (como en iOS) */
+body::after {
+  content: ""; position: fixed; left: 0; right: 0; top: 0; z-index: 800; pointer-events: none;
+  height: calc(env(safe-area-inset-top) + 26px);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  -webkit-mask-image: linear-gradient(#000 45%, transparent); mask-image: linear-gradient(#000 45%, transparent);
+}
+a { color: var(--tinta-marca); }
+h1, h2 { font-family: var(--titular); }
+h1 { font-size: 2.1rem; font-weight: 800; margin: 0; letter-spacing: -.03em; line-height: 1.05; }
+h2 { font-size: 1.25rem; font-weight: 800; margin: 0 0 .75rem; letter-spacing: -.02em; }
+.nota { color: var(--suave); font-size: .85rem; font-weight: normal; letter-spacing: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+.solo-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-.cabecera { padding: calc(16px + env(safe-area-inset-top)) 16px 4px; max-width: 720px; margin: 0 auto; }
-.pastillas { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px 4px; }
-.pastillas::-webkit-scrollbar { display: none; }
+/* --- El cristal ------------------------------------------------------------------------------------ */
+.tarjeta, .lista, .cifra, .segmentos, .selector-comb, .resultados, .chip, .cuenta-mapa, .escala-mapa, .vidrio {
+  background: linear-gradient(150deg, var(--cristal-luz), transparent 55%), var(--cristal);
+  -webkit-backdrop-filter: var(--desenfoque); backdrop-filter: var(--desenfoque);
+  border: 0;
+  box-shadow: inset 0 1px 0 var(--cristal-filo), inset 0 -1px 0 var(--cristal-filo-bajo),
+              inset 0 0 0 1px var(--cristal-borde), var(--cristal-sombra);
+}
+/* Lo que flota encima de todo: más opaco, para que se lea pase lo que pase por debajo */
+.barra, .hoja, .hoja-instalar, .hoja-estacion, .hoja-comb {
+  background: linear-gradient(150deg, var(--cristal-luz), transparent 55%), var(--cristal-fuerte);
+  -webkit-backdrop-filter: var(--desenfoque); backdrop-filter: var(--desenfoque);
+  border: 0;
+  box-shadow: inset 0 1px 0 var(--cristal-filo), inset 0 -1px 0 var(--cristal-filo-bajo),
+              inset 0 0 0 1px var(--cristal-borde), 0 18px 44px -14px rgb(0 0 0 / 30%);
+}
+/* El filo de luz: un borde que brilla en las esquinas, como el canto de un cristal */
+.filo, .barra, .destacada, .hoja-estacion, .selector-comb, .boton:not(.secundario) { position: relative; }
+.filo::after, .barra::after, .destacada::after, .hoja-estacion::after, .selector-comb::after, .boton:not(.secundario)::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(135deg, var(--filo-a), transparent 32%, transparent 62%, var(--filo-b));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+
+/* Cabecera: el título y, a la derecha, el combustible (abre la hoja para cambiarlo) */
+.cabecera { padding: calc(16px + env(safe-area-inset-top)) 20px 6px; max-width: 720px; margin: 0 auto; }
+.cabecera-fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 46px; }
+.cabecera h1 { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sello {
+  display: inline-grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 13px;
+  background: linear-gradient(150deg, var(--gds-cielo), var(--gds-glaciar)); color: #fff;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 50%), 0 8px 20px -8px rgb(2 132 199 / 70%);
+}
+.sello .icono { width: 22px; height: 22px; stroke-width: 2.2; }
+.selector-comb {
+  display: inline-flex; align-items: center; gap: 6px; flex: none; cursor: pointer; color: var(--texto);
+  padding: 10px 13px 10px 17px; border-radius: 999px; font: 800 .95rem var(--titular); letter-spacing: -.01em;
+  transition: transform .2s cubic-bezier(.3, 1.4, .5, 1);
+}
+.selector-comb:active { transform: scale(.94); }
+.selector-comb .icono { width: 18px; height: 18px; color: var(--tinta-marca); stroke-width: 3; }
+.pastillas { display: flex; flex-wrap: wrap; gap: 8px; }
 .pastillas a {
-  flex: none; padding: 6px 12px; border-radius: 999px; text-decoration: none; font-size: .9rem;
-  color: var(--texto); background: var(--tarjeta); border: 1px solid var(--borde);
+  flex: none; padding: 11px 17px; border-radius: 999px; text-decoration: none; font: 700 .95rem var(--titular);
+  color: var(--texto); background: var(--relleno-cristal); box-shadow: inset 0 1px 0 var(--cristal-filo-bajo), inset 0 0 0 1px var(--cristal-borde);
 }
-.pastillas a.activa { background: var(--marca); border-color: var(--marca); color: var(--fondo); font-weight: 600; }
+.pastillas a.activa { background: var(--marca); color: var(--sobre-marca); box-shadow: inset 0 1px 0 rgb(255 255 255 / 35%); }
+/* La hoja de combustibles: sube desde abajo, encima de la barra */
+.hoja-comb[popover] {
+  position: fixed; inset: auto 10px calc(92px + env(safe-area-inset-bottom)); margin: 0 auto; max-width: 520px;
+  width: auto; padding: 18px; border-radius: 32px; color: var(--texto);
+}
+.hoja-comb:popover-open { animation: subir .4s cubic-bezier(.2, 1.2, .4, 1); }
+.hoja-comb::backdrop { background: rgb(0 0 0 / 20%); }
+.hoja-comb .etiqueta { margin: 0 0 12px 4px; }
+/* Sin popover (navegadores viejos): la fila de pastillas de toda la vida, bajo el título */
+.hoja-comb:not([popover]), .cabecera > .hoja-comb { margin-top: 12px; }
+@supports not selector(:popover-open) {
+  .selector-comb { display: none; }
+  .hoja-comb { background: none !important; box-shadow: none !important; padding: 0 !important; }
+  .hoja-comb .etiqueta { display: none; }
+  .hoja-comb .pastillas { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -20px; padding: 0 20px 4px; }
+}
 
-.contenido { max-width: 720px; margin: 0 auto; padding: 8px 16px 16px; }
-.tarjeta {
-  background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px;
-  padding: 16px; margin-bottom: 14px; box-shadow: var(--sombra);
-}
+.contenido { max-width: 720px; margin: 0 auto; padding: 12px 16px 16px; }
+.tarjeta { border-radius: 28px; padding: 18px; margin-bottom: 14px; }
 .tarjeta p { margin: 0 0 .5rem; }
-.destacada { border-color: var(--marca); }
-.etiqueta { color: var(--suave); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
-.precio-grande { font-size: 3rem; font-weight: 700; line-height: 1.1; color: var(--marca); font-variant-numeric: tabular-nums; }
-.precio-grande small { font-size: 1rem; font-weight: 500; color: var(--suave); }
-.nombre { font-size: 1.2rem; font-weight: 600; }
+.etiqueta { color: var(--suave); font: 800 .72rem var(--titular); text-transform: uppercase; letter-spacing: .08em; }
+
+/* La más barata: el cartel, con un brillo del color de la marca y el precio en grande */
+.destacada {
+  overflow: hidden; padding: 22px 20px 20px;
+  background: radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--gds-acento) 22%, transparent), transparent 60%),
+              linear-gradient(150deg, var(--cristal-luz), transparent 55%), var(--cristal);
+}
+.precio-grande {
+  display: flex; align-items: flex-start; gap: 6px; color: var(--tinta-marca);
+  font: 900 5.2rem/0.95 var(--titular); letter-spacing: -.04em; margin: 10px 0 14px !important;
+  font-variant-numeric: tabular-nums;
+}
+.precio-grande small { font-size: 1rem; font-weight: 800; letter-spacing: 0; margin-top: .55em; color: var(--suave); }
+.nombre { font: 800 1.35rem var(--titular); letter-spacing: -.02em; }
 .donde { color: var(--suave); }
-.ahorro { background: var(--marca-suave); padding: 10px 12px; border-radius: 10px; }
-.cercana { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--borde); color: inherit; text-decoration: none; }
+.destacada .estado { display: inline-block; padding: 3px 11px; border-radius: 999px; background: var(--relleno-cristal); font-size: .8rem; }
+.ahorro { background: var(--relleno-cristal); padding: 12px 14px; border-radius: 18px; margin-top: 14px !important; }
+.destacada .ahorro b { color: var(--tinta-marca); font-weight: 800; }
+.cercana { display: flex; flex-direction: column; gap: 2px; margin: 18px -20px -20px; padding: 14px 20px 16px; border-top: 1px solid var(--separador); color: inherit; text-decoration: none; }
 .titulo-lista { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: .7rem; }
 .titulo-lista h2 { margin: 0; }
 .pastillas.orden { margin: 0; padding: 0; }
 .pastillas.orden a { padding: 4px 10px; font-size: .85rem; }
 
-.prevision { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; padding: 12px 14px; }
+/* «¿Lleno hoy o espero?»: cristal con el color del semáforo entrando por la izquierda */
+.prevision {
+  display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; padding: 14px 16px; border-radius: 22px;
+  background: linear-gradient(100deg, color-mix(in srgb, var(--luz) 20%, transparent), transparent 70%),
+              linear-gradient(150deg, var(--cristal-luz), transparent 55%), var(--cristal) !important;
+}
 .prevision span:last-child { display: flex; flex-direction: column; }
-.prevision small { color: var(--suave); }
+.prevision b { font-family: var(--titular); font-weight: 800; }
+.prevision small { color: var(--suave); font-size: .88rem; }
 .semaforo {
-  display: inline-block; flex: none; width: 14px; height: 14px; border-radius: 50%; vertical-align: middle;
-  background: var(--luz); box-shadow: 0 0 0 5px color-mix(in srgb, var(--luz) 22%, transparent); margin: 0 6px;
+  display: inline-block; flex: none; width: 12px; height: 12px; border-radius: 50%; vertical-align: middle;
+  background: var(--luz); box-shadow: 0 0 0 5px color-mix(in srgb, var(--luz) 22%, transparent), 0 0 16px var(--luz); margin: 0 6px;
 }
 .prevision-llena { --luz: var(--luz-llena); }
 .prevision-igual { --luz: var(--luz-igual); }
 .prevision-espera { --luz: var(--luz-espera); }
 .icono { width: 1.25em; height: 1.25em; flex: none; vertical-align: -0.25em; }
-.prevision-llena { background: var(--semaforo-llena); }
-.prevision-igual { background: var(--semaforo-igual); }
-.prevision-espera { background: var(--semaforo-espera); }
-.prevision-grande { font-size: 1.25rem; padding: 10px 12px; border-radius: 10px; }
+.prevision-grande { font-size: 1.25rem; padding: 12px 14px; border-radius: 18px; background: color-mix(in srgb, var(--luz) 16%, transparent); }
 
-.mapa-casa { height: 260px; border-radius: 12px; overflow: hidden; border: 1px solid var(--borde); margin: 10px 0; }
+.mapa-casa { height: 260px; border-radius: 20px; overflow: hidden; margin: 10px 0; }
 .buscador { display: flex; gap: 8px; }
-.buscador input { flex: 1; }
-.resultados { list-style: none; margin: 6px 0 0; padding: 0; border: 1px solid var(--borde); border-radius: 10px; overflow: hidden; }
+.buscador input { flex: 1; min-width: 0; }
+.bienvenida .buscador input {
+  font: inherit; font-size: 17px; color: var(--texto); background: var(--relleno-cristal);
+  border: 0; border-radius: 16px; padding: 13px 14px; box-shadow: inset 0 0 0 1px var(--cristal-borde);
+}
+.bienvenida .buscador input:focus { outline: 2px solid var(--gds-acento); outline-offset: 0; }
+.resultados { list-style: none; margin: 6px 0 0; padding: 0; border-radius: 18px; overflow: hidden; }
 .resultados:empty { display: none; }
-.resultados button { display: block; width: 100%; text-align: left; background: var(--tarjeta); color: var(--texto); border: 0; padding: 10px 12px; font: inherit; font-size: .9rem; cursor: pointer; }
-.resultados li + li button { border-top: 1px solid var(--borde); }
+.resultados button { display: block; width: 100%; text-align: left; background: none; color: var(--texto); border: 0; padding: 12px 14px; font: inherit; font-size: .92rem; cursor: pointer; }
+.resultados li + li button { border-top: 1px solid var(--separador); }
 details.avanzado summary { color: var(--suave); font-size: .9rem; cursor: pointer; margin: 6px 0; }
 
-.botones { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.botones { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
 .boton {
-  display: inline-block; border: 0; border-radius: 12px; padding: 11px 16px; font: inherit; font-weight: 600;
-  background: var(--marca); color: var(--fondo); text-decoration: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 999px;
+  padding: 14px 20px; font: 800 1rem var(--titular); letter-spacing: -.005em; text-decoration: none; cursor: pointer;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--gds-acento) 92%, #fff), color-mix(in srgb, var(--gds-acento) 92%, #000));
+  color: var(--sobre-marca);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 40%), 0 8px 20px -10px color-mix(in srgb, var(--gds-acento) 80%, transparent);
+  transition: transform .25s cubic-bezier(.3, 1.4, .5, 1), filter .15s;
 }
-.boton.secundario { background: var(--marca-suave); color: var(--marca); }
-.boton.ancho { width: 100%; margin-bottom: 10px; }
-.enlace { background: none; border: 0; color: var(--marca); font: inherit; padding: 0; cursor: pointer; text-decoration: underline; }
+.boton:active { transform: scale(.94); filter: brightness(.96); }
+.boton.secundario {
+  background: var(--relleno-cristal); color: var(--texto);
+  box-shadow: inset 0 1px 0 var(--cristal-filo), inset 0 0 0 1px var(--cristal-borde);
+}
+.boton.ancho { display: flex; width: 100%; margin-bottom: 10px; }
+.botones > .boton:first-child:not(.secundario) { flex: 1; }
+.enlace { background: none; border: 0; color: var(--tinta-marca); font: inherit; padding: 0; cursor: pointer; text-decoration: underline; }
 
-.lista { list-style: none; margin: 0; padding: 0; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px; overflow: hidden; }
-.lista li + li { border-top: 1px solid var(--borde); }
-.lista a { display: flex; align-items: center; gap: 12px; padding: 11px 14px; color: inherit; text-decoration: none; }
-.lista .precio { font-weight: 700; font-size: 1.1rem; font-variant-numeric: tabular-nums; min-width: 4.2em; }
+/* Las listas: filas con su puesto, el precio grande y la diferencia con la media */
+.lista { list-style: none; margin: 0; padding: 0; border-radius: 26px; overflow: hidden; }
+.lista li { position: relative; }
+.lista li + li::before { content: ""; position: absolute; top: 0; left: 16px; right: 16px; border-top: 1px solid var(--separador); }
+.lista a { display: flex; align-items: center; gap: 12px; padding: 13px 16px; color: inherit; text-decoration: none; }
+.lista a:active { background: var(--relleno); }
+.lista .puesto { font: 800 .75rem var(--titular); color: var(--suave); width: 1.4em; flex: none; font-variant-numeric: tabular-nums; }
+.lista .precio { font: 900 1.3rem var(--titular); letter-spacing: -.02em; font-variant-numeric: tabular-nums; min-width: 3.6em; }
 .lista .info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .lista .info b, .lista .info small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lista .info small { color: var(--suave); }
-.lista .fila-rep { display: flex; align-items: center; gap: 12px; padding: 11px 14px; }
-.lista .fila-rep .info b { white-space: normal; font-weight: 600; }
-.boton-icono { background: none; border: 0; color: var(--suave); font-size: 1rem; padding: 6px 8px; cursor: pointer; border-radius: 8px; }
-.boton-icono:hover, .boton-icono:focus-visible { color: var(--sube); background: var(--borde); }
-.dif { font-variant-numeric: tabular-nums; font-size: .9rem; font-weight: 600; }
+.lista .info b { font-weight: 700; }
+.lista .info small { color: var(--suave); font-size: .85rem; }
+.lista .fila-rep { display: flex; align-items: center; gap: 12px; padding: 13px 16px; }
+.lista .fila-rep .info b { white-space: normal; font-weight: 700; }
+.boton-icono { background: none; border: 0; color: var(--suave); font-size: 1rem; padding: 6px 8px; cursor: pointer; border-radius: 10px; }
+.boton-icono:hover, .boton-icono:focus-visible { color: var(--sube); background: var(--relleno); }
+.dif { font: 800 .85rem var(--titular); font-variant-numeric: tabular-nums; padding: 4px 9px; border-radius: 999px; }
+.dif.sube { background: color-mix(in srgb, var(--sube) 13%, transparent); }
+.dif.baja { background: color-mix(in srgb, var(--baja) 14%, transparent); }
 .sube { color: var(--sube); }
 .baja { color: var(--baja); }
 
-.cifras { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
-.cifra { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
-.cifra .etiqueta { font-size: .7rem; }
-.cifra b { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.cifras { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.cifra { border-radius: 22px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+.cifra:first-child b { color: var(--tinta-marca); }
+.cifra .etiqueta { font-size: .66rem; }
+.cifra b { white-space: nowrap; font: 900 clamp(1rem, 4.6vw, 1.3rem) var(--titular); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 
 .grafica { position: relative; height: 240px; }
 .precios { width: 100%; border-collapse: collapse; margin: 6px 0 4px; }
-.precios th { text-align: left; font-weight: 500; padding: 7px 0; }
-.precios td { text-align: right; font-variant-numeric: tabular-nums; }
-.precios tr + tr { border-top: 1px solid var(--borde); }
-.precios tr.activa { color: var(--marca); font-weight: 700; }
+.precios th { text-align: left; font-weight: 500; padding: 9px 0; }
+.precios td { text-align: right; font: 800 1rem var(--titular); font-variant-numeric: tabular-nums; }
+.precios tr + tr { border-top: 1px solid var(--separador); }
+.precios tr.activa { color: var(--tinta-marca); font-weight: 700; }
 .marcas th small { color: var(--suave); font-weight: 400; }
 .pasos { padding-left: 1.3em; margin: 8px 0; }
 .pasos li { margin: 8px 0; }
-.copiable { display: block; position: relative; margin: 6px 0; padding: 9px 11px; border-radius: 10px; background: var(--fondo);
-  border: 1px solid var(--borde); font-size: .82rem; overflow-wrap: anywhere; cursor: pointer; }
+.copiable { display: block; position: relative; margin: 6px 0; padding: 10px 12px; border-radius: 14px; background: var(--relleno-cristal);
+  font-size: .82rem; overflow-wrap: anywhere; cursor: pointer; }
 .copiable[data-copiado]::after { content: attr(data-copiado); position: absolute; right: 8px; top: -12px; font-size: .72rem;
-  background: var(--marca); color: #fff; padding: 2px 8px; border-radius: 999px; font-family: system-ui, sans-serif; }
+  background: var(--marca); color: var(--sobre-marca); padding: 2px 8px; border-radius: 999px; font-family: system-ui, sans-serif; }
 .marcas tr.hueco th { text-align: center; color: var(--suave); padding: 2px 0; }
 
-.mapa { height: calc(100dvh - 276px - env(safe-area-inset-bottom)); min-height: 320px; border-radius: 16px; overflow: hidden; border: 1px solid var(--borde); }
+.mapa { height: calc(100dvh - 300px - env(safe-area-inset-bottom)); min-height: 320px; border-radius: 26px; overflow: hidden; }
 
 /* Filtros del mapa */
-.filtros-mapa { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 10px; padding-bottom: 2px; scrollbar-width: none; }
-.chip { border: 1px solid var(--borde); background: var(--tarjeta); color: var(--texto); border-radius: 999px; padding: 7px 13px;
-  font: inherit; font-size: .88rem; white-space: nowrap; cursor: pointer; }
-.chip[aria-pressed="true"] { background: var(--marca); border-color: var(--marca); color: #fff; }
+.filtros-mapa { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 10px; padding: 2px 2px 10px; scrollbar-width: none; }
+.filtros-mapa::-webkit-scrollbar { display: none; }
+.chip { color: var(--texto); border-radius: 999px; padding: 9px 15px;
+  font: 800 .9rem var(--titular); white-space: nowrap; cursor: pointer; transition: transform .25s cubic-bezier(.3, 1.4, .5, 1); }
+.chip:active { transform: scale(.94); }
+.chip[aria-pressed="true"] { background: linear-gradient(180deg, color-mix(in srgb, var(--gds-acento) 92%, #fff), color-mix(in srgb, var(--gds-acento) 92%, #000)); color: var(--sobre-marca); }
 .lista-marcas { max-height: 55dvh; overflow-y: auto; margin: 6px 0 12px; }
-.fila-marca { display: flex; align-items: center; gap: 10px; padding: 8px 2px; border-bottom: 1px solid var(--borde); cursor: pointer; }
+.fila-marca { display: flex; align-items: center; gap: 10px; padding: 10px 2px; border-bottom: 1px solid var(--separador); cursor: pointer; }
 .fila-marca span:nth-of-type(2) { flex: 1; }
 .fila-marca small { color: var(--suave); font-variant-numeric: tabular-nums; }
-.fila-marca input { width: 24px; height: 24px; accent-color: var(--marca); margin: 0; }
+.fila-marca input { width: 24px; height: 24px; accent-color: var(--gds-acento); margin: 0; }
 .botones.centrados { justify-content: center; }
 
 /* Cada gasolinera: el distintivo de su marca (iniciales y color, no logos) y el precio al lado */
 .pin-icono { background: none; border: 0; }
-.pin { position: relative; width: 28px; height: 28px; }
+.pin { position: relative; width: 28px; height: 28px; transition: transform .25s cubic-bezier(.3, 1.4, .5, 1); }
 .pin-marca { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; flex: none;
   width: 28px; height: 28px; border-radius: 50%; background: var(--f); color: var(--t); border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgb(0 0 0 / 35%); font: 800 12px/1 system-ui, sans-serif; letter-spacing: -.5px; box-sizing: border-box; }
-.pin-precio { position: absolute; left: 20px; top: 5px; padding: 0 6px 0 10px; border-radius: 0 9px 9px 0; background: var(--p);
-  color: #fff; font: 700 11px/18px system-ui, sans-serif; white-space: nowrap; font-variant-numeric: tabular-nums;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 30%); }
+  box-shadow: 0 2px 6px rgb(0 0 0 / 30%); font: 800 12px/1 system-ui, sans-serif; letter-spacing: -.5px; box-sizing: border-box; }
+.pin-precio { position: absolute; left: 20px; top: 4px; padding: 0 8px 0 11px; border-radius: 0 10px 10px 0; background: var(--p);
+  color: #fff; font: 800 11.5px/20px var(--titular); white-space: nowrap; font-variant-numeric: tabular-nums;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 25%); }
+/* En el mapa manda el precio: el círculo, del color de lo barata o cara que es (la marca, solo en la letra) */
+.pin .pin-marca { background: var(--p); color: #fff; }
 .pin.cerrada { opacity: .45; filter: grayscale(.6); }
-.pin.fav .pin-marca { border-color: #f5b301; box-shadow: 0 0 0 2px #f5b301, 0 1px 4px rgb(0 0 0 / 35%); }
+.pin.fav .pin-marca { border-color: #f5b301; box-shadow: 0 0 0 2px #f5b301, 0 2px 6px rgb(0 0 0 / 30%); }
+.pin.elegida { transform: scale(1.3); }
+.pin.elegida .pin-marca { box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--gds-glaciar), 0 4px 12px rgb(0 0 0 / 30%); }
 .lejos .pin-precio { display: none; }
 .lejos .pin { transform: scale(.78); }
+.lejos .pin.elegida { transform: scale(1.1); }
 .leyenda { margin-top: 8px; }
 .leyenda .barata { color: var(--baja); }                 /* los del tema: contraste de sobra en claro y en oscuro */
 .leyenda .cara { color: var(--sube); }
 
-.formulario label { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; font-size: .9rem; color: var(--suave); }
+/* Formularios: campos de cristal, sin borde */
+.formulario label { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; font-size: .88rem; color: var(--suave); }
 .formulario input, .formulario select {
-  font: inherit; font-size: 16px; color: var(--texto); background: var(--fondo);
-  border: 1px solid var(--borde); border-radius: 10px; padding: 10px 12px; width: 100%;
+  font: inherit; font-size: 17px; color: var(--texto); background: var(--relleno-cristal);
+  border: 0; border-radius: 16px; padding: 13px 14px; width: 100%;
+  box-shadow: inset 0 0 0 1px var(--cristal-borde);
 }
+.formulario input:focus, .formulario select:focus { outline: 2px solid var(--gds-acento); outline-offset: 0; }
 .formulario .fila { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.formulario .interruptor { flex-direction: row; align-items: center; gap: 10px; color: var(--texto); font-size: 1rem; }
-.formulario .interruptor input { width: 24px; height: 24px; flex: none; accent-color: var(--marca); }
-.hoja {
-  border: 1px solid var(--borde); border-radius: 18px; padding: 18px 16px; width: min(420px, calc(100% - 32px));
-  background: var(--tarjeta); color: var(--texto); box-shadow: var(--sombra);
+.formulario .interruptor { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; color: var(--texto); font-size: 1rem; }
+/* El interruptor de iOS, hecho con la casilla de siempre (sigue siendo una casilla para el lector de pantalla) */
+.formulario .interruptor input {
+  -webkit-appearance: none; appearance: none; order: 2; flex: none; width: 56px; height: 32px; padding: 0; margin: 0;
+  border-radius: 999px; background: var(--relleno); position: relative; cursor: pointer; transition: background .25s;
+  box-shadow: inset 0 0 0 1px var(--separador);
 }
-.hoja::backdrop { background: rgb(0 0 0 / .4); }
+.formulario .interruptor input::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 34px; height: 26px; border-radius: 999px;
+  background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / 20%); transition: transform .3s cubic-bezier(.3, 1.4, .5, 1);
+}
+.formulario .interruptor input:checked { background: var(--gds-acento); box-shadow: none; }
+.formulario .interruptor input:checked::after { transform: translateX(16px); }
+.formulario .interruptor input:focus-visible { outline: 2px solid var(--gds-acento); outline-offset: 2px; }
+
+.hoja {
+  border-radius: 32px; padding: 22px 18px 18px; width: min(420px, calc(100% - 24px)); color: var(--texto);
+}
+.hoja[open] { animation: aparecer .4s cubic-bezier(.2, 1.2, .4, 1); }
+@keyframes aparecer { from { transform: translateY(24px) scale(.96); opacity: 0; } }
+.hoja::backdrop { background: rgb(0 0 0 / .25); }
 .hoja h2 { text-align: center; }
-.hoja .boton { display: block; text-align: center; margin-bottom: 8px; }
+.hoja .boton { display: flex; text-align: center; margin-bottom: 8px; }
 .hoja form { margin: 0; }
-.ventanita .botones { margin-top: 8px; display: flex; flex-wrap: nowrap; gap: 6px; }
-.ventanita .boton { padding: 6px 10px; font-size: .85rem; }
-.leaflet-popup-content .ventanita a.boton { color: var(--fondo); }
-.leaflet-popup-content .ventanita a.boton.secundario { color: var(--marca); }
-.mensaje { padding: 10px 12px; border-radius: 10px; margin: 0 0 12px; }
-.mensaje.ok { background: var(--marca-suave); color: var(--marca); }
+.mensaje { padding: 12px 14px; border-radius: 18px; margin: 0 0 12px; }
+.mensaje.ok { background: color-mix(in srgb, var(--gds-acento) 16%, transparent); color: var(--texto); }
 .mensaje.error { background: color-mix(in srgb, var(--sube) 14%, transparent); color: var(--sube); }
 
 .sin-conexion {
   position: fixed; left: 50%; transform: translateX(-50%); top: calc(8px + env(safe-area-inset-top)); z-index: 2000;
-  background: var(--texto); color: var(--fondo); padding: 6px 14px; border-radius: 999px; font-size: .85rem;
+  background: var(--texto); color: var(--fondo); padding: 6px 14px; border-radius: 999px; font-size: .85rem; font-weight: 700;
 }
 .formulario select[multiple] { padding: 4px; }
 
@@ -246,15 +458,22 @@ details.avanzado summary { color: var(--suave); font-size: .9rem; cursor: pointe
 .legal h2 { margin-top: 0; }
 .legal li { margin-bottom: 6px; }
 
+/* La barra de abajo: una pastilla de cristal que flota; la sección activa, bajo una lente */
 .barra {
-  position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-around;
-  background: color-mix(in srgb, var(--tarjeta) 88%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid var(--borde); padding: 6px 0 calc(6px + env(safe-area-inset-bottom)); z-index: 1000;
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(14px + env(safe-area-inset-bottom));
+  width: min(400px, calc(100% - 32px)); display: flex; gap: 2px; padding: 5px; border-radius: 999px; z-index: 1000;
 }
-.barra a { display: flex; flex-direction: column; align-items: center; font-size: .72rem; color: var(--suave); text-decoration: none; padding: 2px 12px; }
-.barra a .icono { width: 24px; height: 24px; margin: 2px 0 3px; stroke-width: 1.75; }
-.barra a[aria-current="page"] { color: var(--marca); font-weight: 600; }
-.barra a[aria-current="page"] .icono { stroke-width: 2.25; }
+.barra a {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 7px 0 6px; border-radius: 999px;
+  font: 800 .66rem var(--titular); color: var(--texto); text-decoration: none; letter-spacing: .01em;
+  transition: background .3s, color .3s;
+}
+.barra a .icono { width: 23px; height: 23px; stroke-width: 1.9; }
+.barra a[aria-current="page"] {
+  color: var(--tinta-marca); background: var(--lente);
+  box-shadow: inset 0 1px 0 var(--cristal-filo), 0 2px 10px -2px rgb(0 0 0 / 14%);
+}
+.barra a[aria-current="page"] .icono { stroke-width: 2.4; }
 
 @media (min-width: 900px) {
   .cifras { gap: 12px; }
@@ -268,52 +487,54 @@ details.avanzado summary { color: var(--suave); font-size: .9rem; cursor: pointe
 .clave-totp { text-align: center; word-break: break-all; font-size: 1.05rem; letter-spacing: .05em; }
 
 /* Abierta o cerrada ahora, según el horario publicado */
-.estado { font-size: .85rem; font-weight: 600; }
+.estado { font-size: .85rem; font-weight: 700; }
 .estado.abierta { color: var(--baja); }
 .estado.cerrada { color: var(--sube); }
-.lista a.cerrada .precio, .lista a.cerrada .info b { opacity: .55; }
+.lista a.cerrada .precio, .lista a.cerrada .info b { opacity: .5; }
 .lista small .estado { font-size: inherit; }
 
 /* Favoritas y compartir */
 .botones form { margin: 0; }
-.boton .icono { width: 1.05em; height: 1.05em; vertical-align: -.15em; }
+.boton .icono { width: 1.05em; height: 1.05em; }
+.boton.marcada { color: #e5a000; }
 .boton.marcada .icono { fill: currentColor; }
-h2 .icono { width: 1em; height: 1em; vertical-align: -.12em; color: var(--marca); }
-.dif.total { color: var(--texto); }
-.boton.solo-icono { padding-left: 14px; padding-right: 14px; }
-.boton.solo-icono .icono { width: 1.25em; height: 1.25em; vertical-align: -.25em; }
-.ventanita .estado { display: inline-block; margin-top: 2px; }
-.ventanita form { margin: 0; }
+h2 .icono { width: 1em; height: 1em; vertical-align: -.12em; color: var(--tinta-marca); }
+.dif.total { color: var(--texto); background: var(--relleno); }
+.boton.solo-icono { padding-left: 15px; padding-right: 15px; }
+.boton.solo-icono .icono { width: 1.25em; height: 1.25em; }
 
-/* Las ventanitas y los créditos del mapa, con los colores del tema («html» para ganar a leaflet.css,
-   que se carga después) */
-html .leaflet-popup-content-wrapper, html .leaflet-popup-tip { background: var(--tarjeta); color: var(--texto); box-shadow: var(--sombra), 0 3px 14px rgb(0 0 0 / 25%); }
+/* Los créditos y botones del mapa, de cristal («html» para ganar a leaflet.css) */
+html .leaflet-popup-content-wrapper, html .leaflet-popup-tip { background: var(--tarjeta); color: var(--texto); box-shadow: 0 3px 14px rgb(0 0 0 / 25%); }
 html .leaflet-container a.leaflet-popup-close-button { color: var(--suave); }
-html .leaflet-container .leaflet-control-attribution { background: color-mix(in srgb, var(--tarjeta) 85%, transparent); color: var(--suave); }
-html .leaflet-container .leaflet-control-attribution a { color: var(--marca); }
+html .leaflet-container .leaflet-control-attribution {
+  background: var(--cristal-fuerte); -webkit-backdrop-filter: var(--desenfoque); backdrop-filter: var(--desenfoque);
+  color: var(--suave); border-radius: 10px 0 0 0; font-size: 10px;
+}
+html .leaflet-container .leaflet-control-attribution a { color: var(--texto); }
+html .leaflet-touch .leaflet-bar { border: 0; border-radius: 16px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--cristal-borde), var(--cristal-sombra); }
+html .leaflet-touch .leaflet-bar a { background: var(--cristal-fuerte); -webkit-backdrop-filter: var(--desenfoque); backdrop-filter: var(--desenfoque); color: var(--texto); border-color: var(--separador); }
 
-/* El orden de Cerca, arriba del todo: un control segmentado */
-.segmentos { display: flex; gap: 4px; padding: 4px; margin-bottom: 14px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; }
-.segmentos a { flex: 1; text-align: center; padding: 8px 4px; border-radius: 9px; text-decoration: none; color: var(--suave); font-size: .9rem; font-weight: 600; white-space: nowrap; }
-.segmentos a.activa { background: var(--marca); color: var(--fondo); }
+/* El orden de Cerca: control segmentado de cristal; el elegido, bajo una lente */
+.segmentos { display: flex; gap: 2px; padding: 4px; margin-bottom: 14px; border-radius: 999px; }
+.segmentos a { flex: 1; text-align: center; padding: 9px 4px; border-radius: 999px; text-decoration: none; color: var(--texto); font: 800 .9rem var(--titular); white-space: nowrap; transition: background .3s; }
+.segmentos a.activa { background: var(--lente); color: var(--tinta-marca); box-shadow: inset 0 1px 0 var(--cristal-filo), 0 3px 10px -3px rgb(0 0 0 / 18%); }
 
 /* «Guardado», flotando sobre la barra de abajo */
 .aviso-flotante {
-  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(76px + env(safe-area-inset-bottom));
-  margin: 0; padding: 9px 16px; border-radius: 999px; background: var(--texto); color: var(--fondo);
-  font-size: .9rem; font-weight: 600; box-shadow: 0 4px 16px rgb(0 0 0 / 20%); z-index: 1000; max-width: calc(100% - 32px);
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(92px + env(safe-area-inset-bottom));
+  margin: 0; padding: 10px 18px; border-radius: 999px; background: var(--texto); color: var(--fondo);
+  font-size: .9rem; font-weight: 700; box-shadow: 0 6px 20px rgb(0 0 0 / 22%); z-index: 1000; max-width: calc(100% - 32px);
 }
 .aviso-flotante.error { background: var(--sube); color: #fff; }
 
 /* «Instálala como una app»: una hoja que sube desde abajo, encima de la barra */
 .hoja-instalar {
-  position: fixed; left: 8px; right: 8px; bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 1100;
-  max-width: 520px; margin: 0 auto; padding: 16px; border-radius: 18px;
-  background: var(--tarjeta); border: 1px solid var(--borde); box-shadow: 0 10px 40px rgb(0 0 0 / 25%);
-  animation: subir .25s ease-out;
+  position: fixed; left: 10px; right: 10px; bottom: calc(92px + env(safe-area-inset-bottom)); z-index: 1100;
+  max-width: 520px; margin: 0 auto; padding: 18px; border-radius: 32px;
+  animation: subir .4s cubic-bezier(.2, 1.2, .4, 1);
 }
-@keyframes subir { from { transform: translateY(16px); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .hoja-instalar { animation: none; } }
+@keyframes subir { from { transform: translateY(24px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .hoja-instalar, .hoja[open], .hoja-comb:popover-open { animation: none; } }
 .cabeza-instalar { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
 .cabeza-instalar img { border-radius: 11px; flex: none; }
 .cabeza-instalar h2 { margin: 0 0 2px; }
@@ -323,3 +544,144 @@ html .leaflet-container .leaflet-control-attribution a { color: var(--marca); }
 .hoja-instalar .botones { margin-top: 10px; }
 .nota.centrada { text-align: center; margin: 12px 0; }
 .hoja .botones.centrados .boton { flex: 1; margin-bottom: 0; }
+
+/* --- El mapa a pantalla completa, con los controles de cristal flotando encima --------------------- */
+.con-mapa { padding-bottom: 0; overflow: hidden; }
+/* Encima del mapa (letras y líneas por todas partes), el cristal más opaco, para que se lea siempre */
+.con-mapa { --cristal: color-mix(in srgb, var(--tarjeta) 72%, transparent); --cristal-fuerte: color-mix(in srgb, var(--tarjeta) 88%, transparent); }
+.con-mapa::after { display: none; }
+.con-mapa .contenido { padding: 0; max-width: none; }
+.con-mapa .mapa { position: fixed; inset: 0; height: auto; min-height: 0; border-radius: 0; z-index: 0; }
+/* Safari (iOS 26) tiñe sus barras con lo que toca el borde de la pantalla: que sea el fondo del tema, no
+   el gris claro que Leaflet le pone al mapa mientras carga */
+html .con-mapa .mapa.leaflet-container { background: var(--fondo); }
+.con-mapa .cabecera {
+  position: fixed; top: 0; left: 0; z-index: 500; max-width: none; pointer-events: none;
+  padding: calc(10px + env(safe-area-inset-top)) 12px 0;
+}
+.con-mapa .cabecera > * { pointer-events: auto; }
+.con-mapa .cabecera h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.con-mapa .filtros-mapa {
+  position: fixed; z-index: 500; left: 0; right: 0; top: calc(66px + env(safe-area-inset-top));
+  margin: 0; padding: 0 12px 12px;
+}
+.con-mapa .leyenda { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); margin: 0; }
+.cuenta-mapa { display: none; }
+.con-mapa .cuenta-mapa {
+  display: block; position: fixed; z-index: 500; left: 12px; top: calc(122px + env(safe-area-inset-top));
+  margin: 0; padding: 5px 12px; border-radius: 999px; font-size: .8rem; font-weight: 700; white-space: nowrap;
+}
+.con-mapa .cuenta-mapa:empty { display: none; }
+.con-mapa .pie-legal { display: none; }
+.con-mapa #gps-estado { position: fixed; z-index: 600; left: 12px; right: 12px; top: calc(122px + env(safe-area-inset-top)); }
+.con-mapa .leaflet-bottom { bottom: calc(94px + env(safe-area-inset-bottom)); }
+.con-mapa .leaflet-control-attribution { white-space: nowrap; overflow-x: auto; max-width: calc(100vw - 150px); scrollbar-width: none; border-radius: 999px 0 0 999px !important; padding: 3px 10px !important; }
+.escala-mapa { display: none; }
+.con-mapa .escala-mapa {
+  position: fixed; z-index: 500; left: 12px; bottom: calc(92px + env(safe-area-inset-bottom)); margin: 0;
+  display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; font: 800 .72rem var(--titular); color: var(--suave);
+}
+.escala-mapa span { width: 46px; height: 7px; border-radius: 999px; background: linear-gradient(90deg, hsl(130 70% 38%), hsl(65 70% 38%), hsl(0 70% 38%)); }
+
+/* La ficha de una gasolinera: sube desde abajo al tocarla en el mapa */
+.hoja-estacion {
+  position: fixed; z-index: 900; left: 10px; right: 10px; bottom: calc(92px + env(safe-area-inset-bottom));
+  max-width: 520px; margin: 0 auto; padding: 8px 18px 18px; border-radius: 34px;
+  transition: transform .45s cubic-bezier(.2, 1.15, .4, 1), opacity .25s; touch-action: none;
+}
+.hoja-estacion[aria-hidden="true"] { transform: translateY(calc(100% + 120px)); opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .hoja-estacion { transition: opacity .2s; } .hoja-estacion[aria-hidden="true"] { transform: none; } }
+.asa { display: block; width: 38px; height: 5px; border-radius: 999px; background: var(--separador); margin: 0 auto 10px; }
+.ficha-cabeza { display: flex; align-items: center; gap: 12px; }
+.ficha-cabeza .pin-marca { width: 42px; height: 42px; font-size: 15px; border-width: 0; box-shadow: inset 0 1px 0 rgb(255 255 255 / 35%); border-radius: 14px; }
+.ficha-cabeza div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ficha-cabeza b { font: 800 1.2rem var(--titular); letter-spacing: -.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ficha-cabeza small { color: var(--suave); font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cerrar-ficha { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--relleno-cristal); color: var(--suave);
+  box-shadow: inset 0 1px 0 var(--cristal-filo), inset 0 0 0 1px var(--cristal-borde);
+  font: 600 18px/1 system-ui, sans-serif; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.ficha-precio { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 14px 0 4px; }
+.ficha-precio b { font: 900 3.2rem/1 var(--titular); letter-spacing: -.04em; font-variant-numeric: tabular-nums; color: var(--tinta-marca); }
+.ficha-precio .dif { align-self: center; }
+.hoja-estacion .botones { margin-top: 14px; flex-wrap: nowrap; }
+.hoja-estacion .botones .boton.secundario:not(.solo-icono) { flex: none; }
+
+/* --- Botones redondos de cristal (modo coche, salir, actualizar) ----------------------------------- */
+/* En Cerca, la barra se aparta para dejar sitio al botón del modo coche, a su derecha */
+.con-coche .barra { left: max(16px, calc(50% - 233px)); transform: none; width: auto; right: max(84px, calc(50% - 167px)); }
+.boton-coche {
+  position: fixed; z-index: 1000; bottom: calc(14px + env(safe-area-inset-bottom)); right: max(16px, calc(50% - 233px));
+  display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; color: var(--texto);
+  background: linear-gradient(150deg, var(--cristal-luz), transparent 55%), var(--cristal-fuerte) !important;
+  box-shadow: inset 0 1px 0 var(--cristal-filo), inset 0 0 0 1px var(--cristal-borde), 0 18px 44px -14px rgb(0 0 0 / 30%);
+  transition: transform .25s cubic-bezier(.3, 1.4, .5, 1); view-transition-name: boton-coche;
+}
+.boton-coche:active { transform: scale(.92); }
+.boton-coche .icono { width: 26px; height: 26px; }
+.boton-redondo {
+  display: inline-grid; place-items: center; flex: none; width: 46px; height: 46px; border-radius: 50%; border: 0;
+  color: var(--texto); text-decoration: none; cursor: pointer; font: 700 1.1rem system-ui, sans-serif;
+  transition: transform .25s cubic-bezier(.3, 1.4, .5, 1);
+}
+.boton-redondo:active { transform: scale(.92); }
+.boton-redondo .icono { width: 22px; height: 22px; }
+
+/* «Tus favoritas hoy»: lo que ha cambiado desde su último día con precio */
+.novedades { padding: 14px 16px; }
+.novedades .etiqueta { margin: 0 0 6px; }
+.novedades .etiqueta .icono { width: 1.1em; height: 1.1em; vertical-align: -.2em; color: #e5a000; fill: currentColor; }
+.novedades ul { list-style: none; margin: 0; padding: 0; }
+.novedades a { display: flex; align-items: center; gap: 10px; padding: 6px 0; color: inherit; text-decoration: none; }
+.novedades li + li a { border-top: 1px solid var(--separador); }
+.flecha { flex: none; display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; font-weight: 900;
+  background: color-mix(in srgb, currentColor 14%, transparent); }
+
+/* Lo ahorrado en Mis repostajes */
+.ahorro-total .precio-grande { font-size: 3.6rem; margin: 6px 0 6px !important; }
+.ahorro-total p:last-child { margin-bottom: 0; }
+
+/* --- Modo coche: todo en grande, sin barra de abajo ------------------------------------------------ */
+.modo-coche { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+.modo-coche .barra { display: none; }
+.modo-coche .cabecera { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
+.modo-coche .contenido { padding-top: calc(14px + env(safe-area-inset-top)); }
+.coche-arriba { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.coche-donde { flex: 1; min-width: 0; margin: 0; padding: 6px 16px; border-radius: 999px; text-align: center;
+  display: flex; flex-direction: column; line-height: 1.2; }
+.coche-donde b { font: 800 1rem var(--titular); }
+.coche-donde small { color: var(--suave); font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.coche-mejor .precio-grande { font-size: clamp(5rem, 26vw, 8rem); }
+.coche-mejor .nombre { font-size: 1.7rem; }
+.coche-mejor .donde { font-size: 1.1rem; }
+.coche-ir { display: flex; width: 100%; margin-top: 16px; min-height: 76px; font-size: 1.6rem; gap: 12px; }
+.coche-ir .icono { width: 1.1em; height: 1.1em; }
+.coche-otras a { padding: 18px 16px; }
+.coche-otras .precio { font-size: 1.6rem; }
+.coche-otras .info b { font-size: 1.1rem; }
+
+/* --- La bienvenida: un paso cada vez -------------------------------------------------------------- */
+.bienvenida { padding: 22px 20px; }
+.bienvenida h2 { font-size: 1.6rem; margin-bottom: .3rem; }
+.paso { border: 0; margin: 16px 0 6px; padding: 0; min-width: 0; }
+.paso legend { font: 800 1.2rem var(--titular); letter-spacing: -.02em; padding: 0; margin-bottom: 12px; }
+.paso .icono { width: 1.1em; height: 1.1em; }
+.paso:not([hidden]) { animation: entrar .35s cubic-bezier(.2, 1.1, .4, 1); }
+@keyframes entrar { from { opacity: 0; transform: translateX(18px); } }
+@media (prefers-reduced-motion: reduce) { .paso:not([hidden]) { animation: none; } }
+.opciones { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.opcion { position: relative; cursor: pointer; }
+.opcion input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.opcion span {
+  display: inline-block; padding: 12px 18px; border-radius: 999px; font: 800 1rem var(--titular);
+  background: var(--relleno-cristal); box-shadow: inset 0 1px 0 var(--cristal-filo-bajo), inset 0 0 0 1px var(--cristal-borde);
+}
+.opcion input:checked + span { background: var(--marca); color: var(--sobre-marca); box-shadow: inset 0 1px 0 rgb(255 255 255 / 35%); }
+.opcion input:focus-visible + span { outline: 2px solid var(--gds-acento); outline-offset: 2px; }
+.bienvenida .enlace { display: block; margin: 4px 0 10px; }
+
+/* --- Entre pantallas: la barra y el título se quedan quietos; la tarjeta que tocas se convierte en la
+   ficha de la gasolinera (view-transition-name en las plantillas) ---------------------------------- */
+.barra { view-transition-name: barra; }
+.selector-comb { view-transition-name: combustible; }
+::view-transition-group(*) { animation-duration: .38s; animation-timing-function: cubic-bezier(.2, .9, .3, 1); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; }

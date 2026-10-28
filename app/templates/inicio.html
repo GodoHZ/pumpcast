@@ -22,10 +22,25 @@
   <span><b>{{ prevision.titulo }}</b><small>{{ prevision.frase }}</small></span>
 </a>
 {% endif %}
-<section class="tarjeta destacada">
+{% if novedades %}
+<section class="tarjeta novedades" aria-labelledby="novedades-titulo">
+  <p class="etiqueta" id="novedades-titulo">{{ icono("estrella") }} {{ t("fav.novedades") }}</p>
+  <ul>
+    {% for n in novedades %}
+    {% set cuando = t("fav.ayer") if n.dias_antes == 1 else t("fav.dias", n=n.dias_antes) %}
+    <li><a href="/estacion/{{ n.id }}?c={{ comb }}">
+      <span class="flecha {{ 'baja' if n.cambio < 0 else 'sube' }}" aria-hidden="true">{{ "↓" if n.cambio < 0 else "↑" }}</span>
+      <span>{{ t("fav.bajado" if n.cambio < 0 else "fav.subido", nombre=n.rotulo|titulo|e, cts=(n.cambio|abs * 100)|numero(1), cuando=cuando)|safe }}</span>
+    </a></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{#- view-transition-name: al tocarla, la tarjeta «se convierte» en la ficha de la gasolinera -#}
+<section class="tarjeta destacada" style="view-transition-name: e{{ mejor.id }}">
   {% set nombres = {"precio": "inicio.mas_barata", "distancia": "inicio.mas_cercana", "compensa": "inicio.mas_rentable"} %}
   <p class="etiqueta">{{ t(nombres[aj.orden] ~ ("" if mejor.abierta is false else "_abierta"), radio=aj.radio_km) }}</p>
-  <p class="precio-grande">{{ mejor.precio|euros }}<small> €/{{ unidad }}</small></p>
+  <p class="precio-grande">{{ mejor.precio|euros }}<small>€/{{ unidad }}</small></p>
   <p class="nombre">{{ mejor.rotulo|titulo }}</p>
   <p class="donde">{{ mejor.direccion|titulo }}, {{ mejor.municipio }} · {{ mejor.distancia|km }}</p>
   <p>{{ estado(mejor) }}</p>
@@ -70,7 +85,9 @@
   <h2>{{ t("inicio.resto") }} <span class="nota">{{ t("inicio.resto_nota", total=total) }}</span></h2>
   <ol class="lista">
     {% for e in resto %}
-    <li><a href="/estacion/{{ e.id }}?c={{ comb }}" {% if e.abierta is false %}class="cerrada"{% endif %}>
+    <li><a href="/estacion/{{ e.id }}?c={{ comb }}" {% if e.abierta is false %}class="cerrada"{% endif %}
+           {%- if e.id not in ids_favoritas %} style="view-transition-name: e{{ e.id }}"{% endif %}>
+      <span class="puesto" aria-hidden="true">{{ "%02d"|format(loop.index + 1) }}</span>
       <span class="precio">{{ e.precio|euros }}</span>
       <span class="info"><b>{{ e.rotulo|titulo }}</b><small>{% if e.abierta is false %}{{ estado(e) }} · {% endif %}{{ e.distancia|km }} · {{ e.municipio }}</small></span>
       {% if aj.orden == "compensa" %}

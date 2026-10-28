@@ -334,8 +334,33 @@ def favoritas(aj: dict, comb: str, ids: list[int]) -> list[dict]:
         filas = con.execute(
             f"SELECT e.*, p.precio FROM estaciones e LEFT JOIN precios p ON p.estacion_id = e.id "
             f"AND p.combustible = ? AND p.fecha = ? WHERE e.id IN ({marcas})", (comb, hoy, *ids)).fetchall()
-    lista = [{**dict(f), "distancia": distancia_km(lat, lon, f["lat"], f["lon"])} for f in filas]
+        # El último precio distinto del de hoy en la última semana, para contar lo que ha cambiado.
+        antes, de_hoy = {}, {}
+        if hoy:
+            for f in con.execute(
+                    f"SELECT estacion_id, precio, fecha FROM precios WHERE combustible = ? AND fecha <= ? "
+                    f"AND fecha >= ? AND estacion_id IN ({marcas}) ORDER BY fecha DESC",
+                    (comb, hoy, _hace(hoy, 7), *ids)):
+                e = f["estacion_id"]
+                if f["fecha"] == hoy:
+                    de_hoy[e] = f["precio"]
+                elif e in de_hoy and e not in antes and abs(f["precio"] - de_hoy[e]) > 1e-9:
+                    # «En 2 días»: de ese precio al de hoy van dos días (1: «desde ayer»).
+                    antes[e] = (f["precio"], (date.fromisoformat(hoy) - date.fromisoformat(f["fecha"])).days)
+    lista = [{**dict(f), "distancia": distancia_km(lat, lon, f["lat"], f["lon"]),
+              "antes": antes.get(f["id"], (None, None))[0], "dias_antes": antes.get(f["id"], (None, None))[1]}
+             for f in filas]
     return sorted(lista, key=lambda e: ids.index(e["id"]))
+
+
+def medias_de_referencia(aj: dict, comb: str) -> dict[str, float]:
+    """La media de cada día con la que comparar lo que pagó el visitante: la de su radio mientras
+    hay precios de cada gasolinera (DIAS_CON_PRECIOS) y, antes, la de su provincia."""
+    lat, lon, _ = _casa(aj)
+    provincia = provincia_de(lat, lon)
+    medias = {f["fecha"]: f["media"] for f in serie_provincia(provincia, comb, 400)} if provincia else {}
+    medias.update({f["fecha"]: f["media"] for f in serie_zona(aj, comb, config.DIAS_CON_PRECIOS)})
+    return {fecha: round(media, 4) for fecha, media in sorted(medias.items())}
 
 
 def precios_actuales(estacion_id: int) -> dict[str, float]:

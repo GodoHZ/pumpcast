@@ -35,7 +35,7 @@ def _ubicar(cliente, **cambios):
 def test_sin_ubicacion_pide_elegirla(cliente, cargada):
     for ruta in ("/", "/mapa", "/tendencia"):
         r = cliente.get(ruta)
-        assert r.status_code == 200 and "dinos dónde buscar" in r.text, ruta
+        assert r.status_code == 200 and 'id="bienvenida"' in r.text, ruta
     assert cliente.get("/ajustes").status_code == 200
     assert cliente.get("/salud").json()["estado"] == "ok"
 
@@ -110,7 +110,7 @@ def test_olvidar_la_ubicacion(cliente, cargada):
     assert "a menos de 5 km" in cliente.get("/").text
     r = cliente.post("/ajustes/olvidar", follow_redirects=False)
     assert 'pumpcast=""' in r.headers["set-cookie"] and "Max-Age=0" in r.headers["set-cookie"]
-    assert "dinos dónde buscar" in cliente.get("/").text
+    assert 'id="bienvenida"' in cliente.get("/").text
 
 
 @pytest.mark.parametrize("cambio, error", [
@@ -129,7 +129,7 @@ def test_ajustes_con_error_no_se_guardan(cliente, cambio, error):
 
 def test_una_cookie_trucada_se_ignora(cliente, cargada):
     cliente.cookies.set(preferencias.COOKIE, "lat=40.4&lon=-3.7&radio_km=99999&combustible=g95&litros=40&idioma=auto")
-    assert "dinos dónde buscar" in cliente.get("/").text
+    assert 'id="bienvenida"' in cliente.get("/").text
     cliente.cookies.set(preferencias.COOKIE, '"><script>alert(1)</script>')
     r = cliente.get("/")
     assert r.status_code == 200 and "<script>alert(1)" not in r.text
@@ -390,7 +390,10 @@ def test_elegir_el_tema(cliente, cargada):
     _ubicar(cliente)
     assert "data-theme" not in cliente.get("/").text.split(">", 2)[1]       # automático: el del móvil
     _ubicar(cliente, tema="oscuro")
-    assert '<html lang="es" data-theme="dark">' in cliente.get("/").text
+    texto = cliente.get("/").text
+    assert '<html lang="es" data-theme="dark">' in texto
+    # La barra de la hora, oscura aunque el móvil esté en claro.
+    assert '<meta name="theme-color" content="#070c11">' in texto and 'content="black-translucent"' in texto
     _ubicar(cliente, tema="claro")
     assert 'data-theme="light"' in cliente.get("/ajustes").text
     _ubicar(cliente, tema="raro")
@@ -536,6 +539,16 @@ def test_mapa_con_distintivos_y_filtros(cliente, cargada):
     texto = _ubicar(cliente).get("/mapa").text
     assert '"insignia": {' in texto and '"media":' in texto and "/static/mapa.js" in texto
     assert 'data-filtro="abiertas"' in texto and 'id="elegir-marcas"' in texto
+    # A pantalla completa y con la ficha que sube desde abajo; la página de una gasolinera, no.
+    assert '<body class="pagina-mapa con-mapa">' in texto and 'id="ficha"' in texto and '"cerrar": "Cerrar"' in texto
+    assert '<body class="pagina-mapa">' in cliente.get("/estacion/4352").text
+
+
+def test_combustible_en_una_hoja_y_letra_propia(cliente, cargada):
+    texto = _ubicar(cliente).get("/").text
+    assert 'popovertarget="combustibles"' in texto and 'id="combustibles" class="hoja-comb" popover' in texto
+    r = cliente.get("/static/fuentes/nunito.woff2")
+    assert r.status_code == 200 and r.content[:4] == b"wOF2"
 
 
 def test_pasar_a_otro_movil(cliente, cargada):
@@ -554,3 +567,36 @@ def test_pasar_a_otro_movil(cliente, cargada):
     mal = otro.post("/pasar", json={"p": "lat=999", "f": []}, headers={"Origin": "https://testserver"})
     assert mal.json()["ajustes"] is False and preferencias.COOKIE not in mal.cookies
     assert otro.post("/pasar", json={"p": p}, headers={"Origin": "https://malo.example"}).status_code == 403
+
+
+def test_novedades_de_las_favoritas(cliente, con_historial, una):
+    _ubicar(cliente)
+    cliente.cookies.set(preferencias.COOKIE_FAVORITAS, str(una["id"]))
+    texto = cliente.get("/").text
+    assert 'class="tarjeta novedades"' in texto and "ha bajado 10,0 cts desde ayer" in texto
+
+
+def test_modo_coche(cliente, cargada):
+    assert cliente.get("/coche", follow_redirects=False).status_code == 303     # sin ubicación, a la bienvenida
+    r = _ubicar(cliente).get("/coche")
+    assert r.status_code == 200 and r.headers["cache-control"] == "no-store"
+    assert 'class="boton coche-ir"' in r.text and "data-ir=" in r.text and "modo-coche" in r.text
+    assert "Desde tu ubicación de Ajustes" in r.text
+    r = cliente.get("/coche?lat=40.42&lon=-3.70")
+    assert "Desde donde estás" in r.text and 'class="boton coche-ir"' in r.text
+    assert 'href="/coche?c=g95"' in cliente.get("/").text                      # el botón de Cerca
+
+
+def test_repostajes_traen_las_medias_para_el_ahorro(cliente, con_historial):
+    assert '"medias": {}' in cliente.get("/repostajes").text                    # sin ubicación, sin medias
+    texto = _ubicar(cliente).get("/repostajes").text
+    medias = re.search(r'"medias": (\{[^}]*\})', texto).group(1)
+    assert medias.count(":") >= 10 and 'id="rep-ahorro"' in texto
+
+
+def test_la_bienvenida_guarda_como_ajustes(cliente, cargada):
+    texto = cliente.get("/").text
+    ocultos = dict(re.findall(r'<input type="hidden" name="(\w+)" value="([^"]*)"', texto))
+    assert {"litros", "idioma", "orden", "consumo", "tema", "mapa", "gps"} <= set(ocultos)
+    r = cliente.post("/ajustes", data={**ocultos, **SOL, "combustible": "diesel", "radio_km": "5"}, follow_redirects=False)
+    assert r.status_code == 303 and "combustible=diesel" in r.headers["set-cookie"]

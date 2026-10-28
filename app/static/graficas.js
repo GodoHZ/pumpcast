@@ -3,7 +3,7 @@
 function lineas(id, fechas, series, secundaria) {
   const css = getComputedStyle(document.documentElement);
   const color = (nombre) => css.getPropertyValue(nombre).trim();
-  const marca = color("--marca");
+  const marca = color("--tinta-marca") || color("--marca");
   const suave = color("--suave");
   const borde = color("--borde");
   const petroleo = color("--petroleo");

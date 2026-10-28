@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_estado.html" import estado with context %}
+{% from "_iconos.html" import icono %}
+{% block titulo %}{{ t("coche.titulo") }} · Pumpcast{% endblock %}
+{% block h1 %}{{ t("coche.titulo") }}{% endblock %}
+{% block clase_body %} modo-coche{% endblock %}
+{% block contenido %}
+{#- Para el móvil en el soporte: la mejor de alrededor en grande y un «Ir» enorme. Sin barra de abajo. -#}
+<div class="coche-arriba">
+  <a class="boton-redondo vidrio" href="/?c={{ comb }}" aria-label="{{ t('coche.salir') }}" title="{{ t('coche.salir') }}">✕</a>
+  <p class="coche-donde vidrio"><b>{{ nombre_comb }}</b><small id="coche-donde" role="status">{{ t("coche.aqui") if aqui else t("coche.desde_ajustes") }}</small></p>
+  <button class="boton-redondo vidrio" type="button" id="coche-actualizar" aria-label="{{ t('coche.actualizar') }}" title="{{ t('coche.actualizar') }}">{{ icono("ubicacion") }}</button>
+</div>
+{% if mejor %}
+{% set nombres = {"precio": "inicio.mas_barata", "distancia": "inicio.mas_cercana", "compensa": "inicio.mas_rentable"} %}
+<section class="tarjeta destacada coche-mejor">
+  <p class="etiqueta">{{ t(nombres[aj.orden] ~ ("" if mejor.abierta is false else "_abierta"), radio=aj.radio_km) }}</p>
+  <p class="precio-grande">{{ mejor.precio|euros }}<small>€/{{ unidad }}</small></p>
+  <p class="nombre">{{ mejor.rotulo|titulo }}</p>
+  <p class="donde">{{ mejor.municipio }} · {{ mejor.distancia|km }}{% if mejor.estado %} · {{ estado(mejor) }}{% endif %}</p>
+  <a class="boton coche-ir" href="{{ mapas.google.format(lat=mejor.lat, lon=mejor.lon) }}" data-ir="{{ mejor.lat }},{{ mejor.lon }}" target="_blank" rel="noopener">{{ icono("mapa") }} {{ t("coche.ir") }}</a>
+</section>
+{% if otras %}
+<h2>{{ t("coche.otras") }}</h2>
+<ol class="lista coche-otras">
+  {% for e in otras %}
+  <li><a href="{{ mapas.google.format(lat=e.lat, lon=e.lon) }}" data-ir="{{ e.lat }},{{ e.lon }}" target="_blank" rel="noopener">
+    <span class="precio">{{ e.precio|euros }}</span>
+    <span class="info"><b>{{ e.rotulo|titulo }}</b><small>{{ e.distancia|km }} · {{ e.municipio }}</small></span>
+    <span class="dif {{ 'sube' if e.precio > mejor.precio else 'baja' }}">{{ (e.precio - mejor.precio)|centimos }}</span>
+  </a></li>
+  {% endfor %}
+</ol>
+{% endif %}
+{% else %}
+<section class="tarjeta"><p>{{ t(error) if error else t("coche.nada", comb=nombre_comb, radio=aj.radio_km) }}</p></section>
+{% endif %}
+<p class="nota centrada">{{ t("coche.pantalla") }}</p>
+{% endblock %}
+{% block scripts %}
+<script nonce="{{ nonce }}">
+  window.COCHE = {{ {"aqui": aqui, "buscando": t("coche.buscando")}|tojson }};
+</script>
+<script src="/static/coche.js?v={{ version }}"></script>
+{% endblock %}

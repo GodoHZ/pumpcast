@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "_iconos.html" import icono %}
 {% block titulo %}{{ t("mapa.titulo") }} · Pumpcast{% endblock %}
+{% block clase_body %}{% if not sin_ubicacion %} con-mapa{% endif %}{% endblock %}
 {% block cabeza %}
 <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css?v={{ version }}">
 <link rel="stylesheet" href="/static/vendor/maplibre/maplibre-gl.css?v={{ version }}">
@@ -14,8 +15,11 @@
   <button type="button" class="chip" data-filtro="baratas" aria-pressed="false" title="{{ t('filtro.baratas_ayuda') }}">{{ t("filtro.baratas") }}</button>
   <button type="button" class="chip" id="filtro-marcas" aria-haspopup="dialog" aria-pressed="false">{{ t("filtro.marcas") }}<span id="filtro-marcas-n"></span></button>
 </div>
+<p class="escala-mapa vidrio" aria-hidden="true">€<span></span>€€€</p>
 <div id="mapa" class="mapa" role="region" aria-label="{{ t('mapa.aria') }}"></div>
-<p class="nota leyenda"><b id="filtro-cuenta"></b> {{ t("mapa.leyenda")|safe }}</p>
+<p class="cuenta-mapa" id="filtro-cuenta" role="status"></p>
+<p class="nota leyenda">{{ t("mapa.leyenda")|safe }}</p>
+<section class="hoja-estacion" id="ficha" aria-hidden="true" aria-live="polite"></section>
 <dialog id="elegir-marcas" class="hoja" aria-labelledby="elegir-marcas-titulo">
   <h2 id="elegir-marcas-titulo">{{ t("filtro.marcas_titulo") }}</h2>
   <div class="botones centrados">
@@ -36,7 +40,9 @@
 <script nonce="{{ nonce }}">
   window.MAPA = {{ {"estaciones": estaciones, "escala": escala, "casa": [aj.lat|float, aj.lon|float],
                     "radio": aj.radio_km|float, "comb": comb, "favoritas": favoritas,
-                    "textoFavorita": [t("fav.poner"), t("fav.quitar")], "estrella": icono("estrella")|string}|tojson }};
+                    "textoFavorita": [t("fav.poner"), t("fav.quitar")], "estrella": icono("estrella")|string,
+                    "cts": t("tend.cts"), "cerrar": t("mapa.cerrar"), "unidad": unidad,
+                    "fuente": t("pie.fuente") ~ " · <a href=\"/legal\">" ~ t("pie.legal") ~ "</a>"}|tojson }};
 </script>
 <script src="/static/mapa.js?v={{ version }}"></script>
 {% endif %}
