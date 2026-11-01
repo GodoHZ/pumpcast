@@ -78,6 +78,8 @@
   </main>
 
   <nav class="barra" aria-label="{{ t('aria.secciones') }}">
+    {#- La lente de cristal bajo la sección activa: se coloca con CSS y se desliza entre pantallas -#}
+    <span class="lente" aria-hidden="true"></span>
     <a href="/?c={{ comb }}" {% if pagina == "inicio" %}aria-current="page"{% endif %}>{{ icono("surtidor") }}{{ t("nav.cerca") }}</a>
     <a href="/mapa?c={{ comb }}" {% if pagina == "mapa" %}aria-current="page"{% endif %}>{{ icono("mapa") }}{{ t("nav.mapa") }}</a>
     <a href="/tendencia?c={{ comb }}" {% if pagina == "tendencia" %}aria-current="page"{% endif %}>{{ icono("tendencia") }}{{ t("nav.tendencia") }}</a>
@@ -93,8 +95,14 @@
     <form method="dialog"><button class="boton secundario ancho">{{ t("mapas.cancelar") }}</button></form>
   </dialog>
   <script src="/static/acciones.js?v={{ version }}"></script>
+  <script src="/static/fluido.js?v={{ version }}"></script>
   <script nonce="{{ nonce }}">
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+  </script>
+  {#- Chrome y Edge: la pantalla que vas a tocar se prepara entera antes (en Safari lo hace el service worker) -#}
+  <script type="speculationrules" nonce="{{ nonce }}">
+    {"prerender": [{"where": {"and": [{"selector_matches": ".barra a, .segmentos a, .lista a[href^='/estacion']"},
+                                        {"not": {"href_matches": "/admin*"}}]}, "eagerness": "moderate"}]}
   </script>
   {% if con_gps %}<script src="/static/gps.js?v={{ version }}"></script>{% endif %}
   <div class="hoja-instalar" id="instalar" role="dialog" aria-labelledby="instalar-titulo" hidden

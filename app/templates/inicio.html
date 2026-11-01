@@ -12,6 +12,7 @@
 </section>
 {% else %}
 <nav class="segmentos" aria-label="{{ t('inicio.ordenar') }}">
+  <span class="lente" aria-hidden="true"></span>
   {% for clave in ("precio", "distancia", "compensa") %}
   <a href="?c={{ comb }}&amp;orden={{ clave }}" {% if aj.orden == clave %}class="activa" aria-current="true"{% endif %}>{{ t("orden." + clave) }}</a>
   {% endfor %}

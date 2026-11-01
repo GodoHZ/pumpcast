@@ -14,10 +14,10 @@ const PRECARGA = [
   "/static/acciones.js?v=" + VERSION,
   "/static/mapa-base.js?v=" + VERSION,
   "/static/instalar.js?v=" + VERSION,
+  "/static/fluido.js?v=" + VERSION,
   "/static/vendor/chart.umd.min.js?v=" + VERSION,
   "/static/vendor/leaflet/leaflet.js?v=" + VERSION,
   "/static/vendor/leaflet/leaflet.css?v=" + VERSION,
-  "/static/fuentes/nunito.woff2",
   "/static/iconos/icono-192.png",
   "/sin-conexion",
 ];
@@ -50,12 +50,44 @@ async function pantallaGuardada(peticion) {
   return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
 }
 
+// Pantallas pedidas por adelantado (fluido.js: las de la barra cuando la app está quieta y la que vas
+// a tocar al acercar el dedo). Si se abren en menos de 45 s salen al instante, y solo una vez: después
+// se vuelven a pedir. Guardar algo (ajustes, favorita, ubicación) las tira, porque pueden haber cambiado.
+const ADELANTADAS = new Map();
+const VIDA_ADELANTADA = 45000;
+
+self.addEventListener("message", (event) => {
+  const pedida = event.data && event.data.adelantar;
+  if (typeof pedida !== "string") return;
+  const url = new URL(pedida, self.location.origin);
+  if (url.origin !== self.location.origin || url.pathname.startsWith("/admin")) return;
+  const previa = ADELANTADAS.get(url.href);
+  if (previa && Date.now() - previa.cuando < VIDA_ADELANTADA / 3) return;     // ya está fresca
+  const respuesta = fetch(url.href, { credentials: "same-origin" })
+    .then((res) => (res.ok && (res.headers.get("Content-Type") || "").includes("text/html") ? res : null))
+    .catch(() => null);
+  ADELANTADAS.set(url.href, { cuando: Date.now(), respuesta });
+  event.waitUntil(respuesta);
+});
+
 self.addEventListener("fetch", (event) => {
   const peticion = event.request;
-  if (peticion.method !== "GET") return;                // guardar ajustes, actualizar... siempre a la red
+  if (peticion.method !== "GET") {                      // guardar ajustes, actualizar... siempre a la red
+    ADELANTADAS.clear();
+    return;
+  }
   const url = new URL(peticion.url);
   if (url.origin !== self.location.origin) return;      // el mapa de OpenStreetMap, a su aire
   if (url.pathname.startsWith("/admin")) return;        // el panel nunca se guarda en el móvil
+
+  const adelantada = peticion.mode === "navigate" && ADELANTADAS.get(url.href);
+  if (adelantada) {
+    ADELANTADAS.delete(url.href);
+    if (Date.now() - adelantada.cuando < VIDA_ADELANTADA) {
+      event.respondWith(adelantada.respuesta.then((res) => res || fetch(peticion)));
+      return;
+    }
+  }
 
   if (url.pathname.startsWith("/static/")) {
     event.respondWith(caches.match(peticion).then((hay) => hay || fetch(peticion).then((res) => {
