@@ -441,7 +441,7 @@ details.avanzado summary { color: var(--suave); font-size: .95rem; cursor: point
   border-radius: 34px; padding: 24px 20px 20px; width: min(440px, calc(100% - 24px)); color: var(--texto);
 }
 .hoja[open] { animation: aparecer .5s var(--muelle); }
-@keyframes aparecer { from { transform: translateY(24px) scale(.96); opacity: 0; } }
+@keyframes aparecer { from { transform: translateY(24px) scale(.96); } }   /* sin opacidad: en WebKit la hoja se quedaba invisible */
 .hoja::backdrop { background: rgb(4 9 15 / .32); }
 .hoja h2 { text-align: center; }
 .hoja .boton { display: flex; text-align: center; margin-bottom: 8px; }
@@ -533,7 +533,7 @@ html .leaflet-touch .leaflet-bar a { background: var(--cristal-fuerte); -webkit-
   max-width: 520px; margin: 0 auto; padding: 20px; border-radius: 34px;
   animation: subir .5s var(--muelle);
 }
-@keyframes subir { from { transform: translateY(24px); opacity: 0; } }
+@keyframes subir { from { transform: translateY(32px); } }
 @media (prefers-reduced-motion: reduce) { .hoja-instalar, .hoja[open], .hoja-comb:popover-open { animation: none; } }
 .cabeza-instalar { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
 .cabeza-instalar img { border-radius: 11px; flex: none; }
@@ -668,7 +668,7 @@ html .con-mapa .mapa.leaflet-container { background: var(--fondo); }
 .paso legend { font: 600 1.4rem var(--titular); letter-spacing: -.02em; padding: 0; margin-bottom: 14px; }
 .paso .icono { width: 1.1em; height: 1.1em; }
 .paso:not([hidden]) { animation: entrar .45s var(--muelle); }
-@keyframes entrar { from { opacity: 0; transform: translateX(18px); } }
+@keyframes entrar { from { transform: translateX(18px); } }
 @media (prefers-reduced-motion: reduce) { .paso:not([hidden]) { animation: none; } }
 .opciones { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .opcion { position: relative; cursor: pointer; }
