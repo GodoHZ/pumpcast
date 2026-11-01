@@ -393,7 +393,7 @@ def test_elegir_el_tema(cliente, cargada):
     texto = cliente.get("/").text
     assert '<html lang="es" data-theme="dark">' in texto
     # La barra de la hora, oscura aunque el móvil esté en claro.
-    assert '<meta name="theme-color" content="#070c11">' in texto and 'content="black-translucent"' in texto
+    assert '<meta name="theme-color" content="#04090f">' in texto and 'content="black-translucent"' in texto
     _ubicar(cliente, tema="claro")
     assert 'data-theme="light"' in cliente.get("/ajustes").text
     _ubicar(cliente, tema="raro")

@@ -647,7 +647,7 @@ def manifest(request: Request):
                        "icons": [{"src": "/static/iconos/icono-192.png", "sizes": "192x192"}]},
                       {"name": i18n.t(lang, "coche.titulo"), "url": "/coche",
                        "icons": [{"src": "/static/iconos/icono-192.png", "sizes": "192x192"}]}],
-        "background_color": "#eef4f8", "theme_color": "#0276b5",
+        "background_color": "#e8eff5", "theme_color": "#e8eff5",
         "icons": [
             {"src": "/static/iconos/icono-192.png", "sizes": "192x192", "type": "image/png"},
             {"src": "/static/iconos/icono-512.png", "sizes": "512x512", "type": "image/png"},

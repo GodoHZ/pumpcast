@@ -9,10 +9,10 @@
       en oscuro, la página se pinta también debajo de ella, con letra blanca. -#}
   <meta name="apple-mobile-web-app-status-bar-style" content="{{ 'black-translucent' if tema == 'oscuro' else 'default' }}">
   <meta name="apple-mobile-web-app-title" content="Pumpcast">
-  {% if tema == "oscuro" %}<meta name="theme-color" content="#070c11">
-  {% elif tema == "claro" %}<meta name="theme-color" content="#eef4f8">
-  {% else %}<meta name="theme-color" content="#eef4f8" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#070c11" media="(prefers-color-scheme: dark)">{% endif %}
+  {% if tema == "oscuro" %}<meta name="theme-color" content="#04090f">
+  {% elif tema == "claro" %}<meta name="theme-color" content="#e8eff5">
+  {% else %}<meta name="theme-color" content="#e8eff5" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#04090f" media="(prefers-color-scheme: dark)">{% endif %}
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/static/iconos/icono.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/static/iconos/apple-touch-icon.png">
@@ -39,7 +39,6 @@
   <meta name="twitter:title" content="{{ self.titulo() }}">
   <meta name="twitter:description" content="{{ t('manifest.descripcion') }}">
   <meta name="twitter:image" content="{{ url_imagen }}">
-  <link rel="preload" href="/static/fuentes/nunito.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/static/estilo.css?v={{ version }}">
   {% block cabeza %}{% endblock %}
   <script nonce="{{ nonce }}">window.I18N = {{ js|tojson }};</script>
