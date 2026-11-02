@@ -770,3 +770,52 @@ html .con-mapa .mapa.leaflet-container { background: var(--fondo); }
 .selector-comb { view-transition-name: combustible; }
 ::view-transition-group(*) { animation-duration: .38s; animation-timing-function: cubic-bezier(.2, .9, .3, 1); }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .18s; }
+
+/* --- 2.17.3 · el PC, más fino: el contenido centrado en el hueco que deja la barra, las listas
+   largas a dos columnas y cada pantalla repartida a lo ancho en vez de una columna estrecha ---- */
+@media (min-width: 1100px) {
+  .cabecera, .contenido { max-width: calc(1040px + var(--lado) + var(--lado-d)); }
+  :where(.cabecera, .contenido) > * { max-width: none; }
+  .cabecera h1 { font-size: 3.4rem; }
+  .pie-legal { text-align: left; }
+
+  /* el modo coche, como una fila más de la columna de la izquierda: icono y nombre */
+  .boton-coche { grid-auto-flow: column; justify-content: start; gap: 14px; padding: 0 22px; color: var(--tinta-marca); text-decoration: none; }
+  .boton-coche::before { content: attr(title); order: 2; font: 600 .98rem var(--letra); color: var(--texto); }
+  .boton-coche .icono { width: 22px; height: 22px; }
+
+  /* Cerca: el resto y las favoritas a dos columnas (se leen de arriba abajo, como un ranking) */
+  .contenido > section > .lista, #rep-lista { columns: 2; column-gap: 64px; }
+  .contenido > section > .lista li, #rep-lista li { break-inside: avoid; border-bottom: 1px solid var(--separador); }
+  .contenido > section > .lista li::before, #rep-lista li::before { display: none; }
+  .pagina-inicio .destacada .precio-grande { font-size: clamp(6rem, 11vw, 13.5rem); }
+  .pagina-inicio .destacada .nombre { font-size: 2.3rem; }
+  .pagina-inicio .destacada .ahorro { font-size: 1.15rem; }
+
+  /* Tendencia: el día más barato y las marcas, uno al lado del otro */
+  .contenido:has(> .cifras) { display: grid; grid-template-columns: 1fr 1fr; column-gap: 64px; align-items: start; max-width: calc(1040px + var(--lado) + var(--lado-d)); margin-inline: auto; }
+  .contenido:has(> .cifras) > * { grid-column: 1 / -1; width: 100%; }
+  .contenido:has(> .cifras) > .tarjeta:has(.precios) { grid-column: auto; }
+  .contenido:has(> .cifras) .precios { max-width: none; }
+  .cifra b { font-size: 3rem; }
+
+  /* Ajustes: la ubicación (con el mapa) a la izquierda; el coche y la apariencia, a la derecha */
+  .formulario:has(> .tarjeta #mapa-casa) { max-width: 1040px; display: grid; grid-template-columns: 1.25fr 1fr; column-gap: 64px; align-items: start; }
+  .formulario:has(> .tarjeta #mapa-casa) > .tarjeta:first-of-type { grid-row: span 4; border-top: 0; }
+  .formulario:has(> .tarjeta #mapa-casa) > .tarjeta:nth-of-type(2) { border-top: 0; }
+  .formulario:has(> .tarjeta #mapa-casa) > .boton { grid-column: 2; }
+  .formulario:has(> .tarjeta #mapa-casa) .mapa-casa { height: 340px; }
+  .contenido:has(> .formulario #mapa-casa) > .boton.ancho, .contenido:has(> .formulario #mapa-casa) > form > .boton.ancho { max-width: 420px; }
+
+  /* Mis repostajes: apuntar a la izquierda y el historial a la derecha */
+  .contenido:has(#rep-form) { display: grid; grid-template-columns: 1fr 1fr; column-gap: 64px; align-items: start; max-width: calc(1040px + var(--lado) + var(--lado-d)); margin-inline: auto; }
+  .contenido:has(#rep-form) > * { grid-column: 1 / -1; width: 100%; }
+  .contenido:has(#rep-form) > .tarjeta:has(#rep-form), .contenido:has(#rep-form) > .tarjeta:has(#rep-lista) { grid-column: auto; }
+  .contenido:has(#rep-form) #rep-lista { columns: 1; }
+
+  /* La ficha de una gasolinera: los precios a la izquierda y la gráfica a la derecha */
+  .contenido:has(> .tarjeta > .precios):not(:has(> .cifras)) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); column-gap: 64px; align-items: start; max-width: calc(1040px + var(--lado) + var(--lado-d)); margin-inline: auto; }
+  .contenido:has(> .tarjeta > .precios):not(:has(> .cifras)) > * { grid-column: 1 / -1; width: 100%; }
+  .contenido:has(> .tarjeta > .precios):not(:has(> .cifras)) > .tarjeta { grid-column: auto; border-top: 0; }
+  .contenido:has(> .tarjeta > .precios):not(:has(> .cifras)) .botones { flex-wrap: wrap; }
+}
